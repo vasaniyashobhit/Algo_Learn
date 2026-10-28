@@ -10,3 +10,9 @@ data/
 *.log
 .claude/settings.local.json
 .impeccable/config.local.json
+
+.agent/
+.cursor/
+.gemini/
+.claude/settings.local.json
+.impeccable/**/*.exe
