@@ -6,6 +6,7 @@ import { buildEnv } from '../helpers/envFactory.js';
 import { createTestApp, silentLogger } from '../helpers/testApp.js';
 
 const fakeLogger = () => ({ info: vi.fn(), error: vi.fn(), warn: vi.fn() });
+const db = { connect: async () => {}, disconnect: async () => {} };
 let running;
 
 afterEach(async () => {
@@ -16,7 +17,7 @@ describe('startServer', () => {
   it('listens on the configured port and serves the API', async () => {
     const env = { ...parseEnv(buildEnv()), PORT: 0 };
     const logger = fakeLogger();
-    const { server } = await startServer({ env, logger, app: createTestApp(), proc: new EventEmitter(), exit: vi.fn() });
+    const { server } = await startServer({ env, logger, app: createTestApp(), proc: new EventEmitter(), exit: vi.fn(), db });
     running = server;
     const { port } = server.address();
     const res = await fetch(`http://127.0.0.1:${port}/api/v1/health`);
@@ -26,7 +27,7 @@ describe('startServer', () => {
 
   it('builds the app from env when none is injected', async () => {
     const env = { ...parseEnv(buildEnv()), PORT: 0 };
-    const { server } = await startServer({ env, logger: silentLogger, proc: new EventEmitter(), exit: vi.fn() });
+    const { server } = await startServer({ env, logger: silentLogger, proc: new EventEmitter(), exit: vi.fn(), db });
     running = server;
     const res = await fetch(`http://127.0.0.1:${server.address().port}/api/v1/meta/tags`);
     expect((await res.json()).data.topicTags).toHaveLength(36);
@@ -36,7 +37,7 @@ describe('startServer', () => {
     const proc = new EventEmitter();
     const exit = vi.fn();
     const env = { ...parseEnv(buildEnv()), PORT: 0 };
-    const { server } = await startServer({ env, logger: fakeLogger(), app: createTestApp(), proc, exit });
+    const { server } = await startServer({ env, logger: fakeLogger(), app: createTestApp(), proc, exit, db });
     proc.emit('SIGTERM');
     await vi.waitFor(() => expect(exit).toHaveBeenCalledWith(0));
     expect(server.listening).toBe(false);
@@ -44,10 +45,10 @@ describe('startServer', () => {
 
   it('rejects when the port is already in use', async () => {
     const env = { ...parseEnv(buildEnv()), PORT: 0 };
-    const { server } = await startServer({ env, logger: fakeLogger(), app: createTestApp(), proc: new EventEmitter(), exit: vi.fn() });
+    const { server } = await startServer({ env, logger: fakeLogger(), app: createTestApp(), proc: new EventEmitter(), exit: vi.fn(), db });
     running = server;
     const busy = { ...env, PORT: server.address().port };
-    await expect(startServer({ env: busy, logger: fakeLogger(), app: createTestApp(), proc: new EventEmitter() }))
+    await expect(startServer({ env: busy, logger: fakeLogger(), app: createTestApp(), proc: new EventEmitter(), db }))
       .rejects.toThrow(/EADDRINUSE/);
   });
 });

@@ -24,6 +24,25 @@ Read this first, update it last, every session.
 - Tests: 30 files, 131 tests (Vitest + supertest). Coverage: about 98% lines, 97% branches
   (thresholds 80/80/75 in `backend/vitest.config.js`).
 
+### Session 2 (2026-10-29) — MongoDB connection + all models
+
+- `db/connect.js`: `connectDB(uri, { logger, serverSelectionTimeoutMS })` / `disconnectDB({ logger })`,
+  global `sanitizeFilter` + `strictQuery`, logs host and db name (never the URI), logs
+  disconnect/reconnect/error. Failures throw `ExternalServiceError` 503 `DB_UNAVAILABLE`.
+- `server.js`: connects the DB **before** listening (injectable `db: { connect, disconnect }`),
+  closes the DB if HTTP fails to start, and on SIGINT/SIGTERM via `onClose`.
+- `db/schema.js`: `createSchema` (timestamps + toJSON transform removing `__v`/`passwordHash`),
+  `requiredRef`, `optionalEnum`. `config/constants.js`: enums, CF verdicts, TTL, 20k input limit.
+- Models: `Problem`, `User`, `Submission`, `TopicStat`, `StuckQuery`, `LlmCache`, `PracticeItem`
+  (collections and indexes documented in `docs/API.md` → Data model).
+  `problems/helpers/derivedFields.js` computes `tagCount`/`hasEditorial`.
+- New error code `DB_UNAVAILABLE` (503), now 27 codes.
+- Tests: Vitest `globalSetup` starts one mongodb-memory-server; `useTestDB()` gives each test
+  file its own database (connect + build indexes, clear after each test, drop at the end).
+  Helpers: `db.js`, `mongoServer.js`, `factories.js` (`makeProblem`, `makeUser`, ...),
+  `assertions.js` (`invalidPaths`, `expectDuplicateKey`, `indexesByName`).
+  44 files, 206 tests. Coverage: 99% lines, 97.7% branches.
+
 ## Decisions
 
 - **Mongoose 8** pinned (`^8.24`) as required by backend/CLAUDE.md (npm's latest is 9).
@@ -51,19 +70,40 @@ Read this first, update it last, every session.
   `errorCode` injectable (default `URL_FETCH_FAILED`).
 - ESLint also forbids `.then()` (root rule 2). `_`-prefixed args are allowed to be unused
   (Express needs the 4-arg error middleware signature).
-- The parquet dataset currently lives in the root `data/` (git-ignored), not `backend/data/`.
+- The parquet dataset now lives in `backend/data/cf_problems.parquet` (git-ignored); the root
+  `data/` folder is empty.
+- **sanitizeFilter is global**, so our own operator filters must be marked trusted:
+  `{ rating: mongoose.trusted({ $gte: lo, $lte: hi }) }`, `{ $text: mongoose.trusted({ $search: q }) }`.
+  Untrusted operators become `$eq` (and then fail to cast), and an untrusted `$text` throws.
+  Aggregation pipelines are not sanitized. Only wrap values we built ourselves, never raw input.
+- **cfHandle index**: unique with a `partialFilterExpression` (`$type: 'string'`) instead of
+  `sparse` (sparse still indexes `null`, so two unlinked users with `null` would collide), plus
+  collation strength 2 because CF handles are case-insensitive. To unlink, `$unset` the field.
+  Lookups by handle should pass the same collation to use the index.
+- `passwordHash` has `select: false`; auth must query with `.select('+passwordHash')`.
+- `contestId` is a Number. Problem `_id` must match `/^\d+\/[A-Z]\d*$/` (e.g. `1950/F2`); the
+  import session should confirm every dataset id matches.
+- `tagCount`/`hasEditorial` are set in a `pre('validate')` hook. `bulkWrite` skips hooks, so the
+  import script must spread `problemDerivedFields(doc)` itself.
+- Problem `tags` are validated against the 37 tags; `submission.problemTags` are not (a new CF
+  tag must not break sync).
+- `topicKey` is validated against its `kind` (36 topic tags or 630 pair keys).
+- `stuckqueries`/`llmcaches` have `createdAt` only. Gap `status` enum chosen as
+  `untouched|weak|ok|strong` (not specified in the brief). `tagsSource` stays unset until known.
+- `submission.verdict` is limited to the 17 CF API verdicts (`CF_VERDICTS`).
+- Test globalSetup must not import `vitest`, hence the separate `tests/helpers/mongoServer.js`.
+- mongodb-memory-server 11 downloads MongoDB 8.2.6 (~780 MB) once on first run and caches it
+  (here: `~/.cache/mongodb-binaries`). CI should cache that folder.
 
 ## Blockers
 
-- `docs/PROJECT_BRIEF.md` **does not exist**. Session 1 was built from the CLAUDE.md files
-  only. Please add the brief before Session 2.
 - Rule "add a code on both sides in the same session": the frontend doesn't exist yet, so
   `frontend/src/errors/messages/` could not be created. The frontend setup session must add
-  messages for all 26 codes (listed in docs/API.md).
+  messages for all 27 codes (listed in docs/API.md), including `DB_UNAVAILABLE` (added in Session 2).
 
 ## Next
 
-- Session 2 (suggested): `db/connect.js` (Mongoose, `sanitizeFilter`), connect and disconnect
-  in `server.js` via `registerGracefulShutdown({ onClose })`, mongodb-memory-server test helper,
-  `problems` model plus indexes.
-- Move `data/cf_problems.parquet` to `backend/data/` (or point the import script at the root path).
+- Session 3: dataset import script (`scripts/importDataset.js` with `hyparquet`, from
+  `backend/data/cf_problems.parquet`): skip empty descriptions, `bulkWrite` upserts with
+  `problemDerivedFields`, check every id matches `PROBLEM_ID_PATTERN`, report counts.
+- When a feature service queries with operators, wrap them in `mongoose.trusted()` (see Decisions).

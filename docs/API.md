@@ -105,7 +105,74 @@ Source: `backend/src/errors/codes.js`. Every code needs a frontend message in
 | `PRACTICE_ITEM_EXISTS` | 409 | Problem already in the user's practice list |
 | `STUCK_QUERY_NOT_FOUND` | 404 | Stuck-helper query id does not exist for this user |
 | `DUPLICATE_RESOURCE` | 409 | Generic unique-index violation. `details: { fields: [...] }` (field names only) |
+| `DB_UNAVAILABLE` | 503 | Could not connect to or close MongoDB (startup/shutdown; not yet sent by any endpoint) |
 | `INTERNAL_ERROR` | 500 | Anything unexpected. Message is always generic |
 
 Statuses for codes not yet emitted by any endpoint (auth, CF, upload, stuck, practice) are
 the intended ones; the sessions that implement those features confirm them here.
+
+## Data model (MongoDB)
+
+Source: `backend/src/modules/*/*.model.js`. Shared options in `backend/src/db/schema.js`.
+Every document's JSON form drops `__v` and `passwordHash` and keeps `_id` (ObjectId → hex
+string, except `problems`, whose `_id` is the problem id). `createdAt`/`updatedAt` are ISO
+dates. Enum lists live in `backend/src/config/constants.js`.
+
+### `problems`
+
+| Field | Type | Notes |
+|---|---|---|
+| `_id` | string | `"<contestId>/<index>"`, e.g. `"1/A"`, `"1950/F2"` |
+| `contestId` | number | required |
+| `index` | string | required |
+| `title` | string | required |
+| `description`, `inputFormat`, `outputFormat`, `note`, `editorial` | string | default `""`; CF LaTeX `$$$...$$$` kept as is |
+| `rating` | number \| null | 0–4000, `null` when unrated |
+| `tags` | string[] | each one of the 37 CF tags (incl. `*special`) |
+| `tagCount` | number | derived: `tags.length` |
+| `hasEditorial` | boolean | derived: editorial is non-blank |
+| `source` | `hf` \| `cf_api` | default `hf` |
+
+Indexes: `tags`, `rating`, `{tags, rating}`, text index `problem_text` (title weight 3, description 1).
+
+### `users`
+
+`email` (unique, lowercased), `passwordHash` (never returned; `select: false`), `name`
+(default `""`), `cfHandle` (unset until linked; unique **case-insensitively**, only when it
+is a string), `cfRating`, `cfMaxRating`, `lastSyncedAt`, `lastSubmissionId`,
+`syncLockedUntil` (all default `null`).
+
+### `submissions`
+
+`cfSubmissionId` (unique), `userId`, `problemId`, `contestId`, `index`, `problemRating`
+(nullable), `problemTags` (copied from CF at sync time), `verdict` (CF verdict, e.g. `OK`,
+`WRONG_ANSWER`), `submittedAt`. Index `{userId: 1, submittedAt: -1}`.
+
+### `topicstats`
+
+`userId`, `topicKey` (`dp` or a pair key like `bitmasks+dp`), `kind` (`single` \| `pair`,
+must match the key), `attempted`, `solved`, `failed` (default 0), `avgSolvedRating`,
+`maxSolvedRating`, `comfortRating` (default `null`), `strength` (0..1, default 0),
+`lastActivityAt`. Unique `{userId, topicKey}`.
+
+### `stuckqueries`
+
+`userId`, `inputType` (`text|url|pdf|image`), `rawInput` (truncated to 20,000 chars),
+`matchedProblemId` (nullable), `detectedTags`, `tagsSource` (`db|ai|neighbors`, unset until
+known), `estimatedRating` (nullable), `gap` (`[{ topicKey, strength, status }]`, status
+`untouched|weak|ok|strong`), `result` (free-form), `source` (`ai|cache|fallback`),
+`createdAt` (no `updatedAt`). Index `{userId: 1, createdAt: -1}`.
+
+### `llmcaches` (internal, never returned directly)
+
+`key` (unique: problem id or sha256 of the statement), `provider`, `model`, `response`
+(free-form), `createdAt`. TTL index: entries expire 30 days after `createdAt`.
+
+### `practiceitems`
+
+`userId`, `problemId`, `status` (`todo|solved|skipped`, default `todo`), `addedFrom`
+(`recommendation|similar|stuck|manual`, default `manual`), timestamps. Unique `{userId, problemId}`.
+
+Unique-index violations on any collection → `409 DUPLICATE_RESOURCE` with
+`details.fields` (field names only). Feature endpoints may map them to a specific code
+(e.g. `PRACTICE_ITEM_EXISTS`).
