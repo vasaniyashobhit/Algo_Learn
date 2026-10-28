@@ -1,0 +1,12 @@
+node_modules/
+.env
+.env.*
+!.env.example
+coverage/
+dist/
+backend/data/*.parquet
+data/
+.venv/
+*.log
+.claude/settings.local.json
+.impeccable/config.local.json
