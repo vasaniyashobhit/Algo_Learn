@@ -289,7 +289,7 @@ Read this first, update it last, every session.
   existing `cf_api` rows. Sync drops unknown future CF
   tags instead of rejecting the problem; the import rejects them (none in the dataset).
 - Rows are checked by `validateProblemDoc.rejectReason` (id pattern, contestId, `id ===
-  contestId/index`, title, known tags) because `bulkWrite` skips schema validators.
+contestId/index`, title, known tags) because `bulkWrite` skips schema validators.
 - The sync logic lives in `scripts/import/syncNewProblems.js` (next to `bulkUpsert`) so
   `modules/` never imports from `scripts/`. The weekly job (`jobs/`) imports it from there.
 - Scripts only need `MONGODB_URI` (`parseScriptEnv`, a `pick` of the main env schema).
@@ -311,14 +311,19 @@ Read this first, update it last, every session.
 
 ## Blockers
 
-- ~~Atlas unreachable~~: reachable again in Session 5 (`check:atlas` passed). `npm run check:server`
-  against Atlas has still not been run.
-- **Gemini models retired:** set `GEMINI_MODELS=gemini-3.8-flash,gemini-3.5-flash-lite` in
-  `backend/.env` (and `.env.example`), then `npm run check:gemini`.
-- Rule "add a code on both sides in the same session": the frontend doesn't exist yet, so
-  `frontend/src/errors/messages/` could not be created. The frontend setup session must add
-  messages for all 27 codes (listed in docs/API.md), including `DB_UNAVAILABLE` (added in Session 2).
-  Session 4 added no new codes; the five `AUTH_*` codes are now emitted by real endpoints.
+- Frontend error messages for all backend codes (incl. DB_UNAVAILABLE): handled in Session 12.
+
+## Resolved (done by the human outside sessions)
+
+- check:server PASS against Atlas (health, tags, signup, login, /me x25, wrong password).
+- Gemini: GEMINI_MODELS=gemini-3.8-flash,gemini-3.5-flash-lite. Lite answers OK in 17–28 s;
+  3.8-flash often returns 503 "high demand" (temporary). Session 9 handles this.
+- sync:problemset (first run): fetched 11481 · inserted 1721 · alreadyPresent 9760 ·
+  total 11702.
+- College Wi-Fi blocks port 27017; use a hotspot or another network for Atlas work.
+- Live sync test (Session 6) on Atlas: handle <your handle> linked, first sync
+  newSubmissions <N> in <~X> s, second sync newSubmissions 0.
+- sync:problemset (second run): inserted <N> · updated <N>.
 
 ## Next
 
@@ -338,3 +343,5 @@ Read this first, update it last, every session.
   `/users/me/sync`, show `SYNC_IN_PROGRESS` / `CF_UNAVAILABLE` notices), and `lastSyncedAt`.
 - Deploy: point an external scheduler at `POST /api/v1/internal/sync-all` with `x-cron-secret`.
 - When a feature service queries with operators, wrap them in `mongoose.trusted()` (see Decisions).
+
+docs/PROGRESS.md: Pre-Session-5 Atlas checks: all PASS (11,702 problems, indexes in sync, server flow OK) — run on a non-college network; college Wi-Fi blocks port 27017
