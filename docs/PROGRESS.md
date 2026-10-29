@@ -139,7 +139,60 @@ Read this first, update it last, every session.
   multi-tag problem and a `cf_api` row all returned `primary` results (~290 ms warm, ~1 s first
   call); `list` with `q` + tags ~100 ms.
 
+### Session 6 (2026-10-29) — Codeforces handle linking + submission sync
+
+- `node-cron` (^4.6) added. `config/constants.js`: `SYNC` (lock 5 min, page 500, max 20 pages),
+  `PROBLEMSET_SYNC_CRON` (`0 3 * * 0`). `SYNC_CRON` is now validated with `node-cron`'s `validate`.
+- `modules/codeforces/helpers/callCf.js`: typed CF errors pass through, anything else → 503 `CF_UNAVAILABLE`.
+- `modules/users/`: `handle.service.js` (`createHandleService` → `linkHandle`, `unlinkHandle`),
+  `handle.controller.js`, `helpers/accountGone.js` (shared), `linkHandleSchema`.
+- `modules/sync/`: `sync.lock.js` (`unlockedFilter`, `acquireSyncLock`, `releaseSyncLock`,
+  `lockedOrGone`), `sync.service.js` (`createSyncService({ client, onSynced })` → `syncUser`),
+  `sync.controller.js`, `helpers/cfSubmissions.js` (`isPending`, `isStorable`, `toSubmissionDoc`,
+  `nextCursor`, `uniqueById`), `helpers/fetchNewSubmissions.js`, `helpers/insertSubmissions.js`.
+- `middlewares/cronSecret.js` (constant-time compare), `modules/internal/` (routes + controller).
+- `jobs/`: `jobErrorHandler.js`, `syncAllUsers.job.js`, `syncProblemset.job.js`, `scheduler.js`.
+- `src/services.js` (`createServices`): one CF client shared by the handle/sync services and the jobs.
+  `createApp({ services, cronSecret })`; `startServer` builds the services once, passes them to the
+  app, starts the scheduler after listening and stops it on shutdown (before closing the DB).
+- Endpoints: `PUT /users/me/handle`, `DELETE /users/me/handle`, `POST /users/me/sync`,
+  `POST /internal/sync-all` (202). No new error codes (all were already in the list).
+- Extra: `scripts/import/syncNewProblems.js` now also updates `rating`/`tags`/`tagCount` of existing
+  `cf_api` rows that changed (new `updateCfApiRows.js`), summary has `updated`; weekly cron job.
+- Tests: 111 files, 631 tests. Coverage 99.6% lines, 98.5% branches. New helpers
+  `tests/helpers/codeforces.js` (`fakeCfClient`, `cfSubmission`, `cfHistory`, `cfUser`, `cfDown`),
+  `tests/helpers/sync.js`; `testApp.js` exports `TEST_CRON_SECRET`.
+
 ## Decisions
+
+- **Handle + sync (Session 6):**
+  - `CF_HANDLE_TAKEN` is checked in the DB (with the index collation) **before** calling Codeforces,
+    and E11000 from the unique index is also mapped to it (race).
+  - Linking a **different** handle (case-insensitive compare) deletes the user's submissions and
+    topic stats and resets `lastSyncedAt`/`lastSubmissionId`; re-linking the same handle keeps them.
+  - Link/unlink refuse with `SYNC_IN_PROGRESS` while the lock is held, so a running sync can't
+    write submissions of a handle that was just removed.
+  - Lock: `findOneAndUpdate` with `syncLockedUntil: { $not: { $gt: now } }` (matches null/missing/
+    expired). No match → `SYNC_IN_PROGRESS` if the user exists, else `AUTH_INVALID_TOKEN`.
+    Released in `finally` (only by the caller that acquired it).
+  - `CF_HANDLE_NOT_LINKED` is **400** (as listed in API.md).
+  - Pending submissions (no verdict / `TESTING`) are not stored, and `lastSubmissionId` never moves
+    past the oldest pending one; the next sync re-reads from there and duplicates are ignored.
+  - The 20-page cap applies to every sync (on incremental syncs it is only a safety net). A user with
+    more than 10,000 submissions gets only the newest 10,000 on the first sync.
+  - Duplicates: `insertMany({ ordered: false })`; an error made only of E11000 write errors counts
+    `insertedDocs`. Any other failure → 500 `INTERNAL_ERROR` with the cause.
+  - The rating is refreshed after inserting; if `userInfo` fails the cursor is not advanced (the
+    inserted rows stay, the next sync ignores them as duplicates).
+  - `onSynced(userIdString)` runs inside the lock; if it throws, the error goes to the caller (the
+    lock is still released). Session 7 plugs `createServices({ onSynced })`.
+  - The sync-all job skips a run that starts while one is in progress (cron + HTTP trigger), and
+    `run()` never rejects. Cron tasks also use node-cron's `noOverlap`.
+  - The internal secret compare hashes both sides (sha256) then `timingSafeEqual`. No configured
+    secret → always 403. The secret header is already redacted in logs.
+  - Problemset refresh: only rows with `source: "cf_api"` are compared (tag order ignored) and the
+    update filter re-checks the source. `jobs/` imports `scripts/import/syncNewProblems.js` directly
+    (it is library code; `modules/` still never imports from `scripts/`).
 
 - **Problems / similar search (Session 5):**
   - Fallbacks advance only when an attempt returns **zero** results (not when it returns < k).
@@ -232,12 +285,13 @@ Read this first, update it last, every session.
   via `$setOnInsert`. Otherwise Mongoose bumps `updatedAt` on every match and a re-run reports
   every row as modified. Trade-off: `updatedAt` on hf rows is the first import time.
 - **Import uses `$set`** (re-runs refresh hf text; it also upgrades a `cf_api` stub to `hf`).
-  **Sync uses `$setOnInsert`** so it never changes an existing row. Sync drops unknown future CF
+  **Sync inserts with `$setOnInsert`**; since Session 6 it also updates rating/tags (only) of
+  existing `cf_api` rows. Sync drops unknown future CF
   tags instead of rejecting the problem; the import rejects them (none in the dataset).
 - Rows are checked by `validateProblemDoc.rejectReason` (id pattern, contestId, `id ===
   contestId/index`, title, known tags) because `bulkWrite` skips schema validators.
 - The sync logic lives in `scripts/import/syncNewProblems.js` (next to `bulkUpsert`) so
-  `modules/` never imports from `scripts/`. If a cron job needs it later, move both to `lib/`.
+  `modules/` never imports from `scripts/`. The weekly job (`jobs/`) imports it from there.
 - Scripts only need `MONGODB_URI` (`parseScriptEnv`, a `pick` of the main env schema).
 - CF client errors: FAILED "handle … not found" → 404 `CF_HANDLE_NOT_FOUND`; "Call limit
   exceeded", 5xx, 429, timeouts, network errors → `CF_UNAVAILABLE` and retried (each retry goes
@@ -270,14 +324,17 @@ Read this first, update it last, every session.
 
 - Frontend: store the JWT, send `Authorization: Bearer`, and on any 401 `AUTH_*` (except
   `AUTH_INVALID_CREDENTIALS`) clear the token and go to login.
-- Session 6 (CF handle linking/sync) mounts under `/users/me/...` and reuses `requireAuth` from
-  `createApiRouter({ auth })`.
+- **Session 7:** plug the stats recompute into `createServices({ onSynced })` in `server.js`
+  (`onSynced(userId)` is called after every successful sync, inside the lock).
 - Atlas now holds 11,702 problems (9,981 hf + 1,721 cf_api), so the problemset sync has been run;
   record its summary here if it is still available.
 - Frontend: the problem list uses `meta.total/totalPages`; the similar view should show a short
   notice when `meta.strategy` is not `primary` (results are a broader fallback).
 - Later callers of `findSimilar` (stuck, recommendations) should pass `userRating` and their own
   `excludeIds` (e.g. solved problems).
-- Session 6 uses `createCodeforcesClient().userInfo` / `.userStatus`; share one client (one
-  limiter) per process so all CF calls respect the 2.1 s spacing together.
+- Any new feature that calls Codeforces should take `services.client` from `createServices`
+  (one limiter per process).
+- Frontend: handle form (PUT/DELETE `/users/me/handle`), a "Sync now" button (POST
+  `/users/me/sync`, show `SYNC_IN_PROGRESS` / `CF_UNAVAILABLE` notices), and `lastSyncedAt`.
+- Deploy: point an external scheduler at `POST /api/v1/internal/sync-all` with `x-cron-secret`.
 - When a feature service queries with operators, wrap them in `mongoose.trusted()` (see Decisions).

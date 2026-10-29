@@ -44,10 +44,13 @@ describe('users.controller', () => {
 });
 
 describe('users.routes and schema', () => {
-  it('registers GET and PATCH /me', () => {
-    const router = createUsersRouter({ requireAuth: vi.fn() });
+  it('registers the /me, /me/handle and /me/sync routes', () => {
+    const router = createUsersRouter({ requireAuth: vi.fn(), handleService: {}, syncService: {} });
     const routes = router.stack.filter((layer) => layer.route).map((layer) => [layer.route.path, layer.route.methods]);
-    expect(routes).toEqual([['/me', { get: true }], ['/me', { patch: true }]]);
+    expect(routes).toEqual([
+      ['/me', { get: true }], ['/me', { patch: true }],
+      ['/me/handle', { put: true }], ['/me/handle', { delete: true }], ['/me/sync', { post: true }],
+    ]);
   });
 
   it('accepts only a valid name', () => {

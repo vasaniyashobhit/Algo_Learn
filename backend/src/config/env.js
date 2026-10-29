@@ -1,4 +1,5 @@
 import { z } from 'zod';
+import { validate as validateCron } from 'node-cron';
 
 const LOG_LEVELS = ['fatal', 'error', 'warn', 'info', 'debug', 'trace', 'silent'];
 
@@ -21,7 +22,8 @@ export const envSchema = z.object({
   GROQ_API_KEY: z.preprocess(emptyToUndefined, z.string().min(1).optional()),
   GROQ_MODEL: z.preprocess(emptyToUndefined, z.string().min(1).optional()),
   CRON_SECRET: z.string().min(16, 'Must be at least 16 characters'),
-  SYNC_CRON: z.string().min(1).default('0 */6 * * *'),
+  SYNC_CRON: z.string().min(1).default('0 */6 * * *')
+    .refine((expression) => validateCron(expression), 'Must be a valid cron expression'),
   LOG_LEVEL: z.enum(LOG_LEVELS).default('info'),
 });
 

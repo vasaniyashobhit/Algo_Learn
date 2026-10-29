@@ -2,7 +2,10 @@ import { createCodeforcesClient } from '../modules/codeforces/codeforces.client.
 import { syncNewProblems } from './import/syncNewProblems.js';
 import { isEntryPoint, runAsMain } from './runScript.js';
 
-/** Adds Codeforces problems missing from the DB (tags + rating only, no statements). */
+/**
+ * Adds Codeforces problems missing from the DB (tags + rating only, no statements) and
+ * refreshes rating/tags of cf_api rows. Also runs weekly as the syncProblemset job.
+ */
 export const syncProblemsetTask = async ({ logger, client = createCodeforcesClient({ logger }) } = {}) => {
   logger?.info('Fetching problemset.problems from Codeforces');
   return syncNewProblems({ client });

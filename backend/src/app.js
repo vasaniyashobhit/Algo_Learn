@@ -9,6 +9,7 @@ import { notFound } from './middlewares/notFound.js';
 import { createErrorHandler } from './middlewares/errorHandler.js';
 import { API_BASE_PATH, createApiRouter } from './routes.js';
 import { createAuth } from './modules/auth/auth.module.js';
+import { createServices } from './services.js';
 
 export const BODY_LIMIT = '1mb';
 
@@ -24,6 +25,8 @@ export const createApp = ({
   trustProxy = false,
   auth,
   authRateLimit = AUTH_RATE_LIMIT,
+  services = createServices({ logger }),
+  cronSecret,
 } = {}) => {
   if (!auth?.jwtSecret) throw new TypeError('createApp(): auth.jwtSecret is required');
   const app = express();
@@ -37,7 +40,7 @@ export const createApp = ({
   app.use(express.urlencoded({ extended: false, limit: BODY_LIMIT }));
   app.use('/api', createRateLimiter(rateLimit));
 
-  app.use(API_BASE_PATH, createApiRouter({ auth: createAuth(auth), authRateLimit }));
+  app.use(API_BASE_PATH, createApiRouter({ auth: createAuth(auth), authRateLimit, services, cronSecret }));
 
   app.use(notFound);
   app.use(createErrorHandler({ isProduction, logger }));

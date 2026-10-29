@@ -10,14 +10,19 @@ export const TEST_JWT_SECRET = 't'.repeat(32);
 /** Cheap bcrypt cost (4) keeps route tests fast; the service tests check the real default of 12. */
 export const TEST_AUTH = Object.freeze({ jwtSecret: TEST_JWT_SECRET, jwtExpiresIn: '1h', hashRounds: 4 });
 const GENEROUS_LIMIT = { windowMs: 60_000, limit: 1_000 };
+export const TEST_CRON_SECRET = 'cron-secret-for-tests';
 
-/** Full app with a silent logger, test auth config and generous rate limits unless overridden. */
+/**
+ * Full app with a silent logger, test auth config and generous rate limits unless overridden.
+ * Pass `services` (e.g. createServices({ client: fakeCfClient() })) to fake Codeforces.
+ */
 export const createTestApp = (options = {}) =>
   createApp({
     logger: silentLogger,
     rateLimit: GENEROUS_LIMIT,
     auth: TEST_AUTH,
     authRateLimit: GENEROUS_LIMIT,
+    cronSecret: TEST_CRON_SECRET,
     ...options,
   });
 

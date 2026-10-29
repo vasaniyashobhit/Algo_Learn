@@ -18,7 +18,7 @@ describe('syncNewProblems', () => {
     const client = fakeClient([cfProblem(1, 'A', { name: 'Changed', rating: 2000 }), cfProblem(2100, 'B')]);
     const summary = await syncNewProblems({ client });
     expect(summary).toEqual({
-      fetched: 2, rejected: 0, rejectedByReason: {}, rejectedIds: [], inserted: 1, alreadyPresent: 1,
+      fetched: 2, rejected: 0, rejectedByReason: {}, rejectedIds: [], inserted: 1, alreadyPresent: 1, updated: 0,
     });
     const added = await Problem.findById('2100/B').lean();
     expect(added).toMatchObject({ source: 'cf_api', description: '', title: 'CF 2100B', rating: 1600, tagCount: 1 });

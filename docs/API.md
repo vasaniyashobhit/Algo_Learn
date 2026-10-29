@@ -172,6 +172,74 @@ Errors: `401 AUTH_REQUIRED` / `AUTH_INVALID_TOKEN` / `AUTH_TOKEN_EXPIRED` (check
 body), `400 VALIDATION_FAILED` for a name outside 2–50 characters, a missing name, or **any
 other field** (e.g. `email`), which is reported as an unrecognized key.
 
+### Codeforces handle and sync (protected)
+
+All three routes need `Authorization: Bearer <token>` (401 `AUTH_*` otherwise, checked before
+the body). Codeforces is called through one shared client (≥ 2.1 s between calls, retries on
+timeouts/5xx), so these requests can take a few seconds.
+
+#### `PUT /api/v1/users/me/handle`
+
+```json
+{ "handle": "tourist" }
+```
+
+- `handle`: trimmed, 3–24 characters, letters, digits, `_`, `-`, `.` (strict body: no other fields).
+- Checked with Codeforces `user.info`. The handle is stored with **Codeforces' exact casing**
+  (`"TOURIST"` → `"tourist"`), together with `cfRating` / `cfMaxRating`.
+- Linking a **different** handle than the current one deletes the user's submissions and topic
+  stats and resets the sync state (`lastSyncedAt: null`). Re-linking the same handle keeps them.
+
+`200 OK`: `{ "success": true, "data": <user> }` (with `cfHandle`, `cfRating`, `cfMaxRating` set).
+
+Errors: `400 VALIDATION_FAILED` (`body.handle`), `404 CF_HANDLE_NOT_FOUND`,
+`409 CF_HANDLE_TAKEN` (linked to another account; compared case-insensitively),
+`409 SYNC_IN_PROGRESS` (a sync of this account is running), `503 CF_UNAVAILABLE`
+(`details: { status, retryable }` when known; `502` if Codeforces rejected the request).
+
+#### `DELETE /api/v1/users/me/handle`
+
+Unlinks the handle, clears `cfRating`/`cfMaxRating`/`lastSyncedAt`, and **deletes the user's
+submissions and topic stats**. Succeeds (200, same user body) even when no handle is linked.
+Errors: `409 SYNC_IN_PROGRESS`, `401 AUTH_*`.
+
+#### `POST /api/v1/users/me/sync`
+
+Pulls new Codeforces submissions (`user.status`, newest first, pages of 500) until it reaches
+the last stored one; the first sync reads at most 20 pages (10,000 submissions). Only judged
+submissions to problems with a `contestId` are stored (with the problem's tags and rating
+from the payload). Submissions still being judged are picked up by a later sync. Then the
+rating is refreshed and the topic stats are recomputed (Session 7).
+
+`200 OK`:
+
+```json
+{ "success": true, "data": { "newSubmissions": 42, "totalSubmissions": 1310, "lastSyncedAt": "2026-10-29T14:00:00.000Z" } }
+```
+
+Errors: `400 CF_HANDLE_NOT_LINKED`, `409 SYNC_IN_PROGRESS` (another sync of this account holds
+the 5-minute lock, e.g. the background job), `503 CF_UNAVAILABLE` (try again later; the sync
+resumes where it stopped), `404 CF_HANDLE_NOT_FOUND` (the handle was renamed on Codeforces:
+link it again).
+
+### Internal (hosted cron)
+
+#### `POST /api/v1/internal/sync-all`
+
+For free hosts where the in-process cron sleeps: an external scheduler calls this with the header
+`x-cron-secret: <CRON_SECRET>`. Answers **`202 Accepted`** at once and syncs every user with a
+linked handle in the background (sequentially; a failing user is logged and skipped; a second
+trigger while a run is in progress is ignored).
+
+```json
+{ "success": true, "data": { "started": true, "job": "syncAllUsers" } }
+```
+
+Errors: `403 FORBIDDEN` when the header is missing or wrong (or no `CRON_SECRET` is configured).
+
+In-process schedule (`node-cron`, off when `NODE_ENV=test`): user sync on `SYNC_CRON`
+(default every 6 hours) and a problemset refresh every **Sunday at 03:00** server time.
+
 ### Problems (public)
 
 No auth needed. Route params: `contestId` is a positive integer without leading zeros
@@ -297,8 +365,10 @@ Source: `backend/src/errors/codes.js`. Every code needs a frontend message in
 | `DB_UNAVAILABLE` | 503 | Could not connect to or close MongoDB (startup/shutdown; not yet sent by any endpoint) |
 | `INTERNAL_ERROR` | 500 | Anything unexpected. Message is always generic |
 
-Auth codes are confirmed (Session 4). Statuses for codes not yet emitted by any endpoint (CF, upload, stuck, practice) are
-the intended ones; the sessions that implement those features confirm them here.
+Auth codes are confirmed (Session 4). CF and sync codes (`CF_HANDLE_*`, `CF_UNAVAILABLE`,
+`SYNC_IN_PROGRESS`) and `FORBIDDEN` are confirmed (Session 6). Statuses for codes not yet emitted
+by any endpoint (upload, stuck, practice) are the intended ones; the sessions that implement
+those features confirm them here.
 
 ## Data model (MongoDB)
 
@@ -323,7 +393,9 @@ dates. Enum lists live in `backend/src/config/constants.js`.
 | `source` | `hf` \| `cf_api` | default `hf`; `cf_api` rows (from `npm run sync:problemset`) have no statement text |
 
 Rows are written by `npm run import:dataset` (hf, `$set` upsert) and
-`npm run sync:problemset` (cf_api, insert-only, never overwrites existing rows).
+`npm run sync:problemset` / the weekly job (cf_api: inserts new problems, and updates only
+`rating`, `tags`, `tagCount` of existing **cf_api** rows when Codeforces changed them; hf rows
+and text fields are never touched).
 
 Indexes: `tags`, `rating`, `{tags, rating}`, text index `problem_text` (title weight 3, description 1).
 
@@ -338,7 +410,8 @@ is a string), `cfRating`, `cfMaxRating`, `lastSyncedAt`, `lastSubmissionId`,
 
 `cfSubmissionId` (unique), `userId`, `problemId`, `contestId`, `index`, `problemRating`
 (nullable), `problemTags` (copied from CF at sync time), `verdict` (CF verdict, e.g. `OK`,
-`WRONG_ANSWER`), `submittedAt`. Index `{userId: 1, submittedAt: -1}`.
+`WRONG_ANSWER`), `submittedAt`. Index `{userId: 1, submittedAt: -1}`. Written by the sync
+(`insertMany`, unordered, duplicates ignored); deleted when the handle is unlinked or changed.
 
 ### `topicstats`
 
