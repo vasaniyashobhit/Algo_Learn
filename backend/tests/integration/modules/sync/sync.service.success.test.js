@@ -14,7 +14,7 @@ describe('syncUser — first sync', () => {
     const user = await createLinkedUser();
     const result = await createTestSyncService(client).syncUser(user._id);
     expect(client.userStatus.mock.calls).toEqual([['Ada_L', 1, 5], ['Ada_L', 6, 5], ['Ada_L', 11, 5]]);
-    expect(result).toEqual({ newSubmissions: 15, totalSubmissions: 15, lastSyncedAt: expect.any(Date) });
+    expect(result).toEqual({ newSubmissions: 15, totalSubmissions: 15, lastSyncedAt: expect.any(Date), pending: [] });
     const stored = await Submission.findOne({ cfSubmissionId: 20 }).lean();
     expect(stored).toMatchObject({ problemTags: ['dp', 'math'], problemRating: 1500, verdict: 'OK' });
     expect(String(stored.userId)).toBe(String(user._id));
@@ -39,6 +39,7 @@ describe('syncUser — first sync', () => {
     const user = await createLinkedUser();
     const result = await createTestSyncService(fakeCfClient({ users, submissions })).syncUser(user._id);
     expect(result.newSubmissions).toBe(2);
+    expect(result.pending).toEqual([{ problemId: '1004/A', cfSubmissionId: 4 }]);
     expect((await reloadUser(user._id)).lastSubmissionId).toBe(3);
   });
 

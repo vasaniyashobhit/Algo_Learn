@@ -27,11 +27,23 @@ describe('POST /api/v1/users/me/sync', () => {
     expect(res.status).toBe(200);
     expect(res.body).toEqual({
       success: true,
-      data: { newSubmissions: 6, totalSubmissions: 6, lastSyncedAt: expect.any(String) },
+      data: { newSubmissions: 6, totalSubmissions: 6, lastSyncedAt: expect.any(String), pending: [] },
     });
     expect(onSynced).toHaveBeenCalledWith(user.id);
+    await User.updateOne({ _id: user.id }, { lastSyncedAt: new Date(Date.now() - 21_000) });
     const again = await request(app).post('/api/v1/users/me/sync').set(bearer(token));
     expect(again.body.data).toMatchObject({ newSubmissions: 0, totalSubmissions: 6 });
+  });
+
+  it('answers 429 RATE_LIMITED with retryAfterSeconds within 20 s of the last sync', async () => {
+    const app = appWith(fakeCfClient({ users, submissions: cfHistory(1) }));
+    const { token } = await linkedUser(app);
+    await request(app).post('/api/v1/users/me/sync').set(bearer(token));
+    const res = await request(app).post('/api/v1/users/me/sync').set(bearer(token));
+    expect(res.status).toBe(429);
+    expect(res.body.error).toMatchObject({ code: 'RATE_LIMITED', details: { retryAfterSeconds: expect.any(Number) } });
+    expect(res.body.error.details.retryAfterSeconds).toBeGreaterThan(0);
+    expect(res.body.error.details.retryAfterSeconds).toBeLessThanOrEqual(20);
   });
 
   it('answers 400 CF_HANDLE_NOT_LINKED without a handle', async () => {

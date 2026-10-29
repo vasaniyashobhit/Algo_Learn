@@ -40,6 +40,10 @@ and `POST /api/v1/auth/login` also share a stricter 20 per 15 minutes per IP (se
 standard `RateLimit` / `RateLimit-Policy` headers (draft-7). When exceeded: `429 RATE_LIMITED`,
 `details: { "retryAfterSeconds": 900 }`.
 
+`POST /users/me/sync` (and the sync inside `POST /practice/:contestId/:index/verify`) also has a
+**per-user cooldown of 20 s** after `lastSyncedAt`: `429 RATE_LIMITED` with
+`details.retryAfterSeconds` (1–20). The background sync job ignores the cooldown.
+
 ## Endpoints
 
 ### `GET /api/v1/health`
@@ -215,11 +219,20 @@ inside the same lock; a recompute failure fails the sync with `500 INTERNAL_ERRO
 `200 OK`:
 
 ```json
-{ "success": true, "data": { "newSubmissions": 42, "totalSubmissions": 1310, "lastSyncedAt": "2026-10-29T14:00:00.000Z" } }
+{
+  "success": true,
+  "data": {
+    "newSubmissions": 42, "totalSubmissions": 1310, "lastSyncedAt": "2026-10-29T14:00:00.000Z",
+    "pending": [{ "problemId": "1950/F2", "cfSubmissionId": 251234567 }]
+  }
+}
 ```
 
+`pending` lists submissions Codeforces is still judging (not stored yet; a later sync stores them).
+
 Errors: `400 CF_HANDLE_NOT_LINKED`, `409 SYNC_IN_PROGRESS` (another sync of this account holds
-the 5-minute lock, e.g. the background job), `503 CF_UNAVAILABLE` (try again later; the sync
+the 5-minute lock, e.g. the background job), `429 RATE_LIMITED` (synced less than 20 s ago;
+`details.retryAfterSeconds`; checked after the lock, so a running sync answers 409 first), `503 CF_UNAVAILABLE` (try again later; the sync
 resumes where it stopped), `404 CF_HANDLE_NOT_FOUND` (the handle was renamed on Codeforces:
 link it again).
 
@@ -375,7 +388,10 @@ Score = `0.75 · jaccard + 0.25 · ratingCloseness` (constants in `SIMILARITY`,
 empty). `ratingCloseness = max(0, 1 − |Δrating| / window)`, 0 when a rating is missing.
 Order: score desc, closeness desc, rating distance asc (unrated last), then id.
 
-**Never blank.** Attempts run in order until one returns anything; `meta.strategy` names it:
+**Never blank.** Attempts run in order; each later attempt only **fills the slots still free**
+(problems already found are excluded, so nothing repeats) until `k` results are found. Results
+of earlier attempts come first. `meta.strategy` is the first attempt that returned anything,
+`meta.strategies` lists every attempt that contributed (in order):
 
 | `strategy` | When / what |
 |---|---|
@@ -390,15 +406,125 @@ Order: score desc, closeness desc, rating distance asc (unrated last), then id.
   "success": true,
   "data": [{ "<problem summary>": "...", "similarity": { "score": 0.917, "jaccard": 1, "ratingCloseness": 0.667 } }],
   "meta": {
-    "strategy": "primary", "ratingWindow": 300, "targetRating": 1500, "count": 10,
+    "strategy": "primary", "strategies": ["primary", "widened_window"],
+    "ratingWindow": 300, "targetRating": 1500, "count": 10,
     "problem": { "id": "1/A", "title": "Theatre Square", "rating": 1000, "tags": ["math"] }
   }
 }
 ```
 
 `meta.ratingWindow` is the window of the attempt that was used (600 for `widened_window`,
-200 for `rating_band`). `data` is only empty when the database has no other problem.
+200 for `rating_band`); each item's `similarity` was scored with its own attempt's window.
+Because the last attempt has no filter, `data` has `k` items unless the database has fewer
+other problems (and is only empty when it has none).
 Errors: `404 PROBLEM_NOT_FOUND`, `400 VALIDATION_FAILED` (params, `k`, `ratingWindow`).
+
+### Recommendations (protected)
+
+#### `GET /api/v1/recommendations`
+
+"What to learn next": up to **3 topics**, each with up to **5 problems**. Practice and upsolving
+only. **Never blank:** a new account (no handle, no stats) still gets topics and problems.
+
+**Topics.** Frequency = share of rated problems within **±300** of the user's rating (`cfRating`,
+else 1200) that carry the tag (per-rating counts cached in memory for 1 hour).
+
+- **Learning zone** (`basis: "learning_zone"`): single topics with `attempted ≥ 3` and
+  `0.2 ≤ strength ≤ 0.75`, ordered by `priority = (1 − strength) · ln(1 + frequency)`
+  (ties: lower strength, then name).
+- **Frequent** (`basis: "frequent"`): fills the remaining slots (cold start = all 3) with the most
+  common tags at the user's rating, skipping topics already picked and mastered ones
+  (`attempted ≥ 3`, `strength > 0.75`). `priority` is `null` here.
+
+**Problems per topic.** `targetRange = [base + 100, base + 300]`, each bound rounded to 100, with
+`base` = the topic's `comfortRating`, else `cfRating`, else 1200. Problems with the tag in that
+range, excluding: solved problems, **Div1/Div2 copies** of solved problems (same title,
+case-insensitive, contest id within ±2), practice-list items, and problems already picked for an
+earlier topic. Ranked by `similarityToFailed` = max topic-tag Jaccard to the user's **10 most
+recent never-solved problems** (desc), then rating asc (unrated last), then id
+(`pickedBy: "target_range"`). If fewer than 5 remain, the rest comes from the similar search
+(`tags: [topic]`, centred on the range with window 100, fill-up strategies) in its own order
+(`pickedBy: "similar_fallback"`).
+
+```json
+{
+  "success": true,
+  "data": {
+    "topics": [{
+      "topic": "dp", "basis": "learning_zone", "strength": 0.42, "attempted": 11, "solved": 4,
+      "comfortRating": 1400, "frequency": 0.22, "priority": 0.1153,
+      "reason": "You've solved 4 of 11 dp problems; dp shows up in 22% of problems at your level",
+      "targetRange": { "min": 1500, "max": 1700 },
+      "problems": [{ "<problem summary>": "...", "similarityToFailed": 0.6667, "pickedBy": "target_range" }]
+    }]
+  },
+  "meta": { "userRating": 1450, "frequencyRating": 1450, "coldStart": false, "recentFailed": 10 }
+}
+```
+
+`reason` for a topic with no attempts: `"New topic for you: dp shows up in 22% of problems at your
+level"` ("rated around 1200" when the user has no rating). `meta.coldStart` is true when the user
+has no topic stats; `meta.reason` is `NO_HANDLE` / `NOT_SYNCED` as in Topic stats.
+Errors: `401 AUTH_*`.
+
+### Practice list (protected)
+
+All routes need `Authorization: Bearer <token>`. A problem id `"1950/F2"` is addressed as
+`/practice/1950/F2` (`contestId` and `index` rules as in Problems; the index is upper-cased).
+Every success returns the **full item** so the client can reconcile optimistic updates:
+
+```json
+{
+  "id": "6720f0c2a1b2c3d4e5f60718", "problemId": "1950/F2", "status": "todo", "addedFrom": "recommendation",
+  "createdAt": "2026-10-30T10:00:00.000Z", "updatedAt": "2026-10-30T10:00:00.000Z",
+  "problem": { "<problem summary>": "..." }
+}
+```
+
+`status`: `todo|solved|skipped`. `addedFrom`: `recommendation|similar|stuck|manual`. `problem` is
+`null` if the problem no longer exists.
+
+#### `GET /api/v1/practice?status=todo`
+
+Newest first. `status` is optional. `meta: { total, status }` (`status: null` when not filtered).
+Errors: `400 VALIDATION_FAILED` (`query.status`).
+
+#### `POST /api/v1/practice`
+
+```json
+{ "problemId": "1950/f2", "addedFrom": "recommendation" }
+```
+
+Strict body; `addedFrom` defaults to `manual`. `201 Created` with the item.
+Errors: `400 VALIDATION_FAILED`, `404 PROBLEM_NOT_FOUND`, `409 PRACTICE_ITEM_EXISTS`
+(`details: { problemId }`).
+
+#### `PATCH /api/v1/practice/:contestId/:index`
+
+`{ "status": "solved" }` (strict). `200` with the updated item.
+Errors: `400 VALIDATION_FAILED`, `404 NOT_FOUND` (not in the list).
+
+#### `DELETE /api/v1/practice/:contestId/:index`
+
+`200` with the deleted item. Errors: `400 VALIDATION_FAILED`, `404 NOT_FOUND` (not in the list,
+e.g. a repeated delete; an optimistic client can treat it as done).
+
+#### `POST /api/v1/practice/:contestId/:index/verify`
+
+"I solved it". Runs a sync for the user (same lock and cooldown as `POST /users/me/sync`), then
+looks for an `OK` on the problem or a Div1/Div2 copy (same title, contest ±2).
+
+- Solved → the item's status becomes `solved` (created with `addedFrom: "recommendation"` if it
+  was not in the list; an existing item keeps its `addedFrom`):
+  `{ "verified": true, "item": <item> }`.
+- Not solved → **200**, not an error: `{ "verified": false, "reason": "NOT_SOLVED_YET" }`, or
+  `"STILL_JUDGING"` when the newest submission on that problem has no final verdict yet.
+- Inside the 20 s cooldown the stored submissions are checked instead; a solve found there is
+  verified, otherwise `429 RATE_LIMITED` (`details.retryAfterSeconds`) because fresh data could
+  not be fetched.
+
+Errors: `404 PROBLEM_NOT_FOUND` (checked before syncing), `400 CF_HANDLE_NOT_LINKED`,
+`409 SYNC_IN_PROGRESS`, `429 RATE_LIMITED`, `503 CF_UNAVAILABLE`, `400 VALIDATION_FAILED` (params).
 
 ### Unknown routes
 
@@ -419,14 +545,14 @@ Source: `backend/src/errors/codes.js`. Every code needs a frontend message in
 | `AUTH_EMAIL_TAKEN` | 409 | Signup with an email that already has an account |
 | `FORBIDDEN` | 403 | Authenticated but not allowed |
 | `ROUTE_NOT_FOUND` | 404 | No route matches method + path |
-| `NOT_FOUND` | 404 | Generic missing resource |
+| `NOT_FOUND` | 404 | Generic missing resource (e.g. a problem that is not in the user's practice list) |
 | `PROBLEM_NOT_FOUND` | 404 | Problem id (e.g. `1/A`) does not exist |
 | `CF_HANDLE_NOT_FOUND` | 404 | Codeforces handle does not exist |
 | `CF_HANDLE_TAKEN` | 409 | Handle already linked to another account |
 | `CF_HANDLE_NOT_LINKED` | 400 | Feature needs a linked Codeforces handle |
 | `CF_UNAVAILABLE` | 502/503 | Codeforces API down, slow or erroring |
 | `SYNC_IN_PROGRESS` | 409 | A sync for this user is already running |
-| `RATE_LIMITED` | 429 | Too many requests. `details: { retryAfterSeconds }` |
+| `RATE_LIMITED` | 429 | Too many requests, or a sync within 20 s of the last one. `details: { retryAfterSeconds }` |
 | `FILE_TOO_LARGE` | 413 | Upload or request body over the size limit (JSON body limit: 1 MB) |
 | `FILE_TYPE_UNSUPPORTED` | 415 | Unsupported upload type or unexpected file field |
 | `URL_NOT_ALLOWED` | 400 | URL not on the allow-list for problem import |
@@ -440,7 +566,8 @@ Source: `backend/src/errors/codes.js`. Every code needs a frontend message in
 | `INTERNAL_ERROR` | 500 | Anything unexpected. Message is always generic |
 
 Auth codes are confirmed (Session 4). CF and sync codes (`CF_HANDLE_*`, `CF_UNAVAILABLE`,
-`SYNC_IN_PROGRESS`) and `FORBIDDEN` are confirmed (Session 6). Statuses for codes not yet emitted
+`SYNC_IN_PROGRESS`) and `FORBIDDEN` are confirmed (Session 6). `PRACTICE_ITEM_EXISTS` (409) and the
+sync use of `RATE_LIMITED` are confirmed (Session 8; no new codes). Statuses for codes not yet emitted
 by any endpoint (upload, stuck, practice) are the intended ones; the sessions that implement
 those features confirm them here.
 
@@ -513,6 +640,7 @@ known), `estimatedRating` (nullable), `gap` (`[{ topicKey, strength, status }]`,
 
 `userId`, `problemId`, `status` (`todo|solved|skipped`, default `todo`), `addedFrom`
 (`recommendation|similar|stuck|manual`, default `manual`), timestamps. Unique `{userId, problemId}`.
+`POST /practice` maps its duplicate key to `409 PRACTICE_ITEM_EXISTS`.
 
 Unique-index violations on any collection → `409 DUPLICATE_RESOURCE` with
 `details.fields` (field names only). Feature endpoints may map them to a specific code

@@ -11,6 +11,8 @@ describe('createServices', () => {
     expect(Object.keys(services.handleService)).toEqual(['linkHandle', 'unlinkHandle']);
     expect(Object.keys(services.syncService)).toEqual(['syncUser']);
     expect(Object.keys(services.statsService)).toEqual(['recomputeForUser', 'getStats', 'getSummary']);
+    expect(Object.keys(services.recommendationsService)).toEqual(['getRecommendations']);
+    expect(Object.keys(services.practiceService)).toEqual(['list', 'add', 'update', 'remove', 'verify']);
     expect(Object.keys(services.jobs)).toEqual(['syncAllUsers', 'syncProblemset']);
     expect(services.jobs.syncAllUsers.name).toBe('syncAllUsers');
   });

@@ -24,7 +24,7 @@ describe('GET /api/v1/problems/:contestId/:index/similar', () => {
       score: expect.any(Number), jaccard: 1, ratingCloseness: expect.any(Number),
     });
     expect(res.body.meta).toEqual({
-      strategy: 'primary', ratingWindow: 300, targetRating: 1500, count: 2,
+      strategy: 'primary', strategies: ['primary'], ratingWindow: 300, targetRating: 1500, count: 2,
       problem: { id: '1/A', title: 'Title 1/A', rating: 1500, tags: ['dp', 'greedy'] },
     });
   });

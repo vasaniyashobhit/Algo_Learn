@@ -5,22 +5,26 @@ import { createAuthRouter } from './modules/auth/auth.routes.js';
 import { createUsersRouter } from './modules/users/users.routes.js';
 import { problemsRouter } from './modules/problems/problems.routes.js';
 import { createInternalRouter } from './modules/internal/internal.routes.js';
+import { createRecommendationsRouter } from './modules/recommendations/recommendations.routes.js';
+import { createPracticeRouter } from './modules/practice/practice.routes.js';
 
 export const API_BASE_PATH = '/api/v1';
 
 /**
  * Mounts every feature router under /api/v1. `auth` comes from createAuth(),
- * `services` from createServices() (handle/sync services and jobs).
+ * `services` from createServices() (feature services and jobs).
  */
 export const createApiRouter = ({ auth, authRateLimit, services, cronSecret }) => {
   const { authService, requireAuth } = auth;
-  const { handleService, syncService, statsService, jobs } = services;
+  const { handleService, syncService, statsService, recommendationsService, practiceService, jobs } = services;
   const router = Router();
   router.use('/health', healthRouter);
   router.use('/meta', metaRouter);
   router.use('/auth', createAuthRouter({ authService, requireAuth, rateLimit: authRateLimit }));
   router.use('/users', createUsersRouter({ requireAuth, handleService, syncService, statsService }));
   router.use('/problems', problemsRouter);
+  router.use('/recommendations', createRecommendationsRouter({ requireAuth, recommendationsService }));
+  router.use('/practice', createPracticeRouter({ requireAuth, practiceService }));
   router.use('/internal', createInternalRouter({ cronSecret, jobs }));
   return router;
 };

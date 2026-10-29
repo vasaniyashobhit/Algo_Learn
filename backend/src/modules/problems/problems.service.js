@@ -35,8 +35,9 @@ export const getById = async (contestId, index) => {
 };
 
 /**
- * Never-blank similar search: tries each planned attempt (see fallbackPlan.js) until one
- * returns results. `meta.strategy` names the attempt that was used.
+ * Never-blank similar search: runs the planned attempts (see fallbackPlan.js) in order, and each
+ * later attempt fills the slots still free (excluding what was already found) until `k` are found.
+ * `meta.strategy` is the first attempt that returned anything; `meta.strategies` lists all of them.
  */
 export const findSimilar = async ({
   tags = [], rating = null, userRating = null, excludeIds = [], excludeTitles = [],
@@ -45,17 +46,28 @@ export const findSimilar = async ({
   const topicTags = topicTagsOf(tags);
   const limit = Math.min(k, SIMILARITY.maxK);
   const attempts = planAttempts({ tags: topicTags, rating, ratingWindow, userRating });
-  let docs = [];
-  let used = attempts.at(-1);
+  const docs = [];
+  const used = [];
   for (const attempt of attempts) {
-    const pipeline = buildSimilarPipeline({ ...attempt, tags: topicTags, k: limit, excludeIds, excludeTitles });
-    docs = await Problem.aggregate(pipeline);
-    used = attempt;
-    if (docs.length) break;
+    if (docs.length >= limit) break;
+    const excluded = [...excludeIds, ...docs.map(({ _id }) => _id)];
+    const pipeline = buildSimilarPipeline({
+      ...attempt, tags: topicTags, k: limit - docs.length, excludeIds: excluded, excludeTitles,
+    });
+    const found = await Problem.aggregate(pipeline);
+    if (found.length) used.push(attempt);
+    docs.push(...found);
   }
+  const main = used[0] ?? attempts.at(-1);
   return {
     items: docs.map(toProblemSummary),
-    meta: { strategy: used.strategy, ratingWindow: used.window, targetRating: used.target, count: docs.length },
+    meta: {
+      strategy: main.strategy,
+      strategies: used.map(({ strategy }) => strategy),
+      ratingWindow: main.window,
+      targetRating: main.target,
+      count: docs.length,
+    },
   };
 };
 

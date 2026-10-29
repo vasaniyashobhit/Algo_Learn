@@ -8,8 +8,8 @@ useTestDB();
 describe('findSimilar fallbacks', () => {
   it('(a) widens the rating window ×2 when the window is empty', async () => {
     await seedProblems([problemAt('1/A', { tags: ['dp'], rating: 1900 }), problemAt('2/A', { tags: ['dp'], rating: 2200 })]);
-    const { items, meta } = await findSimilar({ tags: ['dp'], rating: 1500, ratingWindow: 300 });
-    expect(meta).toMatchObject({ strategy: 'widened_window', ratingWindow: 600, count: 1 });
+    const { items, meta } = await findSimilar({ tags: ['dp'], rating: 1500, ratingWindow: 300, k: 1 });
+    expect(meta).toMatchObject({ strategy: 'widened_window', strategies: ['widened_window'], ratingWindow: 600, count: 1 });
     expect(ids(items)).toEqual(['1/A']);
   });
 
@@ -26,7 +26,7 @@ describe('findSimilar fallbacks', () => {
       problemAt('2/A', { tags: [], rating: 1450 }),
       problemAt('3/A', { tags: ['dp'], rating: 1800 }),
     ]);
-    const { items, meta } = await findSimilar({ tags: [], rating: 1500 });
+    const { items, meta } = await findSimilar({ tags: [], rating: 1500, k: 2 });
     expect(meta).toMatchObject({ strategy: 'rating_band', ratingWindow: 200 });
     expect(ids(items)).toEqual(['2/A', '1/A']);
   });

@@ -6,7 +6,7 @@ export const SYNC_ALL_USERS_JOB = 'syncAllUsers';
 
 /**
  * Syncs every user with a linked handle, one at a time (the CF client spaces calls anyway).
- * A failing user goes to `onError` and the loop continues. `run()` never rejects, and a second
+ * The per-user sync cooldown does not apply here. A failing user goes to `onError` and the loop continues. `run()` never rejects, and a second
  * `run()` while one is in progress is skipped (cron and the HTTP trigger can overlap).
  */
 export const createSyncAllUsersJob = ({
@@ -22,7 +22,7 @@ export const createSyncAllUsersJob = ({
     summary.users = users.length;
     for (const { _id } of users) {
       try {
-        const { newSubmissions } = await syncService.syncUser(_id);
+        const { newSubmissions } = await syncService.syncUser(_id, { ignoreCooldown: true });
         summary.synced += 1;
         summary.newSubmissions += newSubmissions;
       } catch (err) {

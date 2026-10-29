@@ -66,10 +66,15 @@ export const CF_VERDICTS = Object.freeze([
   'REJECTED',
 ]);
 
-/** Submission sync: lock length, CF page size, and the page cap (also the first-sync limit). */
-export const SYNC = Object.freeze({ lockMs: 5 * 60_000, pageSize: 500, maxPages: 20 });
+/**
+ * Submission sync: lock length, CF page size, the page cap (also the first-sync limit), and the
+ * per-user cooldown after `lastSyncedAt` (user-triggered syncs only; the cron job ignores it).
+ */
+export const SYNC = Object.freeze({ lockMs: 5 * 60_000, pageSize: 500, maxPages: 20, cooldownMs: 20_000 });
 /** Weekly problemset refresh: Sundays at 03:00 server time. */
 export const PROBLEMSET_SYNC_CRON = '0 3 * * 0';
 
 /** Topic strength and stats views (Session 7) live in statsConstants.js. */
 export * from './statsConstants.js';
+/** Recommendations and the practice list (Session 8) live in recommendationConstants.js. */
+export * from './recommendationConstants.js';

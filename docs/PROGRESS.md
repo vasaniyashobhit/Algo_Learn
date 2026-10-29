@@ -183,7 +183,58 @@ Read this first, update it last, every session.
 - Tests: 133 files, 725 tests. Coverage 99.7% lines, 98.8% branches; `modules/stats` 100%.
   New helper `tests/helpers/stats.js` (`createSyncedUser`, `insertSubmissions`, `statsOf`, fixed `STATS_NOW`).
 
+### Session 8 (2026-10-30) — Recommendations + practice list
+
+- `config/recommendationConstants.js` (re-exported by `constants.js`): `RECOMMENDATIONS` (3 topics,
+  5 problems, zone ≥ 3 attempted / strength 0.2–0.75, ±300 frequency window, 1 h cache, target
+  +100..+300 rounded to 100, 10 recent failures), `COPY_CONTEST_GAP` 2, `TOPIC_BASES`, `PICKED_BY`,
+  `VERIFY_REASONS`. `SYNC.cooldownMs` 20 s.
+- `modules/recommendations/helpers/` (pure): `topicFrequency` (`tagCountsPipeline`, `toTagCounts`,
+  `topicFrequencyAtRating`), `pickNextTopics` (`inLearningZone`, `topicPriority`), `topicReason`,
+  `targetRange` (+ `baseRating`), `solvedCopies` (`normalizeTitle`, `isSameOrCopy`,
+  `createSolvedMatcher`), `history` (`summarizeHistory`), `rankByFailed` (+ `maxJaccard`).
+  `tagCounts.cache.js`, `recommendations.context.js`, `.service.js`, `.controller.js`, `.routes.js`.
+- `modules/practice/`: `practice.schema.js`, `practice.service.js` (list/add/update/remove),
+  `practice.verify.js` (`createVerifyService({ syncService })`), controller, routes;
+  helpers `practiceView`, `verifyOutcome`, `copyFilter` (`copyIdPrefixes`).
+- Sync: per-user 20 s cooldown (`RATE_LIMITED`, `details.retryAfterSeconds`); `syncUser(id,
+  { ignoreCooldown })`, the sync-all job passes `true`. `syncUser` now also returns `pending`
+  (`{ problemId, cfSubmissionId }` of submissions still being judged; new helper `pendingRefs`).
+- `findSimilar` fill-up: later strategies fill the free slots (deduplicated); new `meta.strategies`.
+- `createServices` builds `recommendationsService` and `practiceService` (CRUD + verify share it).
+- Endpoints: `GET /recommendations`, `GET/POST /practice`, `PATCH/DELETE /practice/:contestId/:index`,
+  `POST /practice/:contestId/:index/verify` (all in `docs/API.md`). No new error codes.
+- Tests: 161 files, 855 tests. Coverage 99.75% lines, 98.9% branches. New helpers
+  `tests/helpers/recommendations.js`, `tests/helpers/practice.js`; `TEST_SYNC.cooldownMs` is 0.
+
 ## Decisions
+
+- **Recommendations + practice (Session 8):**
+  - Frequency = **share** (0–1) of rated problems within ±300 of the user's rating with the tag, so
+    `priority = (1 − strength) · ln(1 + share)`. The cached aggregation is per (rating, tag) and does
+    not depend on the user; `topicFrequencyAtRating` does the per-user window in JS.
+    The cache lives in the recommendations service (one per process via `createServices`).
+  - Fewer than 3 learning-zone topics → the rest is filled with the most frequent tags (mastered
+    ones skipped), so the answer always has 3 topics (`basis` tells which kind). Cold start = all frequent.
+  - "Recent failed" = the 10 problems attempted but **never solved**, by last submission time.
+  - Div1/Div2 copy = same title (trimmed, case-insensitive, spaces collapsed) and contest id ±2.
+    Solved problems missing from `problems` are matched by id only.
+  - Pool items are ranked by `similarityToFailed`; fill-up items from `findSimilar` keep its own order
+    (topic match first), so an off-topic problem never outranks an on-topic one. Items carry `pickedBy`.
+  - A problem is recommended under at most one topic. No user without a handle is refused:
+    `meta.reason` (`NO_HANDLE`/`NOT_SYNCED`) like the stats endpoints.
+  - Practice: missing item on PATCH/DELETE → `404 NOT_FOUND` (no new code, so the frontend needs no
+    new message). 409 has `details.problemId`. Every answer includes the problem summary.
+    `POST /practice` checks the account exists (401 `AUTH_INVALID_TOKEN` otherwise).
+  - Verify: pending submissions are never stored, so `syncUser` returns them as `pending`;
+    `STILL_JUDGING` = the newest pending id on the problem/copies is newer than every stored one.
+    An OK wins over a pending newer submission. Inside the cooldown, verify checks stored data and
+    only re-throws `RATE_LIMITED` when no solve is found (never a false `NOT_SOLVED_YET`).
+    Copies are found with anchored `_id` prefix regexes (`^1899/` … `^1903/`), which use the `_id` index.
+  - Cooldown is checked **after** acquiring the lock (released in `finally`), so a concurrent sync
+    shows `SYNC_IN_PROGRESS` and a just-finished one has already written `lastSyncedAt`.
+  - `findSimilar` fill-up replaces the Session 5 rule "advance only on zero results"; `meta.strategy`
+    is the first contributing attempt (its window/target in `meta`), `meta.strategies` all of them.
 
 - **Topic stats (Session 7):**
   - Recompute is a **full rebuild** from all stored submissions (≤ 10k per user, one `find` +
@@ -235,8 +286,8 @@ Read this first, update it last, every session.
     (it is library code; `modules/` still never imports from `scripts/`).
 
 - **Problems / similar search (Session 5):**
-  - Fallbacks advance only when an attempt returns **zero** results (not when it returns < k).
-    Order: primary → widened ×2 → no rating filter (tagged input) / ±200 band (untagged, rated)
+  - ~~Fallbacks advance only when an attempt returns zero results~~ (Session 8: later attempts now
+    fill the free slots). Order: primary → widened ×2 → no rating filter (tagged input) / ±200 band (untagged, rated)
     → near rating (no filter). The last attempt is empty only if nothing is left in the DB.
   - "Near the user's rating" target = `userRating` (optional service input, for later callers
     like stuck/recommendations) → problem rating → 1200 (`SIMILARITY.defaultTargetRating`).
@@ -369,8 +420,13 @@ contestId/index`, title, known tags) because `bulkWrite` skips schema validators
 
 - Frontend: store the JWT, send `Authorization: Bearer`, and on any 401 `AUTH_*` (except
   `AUTH_INVALID_CREDENTIALS`) clear the token and go to login.
-- Recommendations (F10) can read `topicstats` directly: "next topic" = weakest single with some
-  activity; target rating = the topic's `comfortRating` + 100–300 (fall back to `cfRating`/1200).
+- Frontend: recommendations page (`GET /recommendations`; show `reason`, a notice for `meta.reason`,
+  and label `pickedBy: similar_fallback` items as broader picks). Practice list with optimistic
+  add/patch/delete reconciled from the returned item; treat `404 NOT_FOUND` on DELETE as done.
+  "I solved it" button → `POST /practice/:contestId/:index/verify`; show `NOT_SOLVED_YET` /
+  `STILL_JUDGING` as notices (200), and `RATE_LIMITED` with a countdown from `retryAfterSeconds`.
+- Stuck helper (F10 third bullet, "after a stuck query") is not done yet: reuse `findSimilar` with the
+  stuck problem's tags and the practice `addedFrom: "stuck"`.
 - Frontend dashboard: `GET /users/me/stats/summary` (cards, bands bar chart, 30-day activity) and
   `GET /users/me/stats?kind=single|pair`. Show a notice for `meta.reason` `NO_HANDLE` (link a handle)
   and `NOT_SYNCED` (press "Sync now") instead of empty charts.
@@ -378,13 +434,14 @@ contestId/index`, title, known tags) because `bulkWrite` skips schema validators
 - Atlas now holds 11,702 problems (9,981 hf + 1,721 cf_api), so the problemset sync has been run;
   record its summary here if it is still available.
 - Frontend: the problem list uses `meta.total/totalPages`; the similar view should show a short
-  notice when `meta.strategy` is not `primary` (results are a broader fallback).
+  notice when `meta.strategies` contains anything other than `primary` (some results are broader).
 - Later callers of `findSimilar` (stuck, recommendations) should pass `userRating` and their own
   `excludeIds` (e.g. solved problems).
 - Any new feature that calls Codeforces should take `services.client` from `createServices`
   (one limiter per process).
 - Frontend: handle form (PUT/DELETE `/users/me/handle`), a "Sync now" button (POST
-  `/users/me/sync`, show `SYNC_IN_PROGRESS` / `CF_UNAVAILABLE` notices), and `lastSyncedAt`.
+  `/users/me/sync`, show `SYNC_IN_PROGRESS` / `CF_UNAVAILABLE` / `RATE_LIMITED` (20 s cooldown)
+  notices), and `lastSyncedAt`.
 - Deploy: point an external scheduler at `POST /api/v1/internal/sync-all` with `x-cron-secret`.
 - When a feature service queries with operators, wrap them in `mongoose.trusted()` (see Decisions).
 

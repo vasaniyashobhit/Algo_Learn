@@ -22,6 +22,12 @@ export const toSubmissionDoc = (userId) => ({ id, problem, verdict, creationTime
   submittedAt: new Date(creationTimeSeconds * 1000),
 });
 
+/** `{ problemId, cfSubmissionId }` of every pending submission to a contest problem. */
+export const pendingRefs = (fetched) =>
+  fetched
+    .filter((submission) => isPending(submission) && Number.isInteger(submission?.problem?.contestId))
+    .map(({ id, problem }) => ({ problemId: `${problem.contestId}/${problem.index}`, cfSubmissionId: id }));
+
 const maxId = (submissions) => Math.max(...submissions.map(({ id }) => id));
 
 /**

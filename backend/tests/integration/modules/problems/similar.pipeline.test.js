@@ -6,7 +6,8 @@ import { jaccard, ratingCloseness, similarityScore } from '../../../../src/modul
 
 useTestDB();
 
-const target = { tags: ['dp', 'greedy'], rating: 1500 };
+// k = the primary match count, so later strategies have no free slot to fill.
+const target = { tags: ['dp', 'greedy'], rating: 1500, k: 5 };
 
 const seed = async () => {
   await seedProblems([
@@ -26,7 +27,9 @@ describe('findSimilar pipeline (primary)', () => {
   it('ranks by score desc then _id, inside the tag and rating filters', async () => {
     const { items, meta } = await findSimilar(target);
     expect(ids(items)).toEqual(['10/A', '13/A', '11/A', '12/A', '2000/C']);
-    expect(meta).toEqual({ strategy: 'primary', ratingWindow: 300, targetRating: 1500, count: 5 });
+    expect(meta).toEqual({
+      strategy: 'primary', strategies: ['primary'], ratingWindow: 300, targetRating: 1500, count: 5,
+    });
   });
 
   it('computes the same scores as the JS helpers', async () => {
@@ -51,7 +54,7 @@ describe('findSimilar pipeline (primary)', () => {
   });
 
   it('excludes ids and exact titles', async () => {
-    const { items } = await findSimilar({ ...target, excludeIds: ['10/A'], excludeTitles: ['Title 13/A'] });
+    const { items } = await findSimilar({ ...target, k: 3, excludeIds: ['10/A'], excludeTitles: ['Title 13/A'] });
     expect(ids(items)).toEqual(['11/A', '12/A', '2000/C']);
   });
 
@@ -77,7 +80,7 @@ describe('findSimilar k cap', () => {
 describe('findSimilar without a rating', () => {
   it('uses tags only, ranked by jaccard', async () => {
     await seed();
-    const { items, meta } = await findSimilar({ tags: ['dp', 'greedy'] });
+    const { items, meta } = await findSimilar({ tags: ['dp', 'greedy'], k: 6 });
     expect(meta).toMatchObject({ strategy: 'primary', targetRating: null });
     expect(ids(items)).toEqual(['10/A', '11/A', '13/A', '12/A', '15/A', '2000/C']);
   });

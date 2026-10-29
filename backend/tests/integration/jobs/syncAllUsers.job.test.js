@@ -29,6 +29,7 @@ describe('syncAllUsers job', () => {
     const summary = await createSyncAllUsersJob({ syncService: { syncUser } }).run();
     expect(summary).toEqual({ users: 3, synced: 3, failed: 0, newSubmissions: 6 });
     expect(new Set(order).size).toBe(3);
+    expect(syncUser.mock.calls.every(([, options]) => options?.ignoreCooldown === true)).toBe(true);
   });
 
   it('logs a failing user through jobErrorHandler and continues with the next', async () => {
