@@ -4,13 +4,16 @@ import { createRateLimiter, AUTH_RATE_LIMIT } from '../../middlewares/rateLimit.
 import { createAuthController } from './auth.controller.js';
 import { loginSchema, signupSchema } from './auth.schema.js';
 
-/** /auth routes, all behind a stricter per-IP rate limit than the rest of the API. */
+/**
+ * /auth routes. Signup and login share one stricter per-IP limiter (brute force);
+ * GET /me is only under the global API limit because the frontend calls it on every page load.
+ */
 export const createAuthRouter = ({ authService, requireAuth, rateLimit = AUTH_RATE_LIMIT }) => {
   const controller = createAuthController({ authService });
+  const strictLimit = createRateLimiter(rateLimit);
   const router = Router();
-  router.use(createRateLimiter(rateLimit));
-  router.post('/signup', validate({ body: signupSchema }), controller.signup);
-  router.post('/login', validate({ body: loginSchema }), controller.login);
+  router.post('/signup', strictLimit, validate({ body: signupSchema }), controller.signup);
+  router.post('/login', strictLimit, validate({ body: loginSchema }), controller.login);
   router.get('/me', requireAuth, controller.me);
   return router;
 };

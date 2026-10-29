@@ -15,7 +15,11 @@
     "test:cov": "npm run test:cov --workspaces --if-present",
     "lint": "eslint .",
     "import:dataset": "npm run import:dataset -w backend",
-    "sync:problemset": "npm run sync:problemset -w backend"
+    "sync:problemset": "npm run sync:problemset -w backend",
+    "check:env": "npm run check:env -w backend",
+    "check:atlas": "npm run check:atlas -w backend",
+    "check:server": "npm run check:server -w backend",
+    "check:gemini": "npm run check:gemini -w backend"
   },
   "devDependencies": {
     "@eslint/js": "^9.39.5",

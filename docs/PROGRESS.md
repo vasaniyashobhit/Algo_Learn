@@ -88,6 +88,35 @@ Read this first, update it last, every session.
   (`makeSignup`, `signupViaApi`, `bearer`, `expectErrorShape`, `expectPublicUser`); `testApp.js`
   now exports `TEST_AUTH` / `TEST_JWT_SECRET`.
 
+### Pre-Session-5 check (2026-10-29)
+
+- **Fix:** the strict auth limiter (20 / 15 min per IP) now sits only on `POST /auth/signup` and
+  `POST /auth/login`, which share one counter. `GET /auth/me` is only under the global 300 limit.
+  Tests: 25 `/auth/me` calls in a row succeed under the default config, the global limit still
+  returns 429 on `/auth/me`, and signup + login share the counter. `docs/API.md` updated.
+- Lint and tests green: 74 files, 389 tests, coverage 99.4% lines / 98.7% branches.
+- `.env` and parquet: ignored, never committed (`git log --all -- backend/.env` is empty).
+  Added a global `*.parquet` ignore (before, only `data/` folders were covered).
+- `npm audit --omit=dev`: 0 vulnerabilities. Full audit: 4 in dev-only test tooling
+  (`@vitest/mocker` moderate, `tinypool` critical, through vitest 3.2). The only fix is
+  `--force` to an older vitest major, so it was not applied (see the Vitest decision).
+- `@google/genai` (^2.32) added for Session 9 (no LLM module built).
+- Live check scripts in `backend/scripts/checks/` (manual, outside `src/`, no unit tests, each under
+  100 lines): `npm run check:env`, `check:atlas` (`-- --sync` creates missing indexes),
+  `check:server` (`-- --memory` uses in-memory MongoDB instead of Atlas), `check:gemini`.
+- Results:
+  - env: all 13 variables present and valid.
+  - **Atlas: unreachable.** TCP to the cluster's port 27017 times out (all 3 nodes), while other
+    internet works, so this machine's IP is most likely not in the Atlas Network Access list.
+    Counts, indexes, spot checks and `$text` were **not run**.
+  - Real server flow (health, 36 topic tags, signup, login, `/auth/me`, 25× `/auth/me` not
+    limited, wrong password → `AUTH_INVALID_CREDENTIALS`, cleanup) **passed against in-memory
+    MongoDB**. Not yet run against Atlas.
+  - Codeforces `user.info` for tourist via our client: OK (rating 3382, max 4009).
+  - **Gemini:** both configured models (`gemini-2.5-flash`, `gemini-2.5-flash-lite`) return 404
+    "no longer available to new users". The suggested replacements: `gemini-3.5-flash-lite` OK
+    (about 17 s); `gemini-3.8-flash` exists but answered 504/503 "high demand" (temporary).
+
 ## Decisions
 
 - **Auth (Session 4):**
@@ -112,8 +141,8 @@ Read this first, update it last, every session.
   - User responses use an explicit whitelist (`toPublicUser`) with **`id`** (not `_id`); internal
     fields `syncLockedUntil`, `lastSubmissionId` are never returned.
   - `PATCH /users/me` uses `z.strictObject`, so unknown fields (e.g. `email`) are a 400.
-  - The auth limiter covers `/auth/me` too (the prompt said `/auth/*`); `/users/me` is the
-    route for frequent profile reads.
+  - The strict auth limiter covers only signup + login (changed in the pre-Session-5 check;
+    `/auth/me` is called on every page load).
   - Signup `name` is required (2–50). The model still allows up to 80 / default `""`.
 - **Mongoose 8** pinned (`^8.24`) as required by backend/CLAUDE.md (npm's latest is 9).
 - **Vitest 3.2** (not 5): npm 10.9 crashes (`edgesOut` bug) when resolving the peer set
@@ -186,6 +215,10 @@ Read this first, update it last, every session.
 
 ## Blockers
 
+- **Atlas unreachable from this machine** (pre-Session-5 check): add the current IP in Atlas →
+  Network Access, then run `npm run check:atlas` and `npm run check:server`.
+- **Gemini models retired:** set `GEMINI_MODELS=gemini-3.8-flash,gemini-3.5-flash-lite` in
+  `backend/.env` (and `.env.example`), then `npm run check:gemini`.
 - Rule "add a code on both sides in the same session": the frontend doesn't exist yet, so
   `frontend/src/errors/messages/` could not be created. The frontend setup session must add
   messages for all 27 codes (listed in docs/API.md), including `DB_UNAVAILABLE` (added in Session 2).

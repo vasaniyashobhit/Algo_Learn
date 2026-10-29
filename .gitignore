@@ -16,3 +16,4 @@ data/
 .gemini/
 .claude/settings.local.json
 .impeccable/**/*.exe
+*.parquet

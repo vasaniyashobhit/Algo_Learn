@@ -35,8 +35,8 @@ Error:
 
 ## Rate limiting
 
-All `/api` routes: 300 requests per 15 minutes per IP (default). `/api/v1/auth/*` also has a
-stricter 20 per 15 minutes per IP (see Authentication). Responses include the
+All `/api` routes: 300 requests per 15 minutes per IP (default). `POST /api/v1/auth/signup`
+and `POST /api/v1/auth/login` also share a stricter 20 per 15 minutes per IP (see Authentication). Responses include the
 standard `RateLimit` / `RateLimit-Policy` headers (draft-7). When exceeded: `429 RATE_LIMITED`,
 `details: { "retryAfterSeconds": 900 }`.
 
@@ -103,8 +103,10 @@ or internal sync fields):
 
 Note: users are identified by `id` (hex string), not `_id`.
 
-All `/auth/*` routes share a stricter limit: **20 requests per 15 minutes per IP** (on top of
-the global 300). Exceeding it → `429 RATE_LIMITED`, `details: { "retryAfterSeconds": 900 }`.
+`POST /auth/signup` and `POST /auth/login` share a stricter limit: **20 requests per 15 minutes
+per IP**, counted together (on top of the global 300). Exceeding it → `429 RATE_LIMITED`,
+`details: { "retryAfterSeconds": 900 }`. `GET /auth/me` is **not** under the strict limit (the
+frontend calls it on every page load); only the global limit applies to it.
 
 ### `POST /api/v1/auth/signup`
 
@@ -148,11 +150,12 @@ similar timing), `429 RATE_LIMITED`.
 ### `GET /api/v1/auth/me`
 
 Protected. Returns the current user: `{ "success": true, "data": <user> }`.
-Errors: `401 AUTH_REQUIRED` / `AUTH_INVALID_TOKEN` / `AUTH_TOKEN_EXPIRED`, `429 RATE_LIMITED`.
+Errors: `401 AUTH_REQUIRED` / `AUTH_INVALID_TOKEN` / `AUTH_TOKEN_EXPIRED`, `429 RATE_LIMITED`
+(global limit only).
 
 ### `GET /api/v1/users/me`
 
-Protected. Same response as `GET /auth/me`, but under the normal API rate limit.
+Protected. Same response as `GET /auth/me` (also only under the global rate limit).
 Errors: `401 AUTH_REQUIRED` / `AUTH_INVALID_TOKEN` / `AUTH_TOKEN_EXPIRED`.
 
 ### `PATCH /api/v1/users/me`
