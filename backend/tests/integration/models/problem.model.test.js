@@ -28,6 +28,18 @@ describe('Problem model', () => {
     expect(invalidPaths(Problem, makeProblem({ _id: '1950/F2', index: 'F2', tags: ['*special'] }))).toEqual([]);
   });
 
+  it('accepts the 4 unusual dataset ids (1723/GP1, 1723/GP2, 921/01, 921/02)', () => {
+    for (const _id of ['1723/GP1', '1723/GP2', '921/01', '921/02']) {
+      const [contestId, index] = _id.split('/');
+      expect(invalidPaths(Problem, makeProblem({ _id, contestId: Number(contestId), index }))).toEqual([]);
+    }
+  });
+
+  it('rejects indexes longer than 3 characters or in lower case', () => {
+    expect(invalidPaths(Problem, makeProblem({ _id: '1/ABCD' }))).toEqual(['_id']);
+    expect(invalidPaths(Problem, makeProblem({ _id: '1/a' }))).toEqual(['_id']);
+  });
+
   it('applies defaults: null rating, empty texts and tags, source hf', async () => {
     const saved = await Problem.create({ _id: '2/B', contestId: 2, index: 'B', title: 'T' });
     expect(saved).toMatchObject({

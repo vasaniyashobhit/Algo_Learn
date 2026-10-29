@@ -46,6 +46,15 @@ export const parseEnv = (source = process.env) => {
   return Object.freeze({ ...result.data, isProduction: result.data.NODE_ENV === 'production' });
 };
 
+/** CLI scripts (import/sync) only need the DB and log level, not the API secrets. */
+export const scriptEnvSchema = envSchema.pick({ NODE_ENV: true, MONGODB_URI: true, LOG_LEVEL: true });
+
+export const parseScriptEnv = (source = process.env) => {
+  const result = scriptEnvSchema.safeParse(source);
+  if (!result.success) throw new EnvValidationError(result.error.issues, source);
+  return Object.freeze(result.data);
+};
+
 let cached;
 
 export const getEnv = () => {

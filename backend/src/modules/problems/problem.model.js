@@ -1,10 +1,10 @@
 import mongoose from 'mongoose';
 import { createSchema } from '../../db/schema.js';
 import { ALL_TAGS } from '../../config/tags.js';
-import { PROBLEM_SOURCES } from '../../config/constants.js';
+import { PROBLEM_ID_PATTERN, PROBLEM_SOURCES } from '../../config/constants.js';
 import { problemDerivedFields } from './helpers/derivedFields.js';
 
-export const PROBLEM_ID_PATTERN = /^\d+\/[A-Z]\d*$/;
+export { PROBLEM_ID_PATTERN };
 
 const optionalText = { type: String, default: '' };
 

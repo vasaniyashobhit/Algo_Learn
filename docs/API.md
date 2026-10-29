@@ -122,7 +122,7 @@ dates. Enum lists live in `backend/src/config/constants.js`.
 
 | Field | Type | Notes |
 |---|---|---|
-| `_id` | string | `"<contestId>/<index>"`, e.g. `"1/A"`, `"1950/F2"` |
+| `_id` | string | `"<contestId>/<index>"`, must match `^\d+\/[A-Z0-9]{1,3}$` (`PROBLEM_ID_PATTERN` in `config/constants.js`), e.g. `"1/A"`, `"1950/F2"`, `"1723/GP1"`, `"921/01"` |
 | `contestId` | number | required |
 | `index` | string | required |
 | `title` | string | required |
@@ -131,7 +131,10 @@ dates. Enum lists live in `backend/src/config/constants.js`.
 | `tags` | string[] | each one of the 37 CF tags (incl. `*special`) |
 | `tagCount` | number | derived: `tags.length` |
 | `hasEditorial` | boolean | derived: editorial is non-blank |
-| `source` | `hf` \| `cf_api` | default `hf` |
+| `source` | `hf` \| `cf_api` | default `hf`; `cf_api` rows (from `npm run sync:problemset`) have no statement text |
+
+Rows are written by `npm run import:dataset` (hf, `$set` upsert) and
+`npm run sync:problemset` (cf_api, insert-only, never overwrites existing rows).
 
 Indexes: `tags`, `rating`, `{tags, rating}`, text index `problem_text` (title weight 3, description 1).
 

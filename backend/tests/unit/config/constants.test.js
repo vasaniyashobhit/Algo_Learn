@@ -2,6 +2,13 @@ import { describe, expect, it } from 'vitest';
 import * as constants from '../../../src/config/constants.js';
 
 describe('constants', () => {
+  it('PROBLEM_ID_PATTERN accepts 1-3 char A-Z/0-9 indexes only', () => {
+    const ok = ['1/A', '1950/F2', '1723/GP1', '1723/GP2', '921/01', '921/02'];
+    const bad = ['1A', '/A', '1/', '1/ABCD', '1/a', 'x/A', '1/A-1'];
+    expect(ok.filter((id) => constants.PROBLEM_ID_PATTERN.test(id))).toEqual(ok);
+    expect(bad.filter((id) => constants.PROBLEM_ID_PATTERN.test(id))).toEqual([]);
+  });
+
   it('has a 30-day LLM cache TTL and a 20k raw-input limit', () => {
     expect(constants.LLM_CACHE_TTL_SECONDS).toBe(2_592_000);
     expect(constants.STUCK_RAW_INPUT_MAX).toBe(20_000);

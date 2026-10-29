@@ -8,6 +8,9 @@ export const LLM_CACHE_TTL_SECONDS = 30 * DAY_SECONDS;
 /** Stuck-query raw input is truncated to this many characters before it is stored. */
 export const STUCK_RAW_INPUT_MAX = 20_000;
 
+/** Problem id: `<contestId>/<index>`, index 1-3 chars of A-Z/0-9 (e.g. 1/A, 1950/F2, 1723/GP1, 921/01). */
+export const PROBLEM_ID_PATTERN = /^\d+\/[A-Z0-9]{1,3}$/;
+
 export const PROBLEM_SOURCES = Object.freeze(['hf', 'cf_api']);
 export const TOPIC_KINDS = Object.freeze(['single', 'pair']);
 export const STUCK_INPUT_TYPES = Object.freeze(['text', 'url', 'pdf', 'image']);

@@ -43,6 +43,32 @@ Read this first, update it last, every session.
   `assertions.js` (`invalidPaths`, `expectDuplicateKey`, `indexesByName`).
   44 files, 206 tests. Coverage: 99% lines, 97.7% branches.
 
+### Session 3 (2026-10-29) — Dataset import + Codeforces client
+
+- `PROBLEM_ID_PATTERN` moved to `config/constants.js` (re-exported by the model) and widened to
+  `^\d+\/[A-Z0-9]{1,3}$`, so `1723/GP1`, `1723/GP2`, `921/01`, `921/02` are accepted.
+- `lib/rateLimitQueue.js`: FIFO limiter, starts spaced by `intervalMs`, errors propagate per task.
+- `modules/codeforces/`: `codeforces.client.js` (`problemsetProblems`, `userInfo`, `userStatus`;
+  injected fetch/limiter/sleep, 2.1 s spacing, 20 s timeout, 2 retries) and `helpers/cfRequest.js`
+  (URL building, response parsing) + `helpers/cfErrors.js` (typed errors, retry rule).
+- `modules/problems/helpers/`: `cleanProblem.js`, `validateProblemDoc.js` (id/contest/tag checks,
+  because bulkWrite skips validators), `prepareImport.js` (summary counts), `fromCfProblem.js`.
+- `scripts/`: `runScript.js` (env → connect → task → print → disconnect; exit 1 on failure),
+  `importDataset.js`, `syncProblemset.js`, `import/readParquet.js`, `import/bulkUpsert.js`,
+  `import/syncNewProblems.js`. npm scripts `import:dataset`, `sync:problemset` (backend and root).
+- Tests: 60 files, 295 tests. Coverage 99.3% lines, 98.4% branches. The readParquet and import
+  tests write a real fixture parquet with `hyparquet-writer` (devDependency).
+- **Atlas import (2026-10-29), `npm run import:dataset`:**
+
+  ```
+  read 10024 · skippedEmptyDescription 43 · rejected 0 (rejectedByReason {})
+  toUpsert 9981 · upserted 9981 · updated 0 · unchanged 0 · batches 20
+  withRating 9745 · withTags 9827 · withEditorial 6080 · withSpecialTag 485
+  totalInCollection 9981 · took ~14 s
+  ```
+
+  0 rows rejected for invalid ids. A second run gave upserted 0 / updated 0 / unchanged 9981.
+
 ## Decisions
 
 - **Mongoose 8** pinned (`^8.24`) as required by backend/CLAUDE.md (npm's latest is 9).
@@ -81,8 +107,27 @@ Read this first, update it last, every session.
   collation strength 2 because CF handles are case-insensitive. To unlink, `$unset` the field.
   Lookups by handle should pass the same collation to use the index.
 - `passwordHash` has `select: false`; auth must query with `.select('+passwordHash')`.
-- `contestId` is a Number. Problem `_id` must match `/^\d+\/[A-Z]\d*$/` (e.g. `1950/F2`); the
-  import session should confirm every dataset id matches.
+- `contestId` is a Number. Problem `_id` must match `PROBLEM_ID_PATTERN` = `^\d+\/[A-Z0-9]{1,3}$`
+  (Session 3; all 10,024 dataset ids match).
+- **Parquet types:** hyparquet returns `rating` as BigInt **and `contest_id` as a string**.
+  `readParquet` turns every BigInt into a Number; `cleanProblem` also accepts BigInt/strings.
+- **`*special` stays in `problems.tags`** (it is a real CF tag, 485 imported rows). Stats code
+  must skip it (`SPECIAL_TAG` in `cleanProblem.js`; `isTopicTag` in `tags.js`).
+- **bulkUpsert timestamps:** both modes pass `timestamps: false` and write `createdAt`/`updatedAt`
+  via `$setOnInsert`. Otherwise Mongoose bumps `updatedAt` on every match and a re-run reports
+  every row as modified. Trade-off: `updatedAt` on hf rows is the first import time.
+- **Import uses `$set`** (re-runs refresh hf text; it also upgrades a `cf_api` stub to `hf`).
+  **Sync uses `$setOnInsert`** so it never changes an existing row. Sync drops unknown future CF
+  tags instead of rejecting the problem; the import rejects them (none in the dataset).
+- Rows are checked by `validateProblemDoc.rejectReason` (id pattern, contestId, `id ===
+  contestId/index`, title, known tags) because `bulkWrite` skips schema validators.
+- The sync logic lives in `scripts/import/syncNewProblems.js` (next to `bulkUpsert`) so
+  `modules/` never imports from `scripts/`. If a cron job needs it later, move both to `lib/`.
+- Scripts only need `MONGODB_URI` (`parseScriptEnv`, a `pick` of the main env schema).
+- CF client errors: FAILED "handle … not found" → 404 `CF_HANDLE_NOT_FOUND`; "Call limit
+  exceeded", 5xx, 429, timeouts, network errors → `CF_UNAVAILABLE` and retried (each retry goes
+  back through the limiter); other FAILED/4xx → 502 `CF_UNAVAILABLE`, not retried. No new codes.
+- Entry-point blocks of the two scripts are `c8 ignore`d; their logic is tested via exports.
 - `tagCount`/`hasEditorial` are set in a `pre('validate')` hook. `bulkWrite` skips hooks, so the
   import script must spread `problemDerivedFields(doc)` itself.
 - Problem `tags` are validated against the 37 tags; `submission.problemTags` are not (a new CF
@@ -103,7 +148,8 @@ Read this first, update it last, every session.
 
 ## Next
 
-- Session 3: dataset import script (`scripts/importDataset.js` with `hyparquet`, from
-  `backend/data/cf_problems.parquet`): skip empty descriptions, `bulkWrite` upserts with
-  `problemDerivedFields`, check every id matches `PROBLEM_ID_PATTERN`, report counts.
+- `npm run sync:problemset` has not been run against the real Codeforces API yet (only tested
+  with a fake client). Run it once and record the summary.
+- Session 6 uses `createCodeforcesClient().userInfo` / `.userStatus`; share one client (one
+  limiter) per process so all CF calls respect the 2.1 s spacing together.
 - When a feature service queries with operators, wrap them in `mongoose.trusted()` (see Decisions).

@@ -13,7 +13,9 @@
     "dev": "concurrently -n backend,frontend -c blue,magenta \"npm run dev -w backend\" \"npm run dev -w frontend --if-present\"",
     "test": "npm test --workspaces --if-present",
     "test:cov": "npm run test:cov --workspaces --if-present",
-    "lint": "eslint ."
+    "lint": "eslint .",
+    "import:dataset": "npm run import:dataset -w backend",
+    "sync:problemset": "npm run sync:problemset -w backend"
   },
   "devDependencies": {
     "@eslint/js": "^9.39.5",
