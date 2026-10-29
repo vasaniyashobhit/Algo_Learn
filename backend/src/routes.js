@@ -14,12 +14,12 @@ export const API_BASE_PATH = '/api/v1';
  */
 export const createApiRouter = ({ auth, authRateLimit, services, cronSecret }) => {
   const { authService, requireAuth } = auth;
-  const { handleService, syncService, jobs } = services;
+  const { handleService, syncService, statsService, jobs } = services;
   const router = Router();
   router.use('/health', healthRouter);
   router.use('/meta', metaRouter);
   router.use('/auth', createAuthRouter({ authService, requireAuth, rateLimit: authRateLimit }));
-  router.use('/users', createUsersRouter({ requireAuth, handleService, syncService }));
+  router.use('/users', createUsersRouter({ requireAuth, handleService, syncService, statsService }));
   router.use('/problems', problemsRouter);
   router.use('/internal', createInternalRouter({ cronSecret, jobs }));
   return router;

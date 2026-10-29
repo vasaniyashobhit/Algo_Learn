@@ -5,10 +5,10 @@ import {
 } from '../../config/constants.js';
 
 // Query strings send "" for `?x=`; treat that as "not given".
-const blankToUndefined = (value) => (value === '' ? undefined : value);
+export const blankToUndefined = (value) => (value === '' ? undefined : value);
 
 // The default sits inside the preprocess so a blank value also gets it.
-const queryInt = (min, max, fallback) => {
+export const queryInt = (min, max, fallback) => {
   const int = z.coerce.number().int().min(min).max(max);
   return z.preprocess(blankToUndefined, fallback === undefined ? int.optional() : int.default(fallback));
 };

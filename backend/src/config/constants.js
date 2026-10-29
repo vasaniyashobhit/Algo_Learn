@@ -70,3 +70,6 @@ export const CF_VERDICTS = Object.freeze([
 export const SYNC = Object.freeze({ lockMs: 5 * 60_000, pageSize: 500, maxPages: 20 });
 /** Weekly problemset refresh: Sundays at 03:00 server time. */
 export const PROBLEMSET_SYNC_CRON = '0 3 * * 0';
+
+/** Topic strength and stats views (Session 7) live in statsConstants.js. */
+export * from './statsConstants.js';

@@ -209,7 +209,8 @@ Pulls new Codeforces submissions (`user.status`, newest first, pages of 500) unt
 the last stored one; the first sync reads at most 20 pages (10,000 submissions). Only judged
 submissions to problems with a `contestId` are stored (with the problem's tags and rating
 from the payload). Submissions still being judged are picked up by a later sync. Then the
-rating is refreshed and the topic stats are recomputed (Session 7).
+rating is refreshed and the user's topic stats are fully recomputed (see Topic stats below),
+inside the same lock; a recompute failure fails the sync with `500 INTERNAL_ERROR`.
 
 `200 OK`:
 
@@ -221,6 +222,79 @@ Errors: `400 CF_HANDLE_NOT_LINKED`, `409 SYNC_IN_PROGRESS` (another sync of this
 the 5-minute lock, e.g. the background job), `503 CF_UNAVAILABLE` (try again later; the sync
 resumes where it stopped), `404 CF_HANDLE_NOT_FOUND` (the handle was renamed on Codeforces:
 link it again).
+
+### Topic stats (protected)
+
+Both routes need `Authorization: Bearer <token>`. Stats are rebuilt from **all** stored
+submissions after every sync. **Never an error for missing data:** without a linked handle the
+answer is `200` with empty data and `meta.reason: "NO_HANDLE"`; a linked handle that was never
+synced adds `meta.reason: "NOT_SYNCED"`. `reason` is absent otherwise.
+
+How a topic's numbers are computed (constants in `backend/src/config/statsConstants.js`):
+
+- Submissions are grouped per problem: `solved` = any `OK` verdict; time = last submission.
+- A problem counts toward each topic tag (`*special` excluded) and each sorted pair of them.
+  Pairs are stored only when attempted on **≥ 2 problems**.
+- `d = 0.5^(ageDays / 90)`, `w = sigmoid((problemRating − userRating) / 300)` (0.5 if either is unknown).
+  Solved: `solvedScore += d·(0.5 + w)`; unsolved: `failScore += d·(1.5 − w)`.
+- `strength = (solvedScore + 1.5) / (solvedScore + failScore + 3)` (prior of 3 attempts at 0.5):
+  0.5 with no data, 0.625 for one fresh solve at your rating, never 1.0 from a single solve.
+- `comfortRating`: median of the top 5 solved ratings in the last 365 days when there are ≥ 3;
+  otherwise `min(userRating, max solved)`, or whichever is known, or `null`.
+
+A **topic stat**:
+
+```json
+{
+  "topicKey": "bitmasks+dp", "kind": "pair", "tags": ["bitmasks", "dp"],
+  "attempted": 7, "solved": 5, "failed": 2, "strength": 0.6412,
+  "comfortRating": 1700, "avgSolvedRating": 1620, "maxSolvedRating": 1900,
+  "lastActivityAt": "2026-10-20T18:03:11.000Z"
+}
+```
+
+#### `GET /api/v1/users/me/stats?kind=single&sort=strength&limit=50`
+
+- `kind`: `single` (default) | `pair`. `sort`: `strength` (default; ties: more attempted, then key)
+  | `attempted` (ties: higher strength, then key). Both descending. `limit`: 1–630, default 50.
+
+```json
+{
+  "success": true,
+  "data": [<topic stat>, ...],
+  "meta": { "kind": "single", "sort": "strength", "limit": 50, "total": 23, "lastSyncedAt": "2026-10-29T14:00:00.000Z" }
+}
+```
+
+No handle: `{ "success": true, "data": [], "meta": { ..., "total": 0, "lastSyncedAt": null, "reason": "NO_HANDLE" } }`.
+Errors: `400 VALIDATION_FAILED` (`query.kind`, `query.sort`, `query.limit`), `401 AUTH_*`.
+
+#### `GET /api/v1/users/me/stats/summary`
+
+Always the same shape (zeros, empty lists and zero-filled bands/days when there is no data):
+
+```json
+{
+  "success": true,
+  "data": {
+    "totals": { "submissions": 1310, "problemsAttempted": 640, "problemsSolved": 590, "topicsAttempted": 31, "pairsTracked": 212 },
+    "strongest": [<topic stat>, ...],
+    "weakest": [<topic stat>, ...],
+    "solvedByRating": { "bands": [{ "from": 800, "to": 999, "solved": 41 }, ...], "unrated": 3 },
+    "activity": [{ "date": "2026-09-30", "submissions": 4, "accepted": 2 }, ...]
+  },
+  "meta": { "cfHandle": "tourist", "cfRating": 3382, "lastSyncedAt": "2026-10-29T14:00:00.000Z" }
+}
+```
+
+- `strongest`: top 5 single topics by strength. `weakest`: bottom 5 single topics with
+  **≥ 3 attempted problems** (one unlucky try is not "weak").
+- `solvedByRating`: solved problems in 200-wide bands from 800 to 3400–3599 (all 14 bands always
+  listed; out-of-range ratings go to the first/last band), plus `unrated`.
+- `activity`: the last 30 **UTC** days, oldest first, ending today (`accepted` = verdict `OK`).
+- No handle: same shape with zeros and `meta: { "cfHandle": null, "cfRating": null, "lastSyncedAt": null, "reason": "NO_HANDLE" }`.
+
+Errors: `401 AUTH_*` (a deleted account → `AUTH_INVALID_TOKEN`).
 
 ### Internal (hosted cron)
 
@@ -418,7 +492,9 @@ is a string), `cfRating`, `cfMaxRating`, `lastSyncedAt`, `lastSubmissionId`,
 `userId`, `topicKey` (`dp` or a pair key like `bitmasks+dp`), `kind` (`single` \| `pair`,
 must match the key), `attempted`, `solved`, `failed` (default 0), `avgSolvedRating`,
 `maxSolvedRating`, `comfortRating` (default `null`), `strength` (0..1, default 0),
-`lastActivityAt`. Unique `{userId, topicKey}`.
+`lastActivityAt`. Unique `{userId, topicKey}`. Rewritten after every sync by
+`recomputeForUser` (one `bulkWrite`: delete this user's keys that are no longer present, then
+upsert-replace every current key).
 
 ### `stuckqueries`
 

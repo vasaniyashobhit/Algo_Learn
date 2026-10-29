@@ -163,7 +163,47 @@ Read this first, update it last, every session.
   `tests/helpers/codeforces.js` (`fakeCfClient`, `cfSubmission`, `cfHistory`, `cfUser`, `cfDown`),
   `tests/helpers/sync.js`; `testApp.js` exports `TEST_CRON_SECRET`.
 
+### Session 7 (2026-10-30) — Topic and pair strength from submissions
+
+- `config/statsConstants.js` (re-exported by `constants.js`, which hit 100 lines): `STATS`
+  (half-life 90, scale 300, prior 3 at 0.5, bases 0.5/1.5, pairs ≥ 2, comfort 365 d / top 5 / ≥ 3),
+  `STATS_VIEW` (sorts, limit 50 / max 630, top 5, weak ≥ 3 attempts, 30 days, 200-wide bands
+  800–3400), `STATS_EMPTY_REASONS`. `lib/sigmoid.js`.
+- `modules/stats/helpers/` (pure, one concern each): `groupByProblem`, `topicKeys` (`topicKeysFor`),
+  `decay`, `difficultyWeight`, `contribution` (`problemContribution`), `strength`, `comfortRating`
+  (+ `median`), `topicTotals` (accumulator → doc), `buildTopicStats`, and for the summary
+  `ratingBands` (`solvedByRating`), `activity` (`dailyActivity`), `statView`, `emptyReason`, `buildSummary`.
+- `stats.service.js` (`createStatsService({ User, Submission, TopicStat, now })` → `recomputeForUser`,
+  `getStats`, `getSummary`), `stats.schema.js`, `stats.controller.js`. Routes are on the users router.
+- `createServices` builds `statsService` and uses `statsService.recomputeForUser` as the default
+  `onSynced`, so every sync (route, cron, `/internal/sync-all`) recomputes. `server.js` unchanged.
+- `problems.schema.js` now exports `blankToUndefined` and `queryInt` (reused by the stats query).
+- Endpoints: `GET /users/me/stats`, `GET /users/me/stats/summary` (documented in `docs/API.md`).
+  No new error codes.
+- Tests: 133 files, 725 tests. Coverage 99.7% lines, 98.8% branches; `modules/stats` 100%.
+  New helper `tests/helpers/stats.js` (`createSyncedUser`, `insertSubmissions`, `statsOf`, fixed `STATS_NOW`).
+
 ## Decisions
+
+- **Topic stats (Session 7):**
+  - Recompute is a **full rebuild** from all stored submissions (≤ 10k per user, one `find` +
+    one `bulkWrite`: `deleteMany` of keys not in the new set, then `replaceOne` upserts). Simpler
+    than incremental, and decay changes every score anyway.
+  - The `$nin` in the stale-key filter is wrapped in `mongoose.trusted()` (see sanitizeFilter).
+  - `attempted`/`solved`/`failed` count **problems**, not submissions. Decay uses the problem's
+    **last** submission time (as specified), also for solved problems.
+  - Rating/tags of a problem come from its newest submission that has them (submissions are
+    read oldest first; a missing rating or empty tags do not override older values).
+  - Unknown user rating (`cfRating: null`) → weight 0.5 for every problem.
+  - `comfortRating` "fewer than 3 solves" means fewer than 3 **rated** solves in the last 365 days.
+    Unrated solves count for `solved`/strength but not for ratings. Medians of an even count are
+    averaged, then rounded.
+  - Empty-on-purpose answers are `200` with `meta.reason`: `NO_HANDLE`, plus `NOT_SYNCED` (handle
+    linked, never synced) so the UI can say "sync to see your stats" instead of a blank chart.
+  - Summary: strongest/weakest are **single** topics only; weakest needs ≥ 3 attempted problems.
+    All 14 rating bands and all 30 days are always present (zero-filled). Days are UTC.
+  - A recompute error fails the sync (inside the lock, as in Session 6); the submissions are already
+    stored, so the next sync recomputes again.
 
 - **Handle + sync (Session 6):**
   - `CF_HANDLE_TAKEN` is checked in the DB (with the index collation) **before** calling Codeforces,
@@ -329,8 +369,12 @@ contestId/index`, title, known tags) because `bulkWrite` skips schema validators
 
 - Frontend: store the JWT, send `Authorization: Bearer`, and on any 401 `AUTH_*` (except
   `AUTH_INVALID_CREDENTIALS`) clear the token and go to login.
-- **Session 7:** plug the stats recompute into `createServices({ onSynced })` in `server.js`
-  (`onSynced(userId)` is called after every successful sync, inside the lock).
+- Recommendations (F10) can read `topicstats` directly: "next topic" = weakest single with some
+  activity; target rating = the topic's `comfortRating` + 100–300 (fall back to `cfRating`/1200).
+- Frontend dashboard: `GET /users/me/stats/summary` (cards, bands bar chart, 30-day activity) and
+  `GET /users/me/stats?kind=single|pair`. Show a notice for `meta.reason` `NO_HANDLE` (link a handle)
+  and `NOT_SYNCED` (press "Sync now") instead of empty charts.
+- Existing users on Atlas get stats only after their next sync (cron or "Sync now"); no backfill script.
 - Atlas now holds 11,702 problems (9,981 hf + 1,721 cf_api), so the problemset sync has been run;
   record its summary here if it is still available.
 - Frontend: the problem list uses `meta.total/totalPages`; the similar view should show a short

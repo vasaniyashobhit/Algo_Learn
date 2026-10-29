@@ -1,23 +1,27 @@
 import { createCodeforcesClient } from './modules/codeforces/codeforces.client.js';
 import { createHandleService } from './modules/users/handle.service.js';
 import { createSyncService } from './modules/sync/sync.service.js';
+import { createStatsService } from './modules/stats/stats.service.js';
 import { createSyncAllUsersJob } from './jobs/syncAllUsers.job.js';
 import { createSyncProblemsetJob } from './jobs/syncProblemset.job.js';
 
 /**
  * Builds the services that share one Codeforces client (one rate limiter per process),
  * plus the background jobs. Used by createApp (routes) and server.js (scheduler).
+ * After every successful sync the user's topic stats are recomputed (`onSynced`).
  */
 export const createServices = ({
   logger,
   client = createCodeforcesClient({ logger }),
-  onSynced,
+  statsService = createStatsService(),
+  onSynced = statsService.recomputeForUser,
 } = {}) => {
   const syncService = createSyncService({ client, onSynced });
   return {
     client,
     handleService: createHandleService({ client }),
     syncService,
+    statsService,
     jobs: {
       syncAllUsers: createSyncAllUsersJob({ syncService, logger }),
       syncProblemset: createSyncProblemsetJob({ client, logger }),

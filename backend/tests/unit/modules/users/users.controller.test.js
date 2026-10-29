@@ -44,12 +44,13 @@ describe('users.controller', () => {
 });
 
 describe('users.routes and schema', () => {
-  it('registers the /me, /me/handle and /me/sync routes', () => {
-    const router = createUsersRouter({ requireAuth: vi.fn(), handleService: {}, syncService: {} });
+  it('registers the /me, /me/handle, /me/sync and /me/stats routes', () => {
+    const router = createUsersRouter({ requireAuth: vi.fn(), handleService: {}, syncService: {}, statsService: {} });
     const routes = router.stack.filter((layer) => layer.route).map((layer) => [layer.route.path, layer.route.methods]);
     expect(routes).toEqual([
       ['/me', { get: true }], ['/me', { patch: true }],
       ['/me/handle', { put: true }], ['/me/handle', { delete: true }], ['/me/sync', { post: true }],
+      ['/me/stats/summary', { get: true }], ['/me/stats', { get: true }],
     ]);
   });
 

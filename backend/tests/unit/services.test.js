@@ -10,8 +10,14 @@ describe('createServices', () => {
     expect(services.client).toBe(client);
     expect(Object.keys(services.handleService)).toEqual(['linkHandle', 'unlinkHandle']);
     expect(Object.keys(services.syncService)).toEqual(['syncUser']);
+    expect(Object.keys(services.statsService)).toEqual(['recomputeForUser', 'getStats', 'getSummary']);
     expect(Object.keys(services.jobs)).toEqual(['syncAllUsers', 'syncProblemset']);
     expect(services.jobs.syncAllUsers.name).toBe('syncAllUsers');
+  });
+
+  it('uses an injected stats service', () => {
+    const statsService = { recomputeForUser: async () => {} };
+    expect(createServices({ client: fakeCfClient(), statsService }).statsService).toBe(statsService);
   });
 
   it('builds a real client by default', () => {
