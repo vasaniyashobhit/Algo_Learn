@@ -4,10 +4,11 @@ import cors from 'cors';
 import { pinoHttp } from 'pino-http';
 import { logger as defaultLogger } from './lib/logger.js';
 import { requestId } from './middlewares/requestId.js';
-import { createRateLimiter, DEFAULT_RATE_LIMIT } from './middlewares/rateLimit.js';
+import { createRateLimiter, AUTH_RATE_LIMIT, DEFAULT_RATE_LIMIT } from './middlewares/rateLimit.js';
 import { notFound } from './middlewares/notFound.js';
 import { createErrorHandler } from './middlewares/errorHandler.js';
 import { API_BASE_PATH, createApiRouter } from './routes.js';
+import { createAuth } from './modules/auth/auth.module.js';
 
 export const BODY_LIMIT = '1mb';
 
@@ -21,7 +22,10 @@ export const createApp = ({
   logger = defaultLogger,
   rateLimit = DEFAULT_RATE_LIMIT,
   trustProxy = false,
+  auth,
+  authRateLimit = AUTH_RATE_LIMIT,
 } = {}) => {
+  if (!auth?.jwtSecret) throw new TypeError('createApp(): auth.jwtSecret is required');
   const app = express();
   app.set('trust proxy', trustProxy);
 
@@ -33,7 +37,7 @@ export const createApp = ({
   app.use(express.urlencoded({ extended: false, limit: BODY_LIMIT }));
   app.use('/api', createRateLimiter(rateLimit));
 
-  app.use(API_BASE_PATH, createApiRouter());
+  app.use(API_BASE_PATH, createApiRouter({ auth: createAuth(auth), authRateLimit }));
 
   app.use(notFound);
   app.use(createErrorHandler({ isProduction, logger }));

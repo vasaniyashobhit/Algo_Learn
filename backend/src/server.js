@@ -30,6 +30,7 @@ export const startServer = async ({
     clientUrl: env.CLIENT_URL,
     logger,
     trustProxy: env.isProduction ? 1 : false,
+    auth: { jwtSecret: env.JWT_SECRET, jwtExpiresIn: env.JWT_EXPIRES_IN },
   });
   let server;
   try {

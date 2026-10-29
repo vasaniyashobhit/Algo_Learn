@@ -6,9 +6,20 @@ import { createErrorHandler } from '../../src/middlewares/errorHandler.js';
 
 export const silentLogger = createLogger({ level: 'silent' });
 
-/** Full app with a silent logger and a generous rate limit unless overridden. */
+export const TEST_JWT_SECRET = 't'.repeat(32);
+/** Cheap bcrypt cost (4) keeps route tests fast; the service tests check the real default of 12. */
+export const TEST_AUTH = Object.freeze({ jwtSecret: TEST_JWT_SECRET, jwtExpiresIn: '1h', hashRounds: 4 });
+const GENEROUS_LIMIT = { windowMs: 60_000, limit: 1_000 };
+
+/** Full app with a silent logger, test auth config and generous rate limits unless overridden. */
 export const createTestApp = (options = {}) =>
-  createApp({ logger: silentLogger, rateLimit: { windowMs: 60_000, limit: 1_000 }, ...options });
+  createApp({
+    logger: silentLogger,
+    rateLimit: GENEROUS_LIMIT,
+    auth: TEST_AUTH,
+    authRateLimit: GENEROUS_LIMIT,
+    ...options,
+  });
 
 /**
  * Minimal app for middleware tests: requestId → json → `setup(app)` → errorHandler.

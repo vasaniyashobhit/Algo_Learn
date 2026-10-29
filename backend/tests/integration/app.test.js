@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import request from 'supertest';
-import { createTestApp } from '../helpers/testApp.js';
+import { createTestApp, TEST_JWT_SECRET } from '../helpers/testApp.js';
 import { BODY_LIMIT, createApp } from '../../src/app.js';
 import { API_BASE_PATH } from '../../src/routes.js';
 
@@ -59,8 +59,12 @@ describe('createApp', () => {
     expect(res.body.error.stack).toBeUndefined();
   });
 
-  it('works with defaults', async () => {
-    const res = await request(createApp()).get('/api/v1/health');
+  it('works with defaults plus an auth secret', async () => {
+    const res = await request(createApp({ auth: { jwtSecret: TEST_JWT_SECRET } })).get('/api/v1/health');
     expect(res.status).toBe(200);
+  });
+
+  it('refuses to build without a JWT secret', () => {
+    expect(() => createApp()).toThrow('auth.jwtSecret is required');
   });
 });

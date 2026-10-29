@@ -35,7 +35,8 @@ Error:
 
 ## Rate limiting
 
-All `/api` routes: 300 requests per 15 minutes per IP (default). Responses include the
+All `/api` routes: 300 requests per 15 minutes per IP (default). `/api/v1/auth/*` also has a
+stricter 20 per 15 minutes per IP (see Authentication). Responses include the
 standard `RateLimit` / `RateLimit-Policy` headers (draft-7). When exceeded: `429 RATE_LIMITED`,
 `details: { "retryAfterSeconds": 900 }`.
 
@@ -69,6 +70,105 @@ Public. The Codeforces tag lists (single source: `backend/src/config/tags.js`).
 Topic-pair keys are built client-side the same way as the backend: the two tags sorted
 alphabetically and joined by `+` (e.g. `bitmasks+dp`), 630 pairs in total.
 
+### Authentication
+
+Protected routes need `Authorization: Bearer <token>`. Tokens are HS256 JWTs with
+`sub` = user id and an `email` claim, valid for `JWT_EXPIRES_IN` (default `7d`). There is no
+refresh token: on `AUTH_TOKEN_EXPIRED` the client asks the user to log in again.
+
+| Situation | Response |
+|---|---|
+| No `Authorization` header (or blank) | `401 AUTH_REQUIRED` |
+| Header not exactly `Bearer <jwt>` (e.g. `Basic ...`, `Bearer` alone) | `401 AUTH_INVALID_TOKEN` |
+| Bad signature, garbage, wrong algorithm, unexpected payload | `401 AUTH_INVALID_TOKEN` |
+| Token expired | `401 AUTH_TOKEN_EXPIRED` |
+| Valid token but the account no longer exists (`/auth/me`, `/users/me`) | `401 AUTH_INVALID_TOKEN` |
+
+The public **user** object (returned by every endpoint below; never contains `passwordHash`
+or internal sync fields):
+
+```json
+{
+  "id": "65f1c2b8e4a1b2c3d4e5f601",
+  "email": "ada@example.com",
+  "name": "Ada Lovelace",
+  "cfHandle": null,
+  "cfRating": null,
+  "cfMaxRating": null,
+  "lastSyncedAt": null,
+  "createdAt": "2026-10-29T14:00:00.000Z",
+  "updatedAt": "2026-10-29T14:00:00.000Z"
+}
+```
+
+Note: users are identified by `id` (hex string), not `_id`.
+
+All `/auth/*` routes share a stricter limit: **20 requests per 15 minutes per IP** (on top of
+the global 300). Exceeding it → `429 RATE_LIMITED`, `details: { "retryAfterSeconds": 900 }`.
+
+### `POST /api/v1/auth/signup`
+
+Public. Creates an account and logs it in.
+
+```json
+{ "email": "Ada@Example.com", "password": "analytical1", "name": "Ada Lovelace" }
+```
+
+- `email`: valid email, trimmed and lowercased, max 254 chars.
+- `password`: at least 8 characters, at least one letter and one digit, at most 72 bytes
+  (bcrypt limit). Stored as a bcrypt hash (cost 12).
+- `name`: trimmed, 2–50 characters.
+
+`201 Created`:
+
+```json
+{ "success": true, "data": { "token": "eyJhbGciOiJIUzI1NiIs...", "user": { "id": "...", "email": "ada@example.com", "name": "Ada Lovelace", "...": "see user object" } } }
+```
+
+Errors: `400 VALIDATION_FAILED` (all field problems at once, e.g.
+`[{ "field": "body.password", "message": "Password must contain at least one digit" }]`),
+`409 AUTH_EMAIL_TAKEN` ("An account with this email already exists"; emails compare
+case-insensitively), `429 RATE_LIMITED`.
+
+### `POST /api/v1/auth/login`
+
+Public.
+
+```json
+{ "email": "ada@example.com", "password": "analytical1" }
+```
+
+`200 OK`: same body as signup (`{ token, user }`).
+
+Errors: `400 VALIDATION_FAILED` (missing/invalid email, empty password; the signup password
+rules are **not** re-checked here), `401 AUTH_INVALID_CREDENTIALS` with the message
+"Invalid email or password" for both an unknown email and a wrong password (same message,
+similar timing), `429 RATE_LIMITED`.
+
+### `GET /api/v1/auth/me`
+
+Protected. Returns the current user: `{ "success": true, "data": <user> }`.
+Errors: `401 AUTH_REQUIRED` / `AUTH_INVALID_TOKEN` / `AUTH_TOKEN_EXPIRED`, `429 RATE_LIMITED`.
+
+### `GET /api/v1/users/me`
+
+Protected. Same response as `GET /auth/me`, but under the normal API rate limit.
+Errors: `401 AUTH_REQUIRED` / `AUTH_INVALID_TOKEN` / `AUTH_TOKEN_EXPIRED`.
+
+### `PATCH /api/v1/users/me`
+
+Protected. Changes the display name only.
+
+```json
+{ "name": "Grace Hopper" }
+```
+
+`200 OK`: `{ "success": true, "data": <updated user> }`.
+
+Errors: `401 AUTH_REQUIRED` / `AUTH_INVALID_TOKEN` / `AUTH_TOKEN_EXPIRED` (checked before the
+body), `400 VALIDATION_FAILED` for a name outside 2–50 characters, a missing name, or **any
+other field** (e.g. `email`), which is reported as an unrecognized key.
+
 ### Unknown routes
 
 Any unmatched method or path → `404 ROUTE_NOT_FOUND`, e.g. `"Route GET /api/v1/nope not found"`.
@@ -81,11 +181,11 @@ Source: `backend/src/errors/codes.js`. Every code needs a frontend message in
 | Code | HTTP | When |
 |---|---|---|
 | `VALIDATION_FAILED` | 400 | Invalid body/query/params, malformed JSON, Mongoose validation/cast errors. `details: [{ field, message }]` |
-| `AUTH_REQUIRED` | 401 | Protected route called without a token |
-| `AUTH_INVALID_TOKEN` | 401 | Token malformed, badly signed or not yet valid |
+| `AUTH_REQUIRED` | 401 | Protected route called without an `Authorization` header |
+| `AUTH_INVALID_TOKEN` | 401 | Header not `Bearer <jwt>`, token malformed/badly signed/not yet valid, or the account no longer exists |
 | `AUTH_TOKEN_EXPIRED` | 401 | Token expired |
-| `AUTH_INVALID_CREDENTIALS` | 401 | Wrong email or password |
-| `AUTH_EMAIL_TAKEN` | 409 | Registration with an existing email |
+| `AUTH_INVALID_CREDENTIALS` | 401 | Login with an unknown email or a wrong password (one message for both) |
+| `AUTH_EMAIL_TAKEN` | 409 | Signup with an email that already has an account |
 | `FORBIDDEN` | 403 | Authenticated but not allowed |
 | `ROUTE_NOT_FOUND` | 404 | No route matches method + path |
 | `NOT_FOUND` | 404 | Generic missing resource |
@@ -108,7 +208,7 @@ Source: `backend/src/errors/codes.js`. Every code needs a frontend message in
 | `DB_UNAVAILABLE` | 503 | Could not connect to or close MongoDB (startup/shutdown; not yet sent by any endpoint) |
 | `INTERNAL_ERROR` | 500 | Anything unexpected. Message is always generic |
 
-Statuses for codes not yet emitted by any endpoint (auth, CF, upload, stuck, practice) are
+Auth codes are confirmed (Session 4). Statuses for codes not yet emitted by any endpoint (CF, upload, stuck, practice) are
 the intended ones; the sessions that implement those features confirm them here.
 
 ## Data model (MongoDB)

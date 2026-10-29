@@ -69,8 +69,52 @@ Read this first, update it last, every session.
 
   0 rows rejected for invalid ids. A second run gave upserted 0 / updated 0 / unchanged 9981.
 
+### Session 4 (2026-10-29) — Email/password auth with JWT
+
+- `bcrypt` (^6) added to the backend.
+- `modules/auth/`: `auth.schema.js` (zod signup/login; email trimmed + lowercased),
+  `helpers/token.js` (`signToken`, `verifyToken`, `createTokenService`), `auth.service.js`
+  (`createAuthService({ tokens, User, hashRounds = 12 })` → `signup`, `login`),
+  `auth.controller.js`, `auth.routes.js`, `auth.module.js` (`createAuth` wires tokens + service + requireAuth).
+- `middlewares/auth.js`: `createRequireAuth(tokens)` and `readBearerToken(header)`; sets `req.user = { id, email }`.
+- `modules/users/`: `users.service.js` (`getProfile`, `updateProfile`), `users.controller.js`,
+  `users.routes.js` (`createUsersRouter({ requireAuth })`), `users.schema.js`, `helpers/publicUser.js`.
+- Endpoints: `POST /auth/signup` (201), `POST /auth/login`, `GET /auth/me`, `GET /users/me`,
+  `PATCH /users/me` (all documented in `docs/API.md` with examples and error codes).
+- `AUTH_RATE_LIMIT` (20 / 15 min per IP) on every `/auth/*` route, in addition to the global limit.
+- `createApp({ auth: { jwtSecret, jwtExpiresIn, hashRounds }, authRateLimit })`; `server.js` passes
+  `JWT_SECRET`/`JWT_EXPIRES_IN`. `createApiRouter({ auth, authRateLimit })`.
+- Tests: 74 files, 387 tests. Coverage 99.4% lines, 98.7% branches. New helper `tests/helpers/auth.js`
+  (`makeSignup`, `signupViaApi`, `bearer`, `expectErrorShape`, `expectPublicUser`); `testApp.js`
+  now exports `TEST_AUTH` / `TEST_JWT_SECRET`.
+
 ## Decisions
 
+- **Auth (Session 4):**
+  - `createApp()` now **requires** `auth.jwtSecret` (throws `TypeError` otherwise). No default secret.
+  - Services that need config are factories (`createAuthService`); `users.service` stays plain
+    module functions like `meta.service`. Future protected routers get `requireAuth` through
+    `createApiRouter({ auth })`.
+  - bcrypt cost **12** by default; tests use cost 4 via `TEST_AUTH.hashRounds` (one service test
+    checks the real 12). Passwords over **72 bytes** are rejected (bcrypt silently truncates).
+  - Login with an unknown email still runs `bcrypt.compare` against a lazily built dummy hash, so
+    both failures take similar time and return the same `AUTH_INVALID_CREDENTIALS` message.
+  - Login does not re-check signup password rules (only non-empty, max 256).
+  - Duplicate email is detected from the unique index (E11000 → `AUTH_EMAIL_TAKEN`), not by a
+    pre-check, so there is no race.
+  - JWT: HS256 only (`algorithms` pinned on verify), `sub` = user id, `email` claim; payload
+    checked with zod (24-hex `sub`). Non-JWT verify failures also become `AUTH_INVALID_TOKEN`.
+  - `requireAuth` is stateless (no DB lookup). `/auth/me` and `/users/me` read the DB; a deleted
+    account → `401 AUTH_INVALID_TOKEN` ("This account no longer exists") so the client logs out.
+    No new error code.
+  - Header must be exactly `Bearer <jwt>` (three base64url parts); otherwise `AUTH_INVALID_TOKEN`.
+    A missing/blank header is `AUTH_REQUIRED`.
+  - User responses use an explicit whitelist (`toPublicUser`) with **`id`** (not `_id`); internal
+    fields `syncLockedUntil`, `lastSubmissionId` are never returned.
+  - `PATCH /users/me` uses `z.strictObject`, so unknown fields (e.g. `email`) are a 400.
+  - The auth limiter covers `/auth/me` too (the prompt said `/auth/*`); `/users/me` is the
+    route for frequent profile reads.
+  - Signup `name` is required (2–50). The model still allows up to 80 / default `""`.
 - **Mongoose 8** pinned (`^8.24`) as required by backend/CLAUDE.md (npm's latest is 9).
 - **Vitest 3.2** (not 5): npm 10.9 crashes (`edgesOut` bug) when resolving the peer set
   for `@vitest/coverage-v8@5`. Revisit after an npm upgrade.
@@ -145,9 +189,14 @@ Read this first, update it last, every session.
 - Rule "add a code on both sides in the same session": the frontend doesn't exist yet, so
   `frontend/src/errors/messages/` could not be created. The frontend setup session must add
   messages for all 27 codes (listed in docs/API.md), including `DB_UNAVAILABLE` (added in Session 2).
+  Session 4 added no new codes; the five `AUTH_*` codes are now emitted by real endpoints.
 
 ## Next
 
+- Frontend: store the JWT, send `Authorization: Bearer`, and on any 401 `AUTH_*` (except
+  `AUTH_INVALID_CREDENTIALS`) clear the token and go to login.
+- Session 6 (CF handle linking/sync) mounts under `/users/me/...` and reuses `requireAuth` from
+  `createApiRouter({ auth })`.
 - `npm run sync:problemset` has not been run against the real Codeforces API yet (only tested
   with a fake client). Run it once and record the summary.
 - Session 6 uses `createCodeforcesClient().userInfo` / `.userStatus`; share one client (one
