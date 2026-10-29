@@ -78,3 +78,5 @@ export const PROBLEMSET_SYNC_CRON = '0 3 * * 0';
 export * from './statsConstants.js';
 /** Recommendations and the practice list (Session 8) live in recommendationConstants.js. */
 export * from './recommendationConstants.js';
+/** LLM coach chain (Session 9) lives in llmConstants.js. */
+export * from './llmConstants.js';

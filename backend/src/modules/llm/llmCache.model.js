@@ -4,7 +4,7 @@ import { LLM_CACHE_TTL_SECONDS } from '../../config/constants.js';
 
 const llmCacheSchema = createSchema(
   {
-    // Problem id (e.g. "1/A") or sha256 of the statement.
+    // "problem:<id>" (e.g. "problem:1/A") or "text:<sha256 of the normalized statement>".
     key: { type: String, required: true, unique: true },
     provider: { type: String, required: true },
     model: { type: String, required: true },

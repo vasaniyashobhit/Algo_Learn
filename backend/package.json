@@ -18,7 +18,8 @@
     "check:env": "node --env-file-if-exists=.env scripts/checks/env.js",
     "check:atlas": "node --env-file-if-exists=.env scripts/checks/atlas.js",
     "check:server": "node --env-file-if-exists=.env scripts/checks/server.js",
-    "check:gemini": "node --env-file-if-exists=.env scripts/checks/gemini.js"
+    "check:gemini": "node --env-file-if-exists=.env scripts/checks/gemini.js",
+    "check:coach": "node --env-file-if-exists=.env scripts/checks/coach.js"
   },
   "dependencies": {
     "@google/genai": "^2.32.0",

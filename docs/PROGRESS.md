@@ -207,7 +207,54 @@ Read this first, update it last, every session.
 - Tests: 161 files, 855 tests. Coverage 99.75% lines, 98.9% branches. New helpers
   `tests/helpers/recommendations.js`, `tests/helpers/practice.js`; `TEST_SYNC.cooldownMs` is 0.
 
+### Session 9 (2026-10-30) — LLM coach chain (never throws)
+
+- `config/llmConstants.js` (re-exported by `constants.js`): `LLM` (3 tries, backoff 1 s · 2^(n−1),
+  20 s timeout, budget/min gemini 8 · groq 25 per model, answer limits, rating 800–3500 step 100),
+  `LLM_FALLBACK_REASONS` (`NO_INPUT`, `AI_BUSY`, `AI_UNAVAILABLE`).
+- `lib/`: `hash.js` (`sha256Hex`), `minuteBudget.js` (sliding 60 s window per key), `withTimeout.js`
+  (aborts the signal and rejects with `TimeoutError` even if the call ignores the signal).
+- `modules/llm/`: `prompts/buildCoachPrompt.js`, `schema/coachResponse.schema.js` (zod +
+  `parseCoachResponse`/`validateCoachResponse`, tolerates a ```json fence),
+  `schema/sanitizeCoachResponse.js`, `providers/gemini.provider.js` (`generateJson`,
+  `extractTextFromImage`; one provider per `GEMINI_MODELS` entry sharing one `GoogleGenAI`),
+  `providers/groq.provider.js` (fetch, `response_format: json_object`, null when key/model missing),
+  `helpers/isRetryable.js`, `helpers/llmError.js`, `helpers/cacheKey.js`, `helpers/callProvider.js`
+  (retry + budget + timeout loop, never throws), `cache.js` (`createCoachCache` on `llmcaches`),
+  `coach.service.js` (`createCoachService` → `getCoachAnswer`, `createLlmBudget`), `imageText.js`
+  (`createImageTextExtractor` → `extractImageText`), `llm.module.js` (`createLlm({ env })`).
+- Not wired into `createServices`/routes yet (the stuck module in Session 10 will call `createLlm`).
+- `scripts/checks/coach.js` (`npm run check:coach [-- --fresh]`): one real call on problem 1/A.
+- Tests: 178 files, 961 tests (all fakes, no network). Coverage 99.78% lines, 98.94% branches;
+  `modules/llm` 100% lines. New helper `tests/helpers/llm.js` (`fakeProvider`, `fakeCache`,
+  `coachJson`, `httpError`, `chainOptions`, open/closed budgets).
+
 ## Decisions
+
+- **LLM coach chain (Session 9):**
+  - Result: `{ answer, source: 'cache'|'ai', provider, model }` or `{ answer: null, source: 'fallback',
+    reason }`. `getCoachAnswer` has an outer catch too, so even a bug ends as `AI_UNAVAILABLE` (logged at error).
+  - Order: cache → each provider in order (Gemini models from `GEMINI_MODELS`, then Groq). Every
+    failure is logged at warn with `provider`/`model`/`attempt` and a short error summary (no key).
+  - Retryable: HTTP 429/500/502/503/504, `TimeoutError`/`AbortError`, network codes, `fetch failed`.
+    Anything else (404 model gone, 400, invalid JSON, schema mismatch) moves to the next model at once.
+  - Invalid JSON / schema mismatch = failure of **that model** (not retried, not cached), next model.
+    Answers need ≥ 1 non-blank hint and an approach after sanitizing.
+  - With 3 tries the waits are 1 s and 2 s (4 s would be the 4th try's wait).
+  - Budget: one unit per call attempt, keyed `name:model`. A full budget skips straight to the next
+    provider; if **every** provider was skipped for budget the reason is `AI_BUSY`, else `AI_UNAVAILABLE`.
+    The budget is per process (in memory) and shared by coach and image reading.
+  - Cache key: `problem:<id>` when known, else `text:<sha256>` of NFKC text with whitespace runs
+    collapsed and trimmed (case kept: `n` vs `N` matters). `problemId` without text → cache only,
+    then `NO_INPUT`. Cache read/write errors are warn-logged and treated as miss/skip. Cached entries
+    are re-validated on read (an outdated shape is a miss). Writes are upserts (no E11000).
+  - Sanitizer: tags lower-cased, official topic tags only (`*special` dropped), deduplicated, max 8;
+    rating numeric strings accepted, clamp then round to 100, else `null`; hints ≤ 3, steps ≤ 12,
+    pitfalls ≤ 8, items ≤ 500 chars, approach ≤ 4000, code ≤ 20,000 (indentation kept).
+  - Provider errors are a plain `LlmError` (not an `AppError`): they never leave the module, so no
+    new error code (and no frontend message) was needed.
+  - `extractImageText(buffer, mimeType)` → `{ text, provider, model }` or null (empty text is a
+    failure); null lets Session 10 fall back to tesseract or ask for text.
 
 - **Recommendations + practice (Session 8):**
   - Frequency = **share** (0–1) of rated problems within ±300 of the user's rating with the tag, so
@@ -415,9 +462,16 @@ contestId/index`, title, known tags) because `bulkWrite` skips schema validators
 - Live sync test (Session 6) on Atlas: handle <your handle> linked, first sync
   newSubmissions <N> in <~X> s, second sync newSubmissions 0.
 - sync:problemset (second run): inserted <N> · updated <N>.
+Groq key added, model <name>
 
 ## Next
 
+- Session 10 (stuck): build `createLlm({ env, logger })` once (e.g. in `createServices`), call
+  `getCoachAnswer({ problemId, text, knownTags })`, and on `source: 'fallback'` show the DB fallback
+  (tags, editorial, similar problems, concept gap) with the notice. Use `extractImageText` for
+  screenshots, then tesseract when it returns null. Store `source` in `stuckqueries.source`.
+- Frontend: show "AI busy, try again in a minute" for `AI_BUSY` and the general notice for
+  `AI_UNAVAILABLE`; hints first, full solution on request.
 - Frontend: store the JWT, send `Authorization: Bearer`, and on any 401 `AUTH_*` (except
   `AUTH_INVALID_CREDENTIALS`) clear the token and go to login.
 - Frontend: recommendations page (`GET /recommendations`; show `reason`, a notice for `meta.reason`,
