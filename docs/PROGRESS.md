@@ -225,6 +225,9 @@ Read this first, update it last, every session.
   (`createImageTextExtractor` → `extractImageText`), `llm.module.js` (`createLlm({ env })`).
 - Not wired into `createServices`/routes yet (the stuck module in Session 10 will call `createLlm`).
 - `scripts/checks/coach.js` (`npm run check:coach [-- --fresh]`): one real call on problem 1/A.
+  **Live run (2026-10-30, Atlas):** `gemini-3.8-flash` timed out 3× (20 s each), then
+  `source=ai provider=gemini model=gemini-3.5-flash-lite`, about 67 s in total; tags `math, implementation`,
+  rating 1000, 18-line C++ answer, cached as `problem:1/A`. Groq (`openai/gpt-oss-120b`) not reached.
 - Tests: 178 files, 961 tests (all fakes, no network). Coverage 99.78% lines, 98.94% branches;
   `modules/llm` 100% lines. New helper `tests/helpers/llm.js` (`fakeProvider`, `fakeCache`,
   `coachJson`, `httpError`, `chainOptions`, open/closed budgets).
@@ -466,6 +469,8 @@ Groq key added, model <name>
 
 ## Next
 
+- The worst case of the chain is long (3 × 20 s per model plus backoff). Session 10 should consider a
+  total deadline or 1 try for a model that times out, so a stuck request answers in reasonable time.
 - Session 10 (stuck): build `createLlm({ env, logger })` once (e.g. in `createServices`), call
   `getCoachAnswer({ problemId, text, knownTags })`, and on `source: 'fallback'` show the DB fallback
   (tags, editorial, similar problems, concept gap) with the notice. Use `extractImageText` for
