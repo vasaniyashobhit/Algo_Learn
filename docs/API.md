@@ -172,6 +172,92 @@ Errors: `401 AUTH_REQUIRED` / `AUTH_INVALID_TOKEN` / `AUTH_TOKEN_EXPIRED` (check
 body), `400 VALIDATION_FAILED` for a name outside 2–50 characters, a missing name, or **any
 other field** (e.g. `email`), which is reported as an unrecognized key.
 
+### Problems (public)
+
+No auth needed. Route params: `contestId` is a positive integer without leading zeros
+(`CONTEST_ID_PATTERN`), `index` is 1–3 characters `A-Z`/`0-9` (`PROBLEM_INDEX_PATTERN`, e.g.
+`A`, `B1`, `F2`, `GP1`, `01`); a lowercase index is upper-cased. Bad params →
+`400 VALIDATION_FAILED` with `params.contestId` / `params.index`.
+
+A **problem summary** (lists and similar results, never any statement or editorial text):
+
+```json
+{
+  "id": "1/A", "contestId": 1, "index": "A", "title": "Theatre Square",
+  "rating": 1000, "tags": ["math"], "hasEditorial": true, "source": "hf"
+}
+```
+
+`rating` is `null` when unrated. `source: "cf_api"` rows (about 1,721, added by the problemset
+sync) have tags and a rating but **no statement**; they are always included.
+
+#### `GET /api/v1/problems`
+
+Query (all optional):
+
+| Param | Rules |
+|---|---|
+| `tags` | any of the 37 tags (incl. `*special`); comma list `tags=dp,greedy` and/or repeated `tags=dp&tags=greedy`; max 10; duplicates removed |
+| `matchAll` | `true`/`false` (default `false`: match **any** tag; `true`: must have **all**) |
+| `minRating`, `maxRating` | integers 0–4000, `minRating ≤ maxRating`; unrated problems drop out when either is set |
+| `q` | 1–100 chars, text search on title (weight 3) and description |
+| `page` | integer ≥ 1, default 1 |
+| `limit` | integer 1–50, default 20 |
+
+An empty value (`?limit=`) counts as not given. Order: newest contest first, then index; with
+`q`, text relevance first.
+
+```json
+{
+  "success": true,
+  "data": [<problem summary>, "..."],
+  "meta": { "page": 1, "limit": 20, "total": 11702, "totalPages": 586 }
+}
+```
+
+A page past the end returns `data: []` with the real `total`.
+
+#### `GET /api/v1/problems/:contestId/:index`
+
+The full problem: summary fields plus `description`, `inputFormat`, `outputFormat`, `note`,
+`editorial` (each `""` when missing) and `hasStatement` (`false` when the description is blank,
+e.g. every `cf_api` row). Errors: `404 PROBLEM_NOT_FOUND`.
+
+#### `GET /api/v1/problems/:contestId/:index/similar?k=10&ratingWindow=300`
+
+`k` 1–30 (default 10), `ratingWindow` 50–1000 (default 300). Excludes the problem itself and
+any problem with the exact same title (div1/div2 duplicates).
+
+Score = `0.75 · jaccard + 0.25 · ratingCloseness` (constants in `SIMILARITY`,
+`config/constants.js`). Jaccard is over topic tags (`*special` ignored, 0 if both sides are
+empty). `ratingCloseness = max(0, 1 − |Δrating| / window)`, 0 when a rating is missing.
+Order: score desc, closeness desc, rating distance asc (unrated last), then id.
+
+**Never blank.** Attempts run in order until one returns anything; `meta.strategy` names it:
+
+| `strategy` | When / what |
+|---|---|
+| `primary` | Tags `$in` the problem's topic tags, and rating within ±window when the problem is rated |
+| `widened_window` | Same, window × 2 |
+| `no_rating_filter` | Tags only (still ranked by closeness) |
+| `rating_band` | Untagged (or only `*special`) and rated: any problem within ±200 |
+| `near_user_rating` | Anything, ranked by closeness to the user rating, else the problem rating, else 1200 |
+
+```json
+{
+  "success": true,
+  "data": [{ "<problem summary>": "...", "similarity": { "score": 0.917, "jaccard": 1, "ratingCloseness": 0.667 } }],
+  "meta": {
+    "strategy": "primary", "ratingWindow": 300, "targetRating": 1500, "count": 10,
+    "problem": { "id": "1/A", "title": "Theatre Square", "rating": 1000, "tags": ["math"] }
+  }
+}
+```
+
+`meta.ratingWindow` is the window of the attempt that was used (600 for `widened_window`,
+200 for `rating_band`). `data` is only empty when the database has no other problem.
+Errors: `404 PROBLEM_NOT_FOUND`, `400 VALIDATION_FAILED` (params, `k`, `ratingWindow`).
+
 ### Unknown routes
 
 Any unmatched method or path → `404 ROUTE_NOT_FOUND`, e.g. `"Route GET /api/v1/nope not found"`.

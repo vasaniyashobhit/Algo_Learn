@@ -9,6 +9,20 @@ describe('constants', () => {
     expect(bad.filter((id) => constants.PROBLEM_ID_PATTERN.test(id))).toEqual([]);
   });
 
+  it('PROBLEM_INDEX_PATTERN and CONTEST_ID_PATTERN match route params', () => {
+    expect(['A', 'B1', 'F2', 'GP1', '01'].every((i) => constants.PROBLEM_INDEX_PATTERN.test(i))).toBe(true);
+    expect(['', 'a', 'ABCD', 'A-1'].some((i) => constants.PROBLEM_INDEX_PATTERN.test(i))).toBe(false);
+    expect(['1', '1950', '1000000'].every((c) => constants.CONTEST_ID_PATTERN.test(c))).toBe(true);
+    expect(['0', '01', 'x', '', '12345678'].some((c) => constants.CONTEST_ID_PATTERN.test(c))).toBe(false);
+  });
+
+  it('has similarity weights summing to 1 and a list cap of 50', () => {
+    expect(constants.SIMILARITY).toMatchObject({ jaccardWeight: 0.75, ratingWeight: 0.25, maxK: 30 });
+    expect(constants.SIMILARITY.defaultRatingWindow).toBe(300);
+    expect(constants.PROBLEM_LIST.maxLimit).toBe(50);
+    expect(Object.isFrozen(constants.SIMILARITY) && Object.isFrozen(constants.PROBLEM_LIST)).toBe(true);
+  });
+
   it('has a 30-day LLM cache TTL and a 20k raw-input limit', () => {
     expect(constants.LLM_CACHE_TTL_SECONDS).toBe(2_592_000);
     expect(constants.STUCK_RAW_INPUT_MAX).toBe(20_000);

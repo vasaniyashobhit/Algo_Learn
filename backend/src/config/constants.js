@@ -8,8 +8,33 @@ export const LLM_CACHE_TTL_SECONDS = 30 * DAY_SECONDS;
 /** Stuck-query raw input is truncated to this many characters before it is stored. */
 export const STUCK_RAW_INPUT_MAX = 20_000;
 
-/** Problem id: `<contestId>/<index>`, index 1-3 chars of A-Z/0-9 (e.g. 1/A, 1950/F2, 1723/GP1, 921/01). */
-export const PROBLEM_ID_PATTERN = /^\d+\/[A-Z0-9]{1,3}$/;
+const INDEX_SOURCE = '[A-Z0-9]{1,3}';
+
+/** Problem index: 1-3 chars of A-Z/0-9 (e.g. A, F2, GP1, 01). */
+export const PROBLEM_INDEX_PATTERN = new RegExp(`^${INDEX_SOURCE}$`);
+
+/** Contest id in a route param: a positive integer without leading zeros. */
+export const CONTEST_ID_PATTERN = /^[1-9]\d{0,6}$/;
+
+/** Problem id: `<contestId>/<index>` (e.g. 1/A, 1950/F2, 1723/GP1, 921/01). */
+export const PROBLEM_ID_PATTERN = new RegExp(String.raw`^\d+\/${INDEX_SOURCE}$`);
+
+/** Similar-problem search: score = jaccardWeight · jaccard + ratingWeight · ratingCloseness. */
+export const SIMILARITY = Object.freeze({
+  jaccardWeight: 0.75,
+  ratingWeight: 0.25,
+  defaultK: 10,
+  maxK: 30,
+  defaultRatingWindow: 300,
+  minRatingWindow: 50,
+  maxRatingWindow: 1000,
+  widenFactor: 2,
+  untaggedRatingBand: 200,
+  defaultTargetRating: 1200,
+});
+
+/** GET /problems paging. */
+export const PROBLEM_LIST = Object.freeze({ defaultLimit: 20, maxLimit: 50, maxTags: 10, maxQueryLength: 100 });
 
 export const PROBLEM_SOURCES = Object.freeze(['hf', 'cf_api']);
 export const TOPIC_KINDS = Object.freeze(['single', 'pair']);

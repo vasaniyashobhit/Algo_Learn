@@ -3,6 +3,7 @@ import { healthRouter } from './modules/health/health.routes.js';
 import { metaRouter } from './modules/meta/meta.routes.js';
 import { createAuthRouter } from './modules/auth/auth.routes.js';
 import { createUsersRouter } from './modules/users/users.routes.js';
+import { problemsRouter } from './modules/problems/problems.routes.js';
 
 export const API_BASE_PATH = '/api/v1';
 
@@ -14,5 +15,6 @@ export const createApiRouter = ({ auth, authRateLimit }) => {
   router.use('/meta', metaRouter);
   router.use('/auth', createAuthRouter({ authService, requireAuth, rateLimit: authRateLimit }));
   router.use('/users', createUsersRouter({ requireAuth }));
+  router.use('/problems', problemsRouter);
   return router;
 };

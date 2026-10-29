@@ -117,7 +117,49 @@ Read this first, update it last, every session.
     "no longer available to new users". The suggested replacements: `gemini-3.5-flash-lite` OK
     (about 17 s); `gemini-3.8-flash` exists but answered 504/503 "high demand" (temporary).
 
+### Session 5 (2026-10-29) — Problem browsing + never-blank similar search
+
+- `config/constants.js`: `PROBLEM_INDEX_PATTERN` (`^[A-Z0-9]{1,3}$`), `CONTEST_ID_PATTERN`
+  (`^[1-9]\d{0,6}$`); `PROBLEM_ID_PATTERN` is now built from the same index source.
+  `SIMILARITY` (weights 0.75/0.25, k 10 / max 30, window 300 (50–1000), widen ×2, untagged band
+  ±200, default target 1200) and `PROBLEM_LIST` (limit 20 / max 50, max 10 tags, q ≤ 100).
+- `modules/problems/helpers/`: `similarity.js` (`topicTagsOf`, `jaccard`, `ratingCloseness`,
+  `similarityScore`), `similarPipeline.js` (pure aggregation builder), `fallbackPlan.js`
+  (`planAttempts`, `STRATEGIES`), `listQuery.js` (trusted find filter + sort),
+  `problemView.js` (`toProblemSummary`, `toProblemDetail`, `SUMMARY_FIELDS`).
+- `problems.service.js` (`list`, `getById`, `findSimilar`, `findSimilarToProblem`, `problemId`),
+  `problems.schema.js`, `problems.controller.js`, `problems.routes.js` (public), mounted at `/problems`.
+- Endpoints: `GET /problems`, `GET /problems/:contestId/:index`,
+  `GET /problems/:contestId/:index/similar` (documented in `docs/API.md`). No new error codes.
+- Tests: 88 files, 510 tests (memory server). Coverage 99.5% lines, 98.6% branches. New helper
+  `tests/helpers/problems.js` (`problemAt`, `seedProblems`, `insertCfApiStub` writes a raw
+  bulkWrite-style row with no defaults). A parity test checks pipeline scores against the JS helpers.
+- **Atlas is reachable again** (`npm run check:atlas` passed: counts, spot checks, `$text`).
+  Read-only smoke test of the service on Atlas (11,702 problems): similar for `1723/GP1`, a 2000+
+  multi-tag problem and a `cf_api` row all returned `primary` results (~290 ms warm, ~1 s first
+  call); `list` with `q` + tags ~100 ms.
+
 ## Decisions
+
+- **Problems / similar search (Session 5):**
+  - Fallbacks advance only when an attempt returns **zero** results (not when it returns < k).
+    Order: primary → widened ×2 → no rating filter (tagged input) / ±200 band (untagged, rated)
+    → near rating (no filter). The last attempt is empty only if nothing is left in the DB.
+  - "Near the user's rating" target = `userRating` (optional service input, for later callers
+    like stuck/recommendations) → problem rating → 1200 (`SIMILARITY.defaultTargetRating`).
+  - The closeness used for scoring is the attempt's own window (600 when widened, 200 in the band).
+  - Sort tie-break uses the absolute rating distance (unrated last) after closeness, so ranking
+    still means "nearest" outside the window (closeness is 0 there).
+  - Title duplicates are excluded inside the pipeline (`title $nin`), no extra query.
+  - Responses use `id` (not `_id`), like users. `toProblemSummary`/`toProblemDetail` fill
+    defaults because bulkWrite-inserted `cf_api` rows have no `description`/`editorial`/`hasEditorial`.
+    Detail adds `hasStatement`.
+  - List order: newest contest first (`contestId` desc, `index` asc); with `q`, textScore first.
+    No new index (an in-memory sort of ≤ 12k docs is fine for now).
+  - Query blanks (`?limit=`) count as missing; tags accept a comma list and repeated params.
+    Listing may filter by `*special`; similar search ignores it.
+  - Index params are upper-cased before validation (`/problems/4/b1` → `4/B1`).
+  - Pipeline stages only use zod-validated values, our constants, or values read from our DB.
 
 - **Auth (Session 4):**
   - `createApp()` now **requires** `auth.jwtSecret` (throws `TypeError` otherwise). No default secret.
@@ -215,8 +257,8 @@ Read this first, update it last, every session.
 
 ## Blockers
 
-- **Atlas unreachable from this machine** (pre-Session-5 check): add the current IP in Atlas →
-  Network Access, then run `npm run check:atlas` and `npm run check:server`.
+- ~~Atlas unreachable~~: reachable again in Session 5 (`check:atlas` passed). `npm run check:server`
+  against Atlas has still not been run.
 - **Gemini models retired:** set `GEMINI_MODELS=gemini-3.8-flash,gemini-3.5-flash-lite` in
   `backend/.env` (and `.env.example`), then `npm run check:gemini`.
 - Rule "add a code on both sides in the same session": the frontend doesn't exist yet, so
@@ -230,8 +272,12 @@ Read this first, update it last, every session.
   `AUTH_INVALID_CREDENTIALS`) clear the token and go to login.
 - Session 6 (CF handle linking/sync) mounts under `/users/me/...` and reuses `requireAuth` from
   `createApiRouter({ auth })`.
-- `npm run sync:problemset` has not been run against the real Codeforces API yet (only tested
-  with a fake client). Run it once and record the summary.
+- Atlas now holds 11,702 problems (9,981 hf + 1,721 cf_api), so the problemset sync has been run;
+  record its summary here if it is still available.
+- Frontend: the problem list uses `meta.total/totalPages`; the similar view should show a short
+  notice when `meta.strategy` is not `primary` (results are a broader fallback).
+- Later callers of `findSimilar` (stuck, recommendations) should pass `userRating` and their own
+  `excludeIds` (e.g. solved problems).
 - Session 6 uses `createCodeforcesClient().userInfo` / `.userStatus`; share one client (one
   limiter) per process so all CF calls respect the 2.1 s spacing together.
 - When a feature service queries with operators, wrap them in `mongoose.trusted()` (see Decisions).
