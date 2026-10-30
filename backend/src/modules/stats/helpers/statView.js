@@ -11,4 +11,5 @@ export const toTopicStatView = (doc) => ({
   avgSolvedRating: doc.avgSolvedRating ?? null,
   maxSolvedRating: doc.maxSolvedRating ?? null,
   lastActivityAt: doc.lastActivityAt ?? null,
+  lastResults: (doc.lastResults ?? []).map(({ problemId, solved }) => ({ problemId, solved })),
 });

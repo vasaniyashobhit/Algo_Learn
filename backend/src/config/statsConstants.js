@@ -17,6 +17,7 @@ export const STATS = Object.freeze({
   comfortWindowDays: 365,
   comfortTopN: 5,
   comfortMinSolves: 3,
+  lastResults: 5,
 });
 
 /** GET /users/me/stats and /stats/summary. Rating bands are [from, from + bandSize − 1]. */

@@ -1,3 +1,4 @@
+import { STATS } from '../../../config/constants.js';
 import { comfortRating } from './comfortRating.js';
 import { strength } from './strength.js';
 
@@ -10,6 +11,7 @@ export const emptyTotals = (topicKey, kind) => ({
   solvedScore: 0,
   failScore: 0,
   solves: [],
+  results: [],
   lastActivityAt: null,
 });
 
@@ -18,6 +20,7 @@ export const addProblem = (totals, problem, { solvedScore, failScore }) => {
   totals.attempted += 1;
   totals.solvedScore += solvedScore;
   totals.failScore += failScore;
+  totals.results.push({ problemId: problem.problemId, solved: problem.solved, at: problem.lastAt });
   if (problem.solved) {
     totals.solved += 1;
     if (Number.isFinite(problem.rating)) totals.solves.push({ rating: problem.rating, at: problem.lastAt });
@@ -25,6 +28,13 @@ export const addProblem = (totals, problem, { solvedScore, failScore }) => {
   if (!totals.lastActivityAt || problem.lastAt > totals.lastActivityAt) totals.lastActivityAt = problem.lastAt;
   return totals;
 };
+
+/** The newest `limit` attempted problems, newest first (ties by id so the order is stable). */
+export const lastResults = (results, limit = STATS.lastResults) =>
+  results
+    .toSorted((a, b) => b.at - a.at || a.problemId.localeCompare(b.problemId))
+    .slice(0, limit)
+    .map(({ problemId, solved }) => ({ problemId, solved }));
 
 const mean = (values) => values.reduce((sum, value) => sum + value, 0) / values.length;
 
@@ -42,5 +52,6 @@ export const toTopicStatDoc = (totals, userRating, now) => {
     comfortRating: comfortRating(totals.solves, userRating, now),
     strength: strength(totals.solvedScore, totals.failScore),
     lastActivityAt: totals.lastActivityAt,
+    lastResults: lastResults(totals.results),
   };
 };

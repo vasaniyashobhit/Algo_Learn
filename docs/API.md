@@ -265,9 +265,16 @@ A **topic stat**:
   "topicKey": "bitmasks+dp", "kind": "pair", "tags": ["bitmasks", "dp"],
   "attempted": 7, "solved": 5, "failed": 2, "strength": 0.6412,
   "comfortRating": 1700, "avgSolvedRating": 1620, "maxSolvedRating": 1900,
-  "lastActivityAt": "2026-10-20T18:03:11.000Z"
+  "lastActivityAt": "2026-10-20T18:03:11.000Z",
+  "lastResults": [{ "problemId": "1950/F2", "solved": false }, { "problemId": "1902/D", "solved": true }]
 }
 ```
+
+- `lastResults` (Session 14): up to **5** most recent attempted problems in this topic key, newest
+  first (by the problem's last submission; ties by id), each `{ problemId, solved }` (`solved` = any
+  `OK` ever). Stored on the topicstat doc by the recompute (`STATS.lastResults`); `[]` for docs
+  written before Session 14 until the next sync. Returned by `GET /users/me/stats` (single and pair)
+  and inside the summary's `strongest`/`weakest`. The dashboard draws them as the "Last 5" marks.
 
 #### `GET /api/v1/users/me/stats?kind=single&sort=strength&limit=50`
 
@@ -771,7 +778,8 @@ is a string), `cfRating`, `cfMaxRating`, `lastSyncedAt`, `lastSubmissionId`,
 `userId`, `topicKey` (`dp` or a pair key like `bitmasks+dp`), `kind` (`single` \| `pair`,
 must match the key), `attempted`, `solved`, `failed` (default 0), `avgSolvedRating`,
 `maxSolvedRating`, `comfortRating` (default `null`), `strength` (0..1, default 0),
-`lastActivityAt`. Unique `{userId, topicKey}`. Rewritten after every sync by
+`lastActivityAt`, `lastResults` (`[{ problemId, solved }]`, newest first, max 5, default `[]`).
+Unique `{userId, topicKey}`. Rewritten after every sync by
 `recomputeForUser` (one `bulkWrite`: delete this user's keys that are no longer present, then
 upsert-replace every current key).
 

@@ -8,17 +8,19 @@ describe('toTopicStatView', () => {
     const view = toTopicStatView({
       _id: 'x', userId: 'u', topicKey: 'bitmasks+dp', kind: 'pair', attempted: 4, solved: 3, failed: 1,
       strength: 0.7, comfortRating: 1600, avgSolvedRating: 1500, maxSolvedRating: 1700, lastActivityAt: at,
+      lastResults: [{ problemId: '1/A', solved: true, _id: 'internal' }],
     });
     expect(view).toEqual({
       topicKey: 'bitmasks+dp', kind: 'pair', tags: ['bitmasks', 'dp'], attempted: 4, solved: 3, failed: 1,
       strength: 0.7, comfortRating: 1600, avgSolvedRating: 1500, maxSolvedRating: 1700, lastActivityAt: at,
+      lastResults: [{ problemId: '1/A', solved: true }],
     });
   });
 
   it('fills defaults for missing fields', () => {
     expect(toTopicStatView({ topicKey: 'dp', kind: 'single' })).toEqual({
       topicKey: 'dp', kind: 'single', tags: ['dp'], attempted: 0, solved: 0, failed: 0,
-      strength: 0, comfortRating: null, avgSolvedRating: null, maxSolvedRating: null, lastActivityAt: null,
+      strength: 0, comfortRating: null, avgSolvedRating: null, maxSolvedRating: null, lastActivityAt: null, lastResults: [],
     });
   });
 });
