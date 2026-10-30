@@ -1,0 +1,59 @@
+/* Motion and texture effects that CSS does better than JS: the skeleton sweep, the button
+   spinner and the floodlight beams. All of them stop under prefers-reduced-motion. */
+.skeleton {
+  display: block;
+  background: repeating-linear-gradient(110deg, var(--band-2) 0 30%, var(--line) 40%, var(--band-2) 50% 100%) 0 0 / 250% 100%;
+  animation: sweep var(--dur-sweep) linear infinite;
+}
+
+.skeleton[data-motion='off'] { animation: none; background: var(--band-2); }
+
+@keyframes sweep { to { background-position: -250% 0; } }
+
+.spinner {
+  display: inline-block;
+  width: 1em;
+  height: 1em;
+  border: 2px solid currentColor;
+  border-right-color: transparent;
+  border-radius: 50%;
+  animation: spin 700ms linear infinite;
+}
+
+@keyframes spin { to { rotate: 360deg; } }
+
+.beam {
+  position: absolute;
+  top: 0;
+  width: 22%;
+  height: 140%;
+  background: var(--band);
+  transform-origin: top;
+}
+
+.beam:nth-child(1) { left: 6%; rotate: 18deg; opacity: 0.9; }
+.beam:nth-child(2) { left: 44%; rotate: -8deg; background: var(--band-2); opacity: 0.55; }
+.beam:nth-child(3) { right: 4%; rotate: -22deg; opacity: 0.8; }
+
+/* Sonner toasts drawn as broadcast straps in both themes. */
+[data-sonner-toaster] [data-sonner-toast] {
+  border-radius: var(--cut);
+  border: 1px solid var(--line);
+  background: var(--band);
+  color: var(--ink);
+  font-family: var(--font-ui);
+  box-shadow: var(--shadow), inset 0 3px 0 var(--ink-soft);
+}
+
+[data-sonner-toaster] [data-sonner-toast][data-type='error'] { box-shadow: var(--shadow), inset 0 3px 0 var(--miss); }
+[data-sonner-toaster] [data-sonner-toast][data-type='success'] { box-shadow: var(--shadow), inset 0 3px 0 var(--plate); }
+[data-sonner-toaster] [data-sonner-toast] [data-description] { color: var(--ink-soft); }
+
+@media (prefers-reduced-motion: reduce) {
+  *, *::before, *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+  }
+  .skeleton { animation: none; background: var(--band-2); }
+}

@@ -1,5 +1,7 @@
 import js from '@eslint/js';
 import globals from 'globals';
+import react from 'eslint-plugin-react';
+import reactHooks from 'eslint-plugin-react-hooks';
 
 const forbiddenSyntax = [
   {
@@ -52,6 +54,19 @@ export default [
       'no-restricted-syntax': ['error', ...forbiddenSyntax],
       eqeqeq: ['error', 'always'],
       'no-unused-vars': ['error', { argsIgnorePattern: '^_', caughtErrors: 'all' }],
+    },
+  },
+  {
+    files: ['frontend/**/*.{js,jsx}'],
+    languageOptions: {
+      parserOptions: { ecmaFeatures: { jsx: true } },
+      globals: { ...globals.browser },
+    },
+    plugins: { react, 'react-hooks': reactHooks },
+    rules: {
+      'react/jsx-uses-vars': 'error',
+      'react-hooks/rules-of-hooks': 'error',
+      'react-hooks/exhaustive-deps': 'error',
     },
   },
 ];

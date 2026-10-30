@@ -1,0 +1,26 @@
+<!doctype html>
+<html lang="en" data-theme="dark">
+  <head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <meta name="color-scheme" content="dark light">
+    <meta name="description" content="AlgoLearn: your Codeforces strength per topic, hints when you are stuck, and the next problem to solve.">
+    <link rel="icon" href="/favicon.svg" type="image/svg+xml">
+    <title>AlgoLearn</title>
+    <!-- Set the theme before any CSS paints so the wrong theme never flashes. Mirrors src/lib/theme.js. -->
+    <script id="theme-boot">
+      (() => {
+        let saved = null;
+        try { saved = localStorage.getItem('algolearn-theme'); } catch { saved = null; }
+        const system = window.matchMedia?.('(prefers-color-scheme: light)').matches ? 'light' : 'dark';
+        const theme = saved === 'light' || saved === 'dark' ? saved : system;
+        document.documentElement.dataset.theme = theme;
+        document.documentElement.style.colorScheme = theme;
+      })();
+    </script>
+  </head>
+  <body>
+    <div id="root"></div>
+    <script type="module" src="/src/main.jsx"></script>
+  </body>
+</html>

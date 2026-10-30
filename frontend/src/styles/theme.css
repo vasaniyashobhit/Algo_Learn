@@ -1,0 +1,34 @@
+/* Tailwind v4 configuration: utilities read the token variables, so both themes switch
+   by changing data-theme only (e.g. bg-band, text-ink-soft, font-display). */
+@theme inline {
+  --color-ground: var(--ground);
+  --color-band: var(--band);
+  --color-band-2: var(--band-2);
+  --color-line: var(--line);
+  --color-ink: var(--ink);
+  --color-ink-soft: var(--ink-soft);
+  --color-plate: var(--plate);
+  --color-plate-ink: var(--plate-ink);
+  --color-plate-text: var(--plate-text);
+  --color-figure: var(--figure);
+  --color-chalk: var(--chalk);
+  --color-chalk-ink: var(--chalk-ink);
+  --color-miss: var(--miss);
+  --color-chalk-miss: var(--chalk-miss);
+  --color-focus: var(--focus);
+
+  --font-display: var(--font-display);
+  --font-ui: var(--font-ui);
+  --font-sans: var(--font-ui);
+
+  --text-step--1: var(--step--1);
+  --text-step-0: var(--step-0);
+  --text-step-1: var(--step-1);
+  --text-step-2: var(--step-2);
+  --text-step-3: var(--step-3);
+  --text-step-4: var(--step-4);
+
+  --radius-cut: var(--cut);
+  --shadow-panel: var(--shadow);
+  --ease-broadcast: var(--ease);
+}

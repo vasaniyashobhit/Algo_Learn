@@ -312,11 +312,56 @@ Read this first, update it last, every session.
     count-ups, all switched off by `prefers-reduced-motion`, plus a light/dark Theme toggle.
 - `eslint.config.js` ignores `frontend/mockups/**` (reference only). No React was built.
 
+### Session 12 (2026-10-30) — React foundation in direction B, landing + auth
+
+- User chose **direction B · Scorecard** (dark default, light via toggle). Recorded in
+  `frontend/DESIGN.md` ("The Floodlit Scorecard"): tokens for both themes, type, spacing, radius,
+  shadow, motion (380 ms wipe, 45 ms stagger, 96% press). Impeccable choice ping sent.
+- `frontend/` scaffolded: Vite 7 + React 19, React Router 7 (data router), TanStack Query 5, axios,
+  motion, react-hook-form + zod 4, sonner, Tailwind v4 (`@theme inline` in `styles/theme.css` reads the
+  token variables), self-hosted Barlow / Barlow Condensed (@fontsource). Vite proxies `/api` to :4000;
+  vendor chunks split. Vitest 3.2 + RTL + MSW 2 + jsdom with coverage thresholds lines 80 / branches 75
+  (now 100 / 98). `frontend/.env.example` has `VITE_API_URL`.
+- Root ESLint: a frontend block with browser globals, JSX, `react/jsx-uses-vars`, rules-of-hooks and
+  exhaustive-deps (`eslint-plugin-react` and `eslint-plugin-react-hooks` added at the root).
+- Theme: an inline boot script in `index.html` sets `data-theme` before paint (saved choice, else
+  system, else dark). `ThemeProvider` follows live system changes until a choice is saved. `ThemeToggle`.
+- API: `api/client.js` (Bearer token from `lib/authStore`, 15 s default timeout, per-request override,
+  every failure → `ApiError`). A 401 `AUTH_TOKEN_EXPIRED`/`AUTH_INVALID_TOKEN` on a request that sent a
+  token logs out and goes to `/login` with a "session expired" note. Errors: `errors/codes.js` (27
+  codes; a test compares it with the backend list and the API.md table), `getUserMessage` (context
+  overrides, params, network/timeout/status/generic fallbacks), messages for every code.
+- Components: ui (Button, Input, Card, Tag, Skeleton, Notice, EmptyState, ErrorState, Spinner,
+  AppToaster), motion (Pressable, Wipe, FadeIn, StaggerList/Item, ParallaxLayer, PageTransition,
+  CountUp; each has a reduced-motion branch), layout (AppShell, Navbar score bug, AccountMenu,
+  ProtectedRoute, PageSkeleton, ErrorBoundary, RouteError, CrashScreen).
+- Pages: landing (floodlight beams + scoreboard parallax planes; the board is labelled "Topic
+  strength" with a "Scoreboard" caption and is a real table), /login and /signup (zod mirrors the
+  backend rules, VALIDATION_FAILED details inline, AUTH_EMAIL_TAKEN on the email field, specific
+  AUTH_INVALID_CREDENTIALS and RATE_LIMITED text), auth state (token in localStorage behind
+  try/catch, /auth/me on load with a page skeleton), logout, 404, and a placeholder /dashboard.
+- **Low-contrast warning from the B fallback mockup: fixed and measured.** In the mockup, the button
+  on the yellow plate turned the theme ink on hover (navy on navy in light mode). The real `Button` has
+  an `onPlate` variant (Plate Ink in both themes; hover is a Plate Ink fill with plate-yellow text),
+  used with `Notice tone="plate"`. `src/styles/tokens.test.js` measures 19 text/background pairs per
+  theme from tokens.css. Light `--miss` was deepened to #a33412 (it was 4.12:1 on band-2), and new
+  `--chalk-miss` and `--figure` tokens cover weak rows on the board and the big auth figure.
+- Bug found by tests and fixed: logging out from a protected page landed on /login (the route
+  redirected before the navigation home). `useLogout` now navigates first, then clears the token.
+- Checked in headless Chrome at 1366 and 760 px in both themes (landing, login, 404).
+
 ## Decisions
 
-- **Design direction (Session 11):** **Waiting for the user to choose a direction** (A, B or C, or
-  a mix stated explicitly). After the choice: write the direction contract to the surface brief, build
-  React from the chosen mockup, then write DESIGN.md from the built result.
+- **Design direction (Session 12):** the user chose **direction B · Scorecard**. Dark is the default;
+  light is available from the navbar toggle (system preference first, saved choice in localStorage).
+  Every cricket-style element gets a plain-language label with the cricket name as a small caption,
+  plus a table or text alternative. Desktop-first (1024px+): no mobile layout yet, but grids collapse
+  below 860px so nothing breaks. `frontend/DESIGN.md` is the source of truth; mockups stay reference only.
+- **Frontend conventions (Session 12):** tests sit next to their source (`*.test.jsx`). Motion
+  primitives expose `data-motion="on|off"` for tests. Tailwind colour classes for idle and active
+  states live in separate strings, never as two competing utilities on one element. Signup sends
+  name/email/password only (the API has no handle field on signup), so the Codeforces handle is linked
+  later on the dashboard. Only the session-ending 401 codes log the user out.
 
 - **Stuck flow (Session 10):**
   - ~~Image reading and the coach each get their own 40 s deadline~~ (Fix-up 10.5: one shared 50 s
@@ -567,7 +612,7 @@ contestId/index`, title, known tags) because `bulkWrite` skips schema validators
 
 ## Blockers
 
-- Frontend error messages for all backend codes (incl. DB_UNAVAILABLE): handled in Session 12.
+- None. (Frontend messages for all 27 backend codes, incl. DB_UNAVAILABLE, were added in Session 12.)
 
 ## Resolved (done by the human outside sessions)
 
@@ -584,8 +629,13 @@ contestId/index`, title, known tags) because `bulkWrite` skips schema validators
 
 ## Next
 
-- **Choose a design direction** from `frontend/mockups/` (`npx serve frontend/mockups`), then the
-  React sessions follow the chosen one. Product name in the UI is AlgoLearn.
+- **Dashboard session:** replace the placeholder `DashboardPage` with direction B's dashboard:
+  - the wagon-wheel topic chart, labelled "Topic strength";
+  - the weak-topics "Batting card" with last-5 marks;
+  - the 30-day "overs" strip.
+
+  Each one needs a table alternative. Add the handle form and "Sync now" too. Use
+  `Notice tone="plate"` + `Button variant="onPlate"` for the screen's one plate notice.
 
 - ~~Live stuck check~~ done in Fix-up 10.5 (`npm run check:stuck`, table above). Groq was not reached
   (the first Gemini model answered every time); its order is covered by tests only.
