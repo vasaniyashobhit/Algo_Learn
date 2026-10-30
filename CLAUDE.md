@@ -7,6 +7,7 @@ user is stuck (practice/upsolving only), and recommends the next topic and probl
 **Product source of truth:** `docs/PROJECT_BRIEF.md`. Read it at the start of every session.
 **Progress log:** `docs/PROGRESS.md`. Read it first, update it last, every session.
 **API contract:** `docs/API.md`. Backend sessions keep it current; frontend sessions follow it.
+**Deployment:** `docs/DEPLOY.md` (Render, Vercel, Atlas, external cron).
 
 ## Stack override (this file wins over the brief)
 
@@ -33,7 +34,8 @@ Do **not** create Spring Boot, Python or PostgreSQL code.
 /                    npm workspaces root (package.json, eslint config, CLAUDE.md)
 ├─ docs/             PROJECT_BRIEF.md, PROGRESS.md, API.md
 ├─ backend/          Express API  → see backend/CLAUDE.md
-└─ frontend/         React app    → see frontend/CLAUDE.md (+ PRODUCT.md, DESIGN.md from Impeccable)
+├─ frontend/         React app    → see frontend/CLAUDE.md (+ PRODUCT.md, DESIGN.md from Impeccable)
+└─ e2e/              Playwright specs + test backend (fakes, behind E2E=1); see README.md
 ```
 
 ## Hard rules (apply everywhere, no exceptions)
@@ -93,3 +95,5 @@ Do **not** create Spring Boot, Python or PostgreSQL code.
 - `npm run dev` — backend and frontend together (concurrently)
 - `npm test` — all workspace tests
 - `npm run lint` — ESLint on all workspaces
+- `npm run build` — frontend production build
+- `npm run e2e` — Playwright end-to-end tests (`npx -w e2e playwright install chromium` once)

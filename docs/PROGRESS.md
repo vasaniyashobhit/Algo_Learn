@@ -442,6 +442,60 @@ Read this first, update it last, every session.
   hint buttons stacked (now one row), an empty line-coloured gap cell at 760 px (`auto-fit`), a
   doubled 3px rule on list tables, and the nav wrapping "I'm stuck".
 
+### Session 15 (2026-10-30) — Final: Impeccable audit/harden/animate/polish, perf, e2e, production, docs
+
+- **Audit** (rendered: production build + test backend, every route at 1366 and 390 px, both themes,
+  Impeccable detector over CDP). Scores before fixes: a11y 3, performance 2, theming 4, responsive 1,
+  integrity 3 (13/20). Fixed: **every page scrolled sideways on phones** (99 px; history 186 px). The
+  score bug now wraps below 860 px (links on their own scrollable row with an edge fade, the current
+  link scrolled into view by `useActiveIntoView`, the name hidden under 520 px); wide tables sit in
+  `.scroll-x` boxes (positioned, so `sr-only` text cannot escape them); `body { overflow-x: clip }`
+  as a safety net. The empty-state figure was 1.5:1 (Line on Band): now Ink Soft at step 4.
+  Not changed: the detector's "cream palette" on light mode (pinned in DESIGN.md) and one 89-char
+  line on the fallback strap (inside the 68ch body rule).
+- **Harden:** pasted titles are clamped (history 2 lines, result strap 3 lines, `overflow-wrap:
+  anywhere`, full text in `title`). Checked a 200-char unbroken paste, a long name with emoji, the
+  dashboard with `/stats` failing (error + reference + retry, recommendations still shown) and with
+  recommendations offline: no overflow, never blank.
+- **Animate:** motion language kept (wipes, 96% press, parallax planes). The global reduced-motion
+  `0.01ms` kill was removed (it also erased colour/hover feedback); instead `Wipe` fades in over
+  160 ms (`.reduced-enter`), pressed buttons dim to 0.78, the skeleton sweep stops, the spinner slows.
+  Verified in a real browser by `e2e/tests/motion.spec.js`.
+- **Polish:** type sizes consolidated: new `--step-lead` 1.08rem (was 1.05/1.06/1.08/1.1), row titles
+  on step 1 (was 1.15/1.2), badge text raised to the step -1 floor (was 0.7/0.75). DESIGN.md updated.
+  Detector advisories 43 → 22 (the rest are the documented in-row figures).
+- **Performance:** every signed-in page is a `React.lazy` chunk (`lib/lazyPages.js`) behind
+  `Suspense` with a page-shaped skeleton (`RouteFallback` + the page's skeleton); landing, auth and
+  404 stay in the entry. Initial JS **~496 → ~255 kB gzip**; charts (100 kB) and markdown/KaTeX
+  (120 kB + its CSS) load only on their pages. After login/signup, `usePrefetchDashboard` loads the
+  dashboard chunk and its four queries (shared `*Options` factories keep the keys identical).
+- **E2E:** new `e2e/` workspace (Playwright 1.64, Chromium). `server/start.js` refuses to run without
+  `E2E=1`: in-memory MongoDB, 24 seeded problems, a fake Codeforces client (any `e2e_*` handle, a
+  25-submission history with its own id range per handle) and the real coach chain around a fake
+  provider (`AI-OUTAGE` in the text makes it fail). Playwright builds the frontend and runs
+  `vite preview` (proxy target from `VITE_API_PROXY`). 10 tests: signup → link → first sync → stats
+  (14 solved), unknown handle, optimistic add (request held) + rollback, stuck → 3 hints → full
+  solution, AI fallback, history delete with Undo then the real DELETE, press/parallax/reduced
+  motion. Found by looking at screenshots: my fake first reused submission ids across handles, so
+  only the first synced user got data, and the first dashboard test only checked tiles existed.
+- **Production:** `/health` now reports `db` (`ok`/`degraded`, always 200); new `/health/ready`
+  answers 503 `DB_UNAVAILABLE` until MongoDB is connected. `CLIENT_URL` drops a trailing slash.
+  helmet, CORS to CLIENT_URL only, `trust proxy` 1 in production and no stacks in production were
+  already in place and are tested. `frontend/vercel.json`: SPA rewrite, immutable `/assets`, basic
+  security headers. `.github/workflows/ci.yml`: lint + unit tests + build, then the e2e job.
+- **Docs:** `README.md` (purpose, Mermaid architecture, setup, env vars, scripts, testing,
+  limitations) and `docs/DEPLOY.md` (Atlas, Render, Vercel, cron-job.org warm-up + sync jobs).
+- Frontend `testTimeout` 10 s (the sync flow test crossed 5 s under full parallel load).
+- Totals: backend 1238 tests, frontend 111 files / 553 tests (99.7% lines, 95.7% branches),
+  e2e 10. Lint, unit tests, build and e2e green.
+
+## Final status (end of Session 15)
+
+All 15 sessions are done. The app is feature-complete for the brief's core scope and ready to
+deploy (`docs/DEPLOY.md`). Open items are optional: the solved-by-rating bands on the dashboard,
+a backfill of `lastResults` for old topic stats (they fill on the next sync), a per-hour quota
+figure on /stuck, C++ validation of AI code, and tracking other platforms.
+
 ## Decisions
 
 - **Stuck / problems / history (Session 14):**
@@ -748,7 +802,7 @@ contestId/index`, title, known tags) because `bulkWrite` skips schema validators
 - ~~Dashboard session~~ done in Session 13 (wagon wheel, batting card, overs strip, handle form, Sync now).
 - ~~Practice "I solved it"~~ and ~~problem detail page~~ done in Session 14. Still open: the summary's
   solved-by-rating bands are not drawn yet; existing topicstat docs get `lastResults` on their next sync.
-- Session 15: a polish/audit pass; consider lazy-loading the `markdown` chunk (KaTeX, ~120 kB gzip)
+- ~~Session 15: a polish/audit pass; lazy-load the `markdown` chunk~~ done (route-level splitting). Still open:
   only on stuck/problem pages, and a per-hour quota figure on /stuck if the API exposes it.
 - ~~Live stuck check~~ done in Fix-up 10.5 (`npm run check:stuck`, table above). Groq was not reached
   (the first Gemini model answered every time); its order is covered by tests only.
@@ -782,7 +836,7 @@ contestId/index`, title, known tags) because `bulkWrite` skips schema validators
 - ~~Frontend: handle form~~ (Session 13). Was: handle form (PUT/DELETE `/users/me/handle`), a "Sync now" button (POST
   `/users/me/sync`, show `SYNC_IN_PROGRESS` / `CF_UNAVAILABLE` / `RATE_LIMITED` (20 s cooldown)
   notices), and `lastSyncedAt`.
-- Deploy: point an external scheduler at `POST /api/v1/internal/sync-all` with `x-cron-secret`.
+- Deploy: point an external scheduler at `POST /api/v1/internal/sync-all` with `x-cron-secret` (steps in `docs/DEPLOY.md`).
 - When a feature service queries with operators, wrap them in `mongoose.trusted()` (see Decisions).
 
 docs/PROGRESS.md: Pre-Session-5 Atlas checks: all PASS (11,702 problems, indexes in sync, server flow OK) — run on a non-college network; college Wi-Fi blocks port 27017
