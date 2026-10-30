@@ -1,36 +1,26 @@
-import { FadeIn } from '../components/motion/FadeIn.jsx';
-import { Button } from '../components/ui/Button.jsx';
-import { EmptyState } from '../components/ui/EmptyState.jsx';
-import { useAuth } from '../hooks/useAuth.js';
+import { DashboardPanels } from '../components/dashboard/DashboardPanels.jsx';
+import { DashboardTop } from '../components/dashboard/DashboardTop.jsx';
+import { RecommendationsSection } from '../components/recommendations/RecommendationsSection.jsx';
+import { statsReason, useStatsSummaryQuery } from '../hooks/queries/stats.queries.js';
 import { usePageTitle } from '../hooks/usePageTitle.js';
 
-/** Signed-in home. The topic card, handle linking and sync arrive in the dashboard session. */
+/**
+ * Signed-in home. One plate per screen: the handle hero without a handle, the first-sync
+ * notice before the first sync, otherwise the lead next topic.
+ */
 export const DashboardPage = () => {
   usePageTitle('Dashboard');
-  const { user } = useAuth();
+  const summary = useStatsSummaryQuery();
+  const reason = statsReason(summary);
+  const synced = summary.isSuccess && reason === null;
+
   return (
-    <div className="wrap pt-6 pb-16">
-      <FadeIn>
-        <h1>Dashboard</h1>
-        <p className="text-ink-soft">
-          Signed in as <span className="text-ink">{user?.name}</span> ({user?.email}).
-        </p>
-      </FadeIn>
-      <EmptyState
-        figure="0"
-        title="Your topic card will appear here"
-        className="mt-6"
-        action={
-          <Button variant="outline" to="/">
-            Back to the start
-          </Button>
-        }
-      >
-        <p>
-          Linking a Codeforces handle and syncing your submissions are being built next. Once they are ready, this
-          page shows your strength per topic and the next problems to solve.
-        </p>
-      </EmptyState>
+    <div className="pb-16">
+      <DashboardTop summary={summary} reason={reason} />
+      <div className="wrap">
+        {synced && <DashboardPanels />}
+        <RecommendationsSection plateLead={synced} />
+      </div>
     </div>
   );
 };

@@ -23,4 +23,13 @@ describe('Input', () => {
     expect(input).toHaveAccessibleDescription('8+ characters Use at least 8 characters');
     expect(screen.getByText('Use at least 8 characters')).toHaveAttribute('id', 'pw-error');
   });
+
+  it('on the plate uses Plate Ink for label and error, with a × so colour is not the signal', () => {
+    render(<Input tone="plate" label="Codeforces handle" error="We couldn't find that handle" />);
+    expect(screen.getByText('Codeforces handle')).toHaveClass('text-plate-ink');
+    const error = screen.getByText("We couldn't find that handle");
+    expect(error).toHaveClass('text-plate-ink');
+    expect(error).toHaveTextContent("× We couldn't find that handle");
+    expect(screen.getByLabelText('Codeforces handle')).toHaveAccessibleDescription(/We couldn't find that handle/);
+  });
 });

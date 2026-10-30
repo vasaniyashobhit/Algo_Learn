@@ -30,8 +30,8 @@ describe('SignupForm', () => {
   it('creates the account and opens the dashboard', async () => {
     const { router } = renderApp('/signup');
     await fill();
-    expect(await screen.findByRole('heading', { name: 'Dashboard' })).toBeInTheDocument();
-    expect(within(screen.getByRole('main')).getByText('Ravi Kumar')).toBeInTheDocument();
+    expect(await screen.findByRole('heading', { name: 'Link your Codeforces handle' })).toBeInTheDocument();
+    expect(within(screen.getByRole('main')).getByText(/Welcome, Ravi./)).toBeInTheDocument();
     expect(router.state.location.pathname).toBe('/dashboard');
     expect(authStore.getToken()).not.toBeNull();
   });

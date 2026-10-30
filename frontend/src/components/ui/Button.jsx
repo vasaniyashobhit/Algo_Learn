@@ -3,7 +3,7 @@ import { buttonClass } from './buttonStyles.js';
 import { Spinner } from './Spinner.jsx';
 
 /**
- * variant: plate (the one primary action per screen) | outline | text | onPlate.
+ * variant: plate (the one primary action per screen) | outline | text | onPlate | onChalk | chalkText.
  * Pass `to` for a router link or `href` for an in-page anchor. `loading` disables the button and shows a spinner.
  */
 export const Button = ({

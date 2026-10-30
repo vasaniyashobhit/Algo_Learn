@@ -15,11 +15,14 @@ export const BUTTON_VARIANTS = {
   text: 'border-transparent bg-transparent text-ink-soft not-disabled:hover:text-ink',
   // On the yellow plate: Plate Ink in both themes, never the theme's ink (The Plate Ink Rule).
   onPlate: 'border-plate-ink bg-transparent text-plate-ink not-disabled:hover:bg-plate-ink not-disabled:hover:text-plate',
+  // On the chalk scoreboard: Chalk Ink in both themes (chalk inverts to navy in light mode).
+  onChalk: 'border-chalk-ink bg-transparent text-chalk-ink not-disabled:hover:bg-chalk-ink not-disabled:hover:text-chalk',
+  chalkText: 'border-transparent bg-transparent text-chalk-ink underline decoration-1 underline-offset-4 not-disabled:hover:decoration-2',
 };
 
 const paddingFor = (variant, wide) => {
   if (wide) return PADDING.wide;
-  return variant === 'text' ? PADDING.tight : PADDING.normal;
+  return variant === 'text' || variant === 'chalkText' ? PADDING.tight : PADDING.normal;
 };
 
 export const buttonClass = ({ variant = 'outline', wide = false, className } = {}) => {

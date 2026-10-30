@@ -66,4 +66,10 @@ describe('buttonClass', () => {
     expect(buttonClass({ variant: 'nope' })).toContain(BUTTON_VARIANTS.outline);
     expect(buttonClass({ wide: true })).toContain('w-full');
   });
+
+  it('has chalk variants that use Chalk Ink in both themes', () => {
+    expect(buttonClass({ variant: 'onChalk' })).toContain('text-chalk-ink');
+    expect(buttonClass({ variant: 'chalkText' })).toContain('underline');
+    expect(buttonClass({ variant: 'chalkText' })).toContain('px-[0.2rem]');
+  });
 });

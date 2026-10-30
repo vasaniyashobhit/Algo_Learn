@@ -17,8 +17,8 @@ describe('ProtectedRoute', () => {
   it('shows a page skeleton while /auth/me loads, then the page', async () => {
     renderApp('/dashboard', { signedIn: true });
     expect(screen.getByRole('status', { name: 'Loading your account' })).toBeInTheDocument();
-    expect(await screen.findByRole('heading', { name: 'Dashboard' })).toBeInTheDocument();
-    expect(screen.getByText(testUser.email, { exact: false })).toBeInTheDocument();
+    expect(await screen.findByRole('heading', { name: 'Link your Codeforces handle' })).toBeInTheDocument();
+    expect(screen.getByText(/Welcome, Ananya./)).toBeInTheDocument();
   });
 
   it('shows a recoverable error when the account cannot load', async () => {
@@ -35,7 +35,7 @@ describe('ProtectedRoute', () => {
     expect(await screen.findByRole('heading', { name: "We couldn't load your account" })).toBeInTheDocument();
     expect(screen.getByText('req-me')).toBeInTheDocument();
     await userEvent.click(screen.getByRole('button', { name: 'Try again' }));
-    expect(await screen.findByRole('heading', { name: 'Dashboard' })).toBeInTheDocument();
+    expect(await screen.findByRole('heading', { name: 'Link your Codeforces handle' })).toBeInTheDocument();
   });
 
   it('logs out and asks to log in again when the token has expired', async () => {

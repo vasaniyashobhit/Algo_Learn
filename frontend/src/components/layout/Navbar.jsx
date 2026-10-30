@@ -15,7 +15,10 @@ export const Navbar = () => {
         <Wordmark to={signedIn ? '/dashboard' : '/'} />
         <nav aria-label="Main" className="mr-auto flex min-w-0 overflow-x-auto">
           {signedIn ? (
-            <NavItem to="/dashboard">Dashboard</NavItem>
+            <>
+              <NavItem to="/dashboard">Dashboard</NavItem>
+              <NavItem to="/practice">Practice</NavItem>
+            </>
           ) : (
             <>
               <NavItem href="/#how">How it works</NavItem>

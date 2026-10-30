@@ -26,7 +26,7 @@ describe('AuthPage', () => {
 
   it('sends signed-in users on to the dashboard', async () => {
     const { router } = renderApp('/signup', { signedIn: true });
-    expect(await screen.findByRole('heading', { name: 'Dashboard' })).toBeInTheDocument();
+    expect(await screen.findByRole('heading', { name: 'Link your Codeforces handle' })).toBeInTheDocument();
     expect(router.state.location.pathname).toBe('/dashboard');
   });
 });

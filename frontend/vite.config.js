@@ -13,6 +13,7 @@ export default defineConfig({
           motion: ['motion/react'],
           data: ['@tanstack/react-query', 'axios'],
           forms: ['react-hook-form', '@hookform/resolvers/zod', 'zod'],
+          charts: ['recharts'],
         },
       },
     },

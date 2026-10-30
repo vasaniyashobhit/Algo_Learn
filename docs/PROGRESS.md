@@ -350,7 +350,60 @@ Read this first, update it last, every session.
   redirected before the navigation home). `useLogout` now navigates first, then clears the token.
 - Checked in headless Chrome at 1366 and 760 px in both themes (landing, login, 404).
 
+### Session 13 (2026-10-30) — Dashboard, handle linking, sync, recommendations, practice list
+
+- Data layer: `api/endpoints/` users (link/unlink/sync with 30 s / 120 s timeouts, PATCH me), stats,
+  recommendations, practice, meta, problems (similar); `unwrapWithMeta` keeps `meta` (for `reason`).
+  Query keys for stats/recommendations/practice/problems plus `mutationKeys.sync`. Query hooks per
+  feature; mutations: link/unlink, sync, practice add/update/remove.
+- **Optimistic updates:** practice add/status/remove snapshot every cached list (one per status
+  filter), apply the change per filter, roll back on error with a specific toast ("Couldn't remove
+  474/D from your practice list" + the reason + a reference for unexpected errors), and invalidate
+  on settle. `PRACTICE_ITEM_EXISTS` → info toast, no rollback; DELETE `404 NOT_FOUND` → done.
+  Sync: "Syncing…" at once via `useIsMutating` (survives remounts), `lastSyncedAt` set from the
+  answer and rolled back on error, success toast with the new submission count, then stats,
+  recommendations and the user are invalidated. `SYNC_IN_PROGRESS` is an info toast.
+- **Dashboard** by state: NO_HANDLE → the handle-link hero on the plate (why we need it, the form,
+  "What happens next": link → first sync about 1 min → scoreboard); linking starts the first sync.
+  NOT_SYNCED → chalk header + plate first-sync notice. Synced → chalk scoreboard (CountUp figures,
+  parallax content, last synced relative time, Sync now, Unlink with a confirm dialog), a ruled grid
+  of Topic strength (Recharts radar of the 8 most practised topics + table toggle), Weak topics,
+  Topic pairs (struggle / hold up together, ≥ 3 attempts, split at 0.5), the 30-day overs strip
+  (+ table), and Next topics (cards with reasons and problems, staggered). Every block has a skeleton,
+  an empty state and an error with retry. Recommendations show in every state (never blank).
+- Handle form messages: `CF_HANDLE_NOT_FOUND` / `CF_HANDLE_TAKEN` under the field with the typed
+  handle, `CF_UNAVAILABLE` "Codeforces seems slow right now…" below the form, validation details on
+  the field, a reference for unexpected errors. New message contexts (no new codes): `linkHandle`
+  for `CF_UNAVAILABLE` and `SYNC_IN_PROGRESS`, `unlinkHandle`, and `sync` for `CF_HANDLE_NOT_FOUND`.
+- Problem cards: rating, tags, Codeforces link (new tab), "Find similar" → new
+  `/problems/:contestId/:index/similar` page, "Add to practice" (optimistic, then a drawn tick).
+- `/practice`: status filter with counts, mark solved / skip / back to to-do / remove, all
+  optimistic with a tick on confirmation. Navbar has Practice.
+- UI: `QueryState`, `ConfirmDialog` (+ `useDialogFocus` trap), `Mark`, `PanelHeading`,
+  `SegmentedControl`, `TableToggle`, `SuccessTick`; `Input tone="plate"`; button variants
+  `onChalk` / `chalkText`; `styles/dashboard.css`. DESIGN.md has a new "Dashboard" section.
+- Recharts 3.10 added (own `charts` vendor chunk). Tests: test setup stubs `ResizeObserver` and
+  dismisses sonner toasts after each test (its store is global). Frontend: 86 files, 431 tests,
+  coverage 99.7% lines / 97.1% branches. Lint, tests and build green.
+- Checked in headless Chrome (mock API) at 1366 px dark/light and 760 px: fixed a clipped radar
+  label and line-coloured empty slots in the problem grid.
+
 ## Decisions
+
+- **Dashboard (Session 13):**
+  - One plate per screen, chosen by state (hero / first-sync notice / lead next topic). The page
+    test counts plates.
+  - Recommendations are shown in every state, including NO_HANDLE (cold start), so the page is
+    never just a form.
+  - Linking a handle starts the first sync immediately (the onboarding promises "first sync ~1 min").
+  - Radar = `GET /users/me/stats?kind=single&sort=attempted&limit=8`; fewer than 3 topics → table
+    only. Pairs = `kind=pair&sort=attempted&limit=100`, eligible with ≥ 3 attempts.
+  - The batting card's "last 5" marks from the mockup are not shown: the API has no per-topic
+    recent results. It shows strength + level word + solved/tried instead.
+  - Adding to practice does not refetch recommendations (they are only marked stale), so cards
+    don't jump away under the cursor; the card says "In practice" instead.
+  - "Mark solved" in the practice list is a manual status change; the verify endpoint ("I solved
+    it", with a sync) is not wired yet.
 
 - **Design direction (Session 12):** the user chose **direction B · Scorecard**. Dark is the default;
   light is available from the navbar toggle (system preference first, saved choice in localStorage).
@@ -629,14 +682,11 @@ contestId/index`, title, known tags) because `bulkWrite` skips schema validators
 
 ## Next
 
-- **Dashboard session:** replace the placeholder `DashboardPage` with direction B's dashboard:
-  - the wagon-wheel topic chart, labelled "Topic strength";
-  - the weak-topics "Batting card" with last-5 marks;
-  - the 30-day "overs" strip.
-
-  Each one needs a table alternative. Add the handle form and "Sync now" too. Use
-  `Notice tone="plate"` + `Button variant="onPlate"` for the screen's one plate notice.
-
+- ~~Dashboard session~~ done in Session 13 (wagon wheel, batting card, overs strip, handle form, Sync now).
+- **Practice "I solved it"**: wire `POST /practice/:contestId/:index/verify` (NOT_SOLVED_YET /
+  STILL_JUDGING notices, RATE_LIMITED countdown) next to the manual "Mark solved".
+- Frontend: a problem detail page (statement + LaTeX) is still to come; "Find similar" currently opens
+  `/problems/:contestId/:index/similar` only. The summary's solved-by-rating bands are not drawn yet.
 - ~~Live stuck check~~ done in Fix-up 10.5 (`npm run check:stuck`, table above). Groq was not reached
   (the first Gemini model answered every time); its order is covered by tests only.
 - Possibly tighten the coach prompt or validate C++ code (the lite model once dropped `include <`).
@@ -647,14 +697,14 @@ contestId/index`, title, known tags) because `bulkWrite` skips schema validators
 - Possible later: `addedFrom: "stuck"` in a one-click "add similar to practice" from the stuck result.
 - Frontend: store the JWT, send `Authorization: Bearer`, and on any 401 `AUTH_*` (except
   `AUTH_INVALID_CREDENTIALS`) clear the token and go to login.
-- Frontend: recommendations page (`GET /recommendations`; show `reason`, a notice for `meta.reason`,
+- ~~Frontend: recommendations page~~ (done in Session 13 on the dashboard, except verify). Was: (`GET /recommendations`; show `reason`, a notice for `meta.reason`,
   and label `pickedBy: similar_fallback` items as broader picks). Practice list with optimistic
   add/patch/delete reconciled from the returned item; treat `404 NOT_FOUND` on DELETE as done.
   "I solved it" button → `POST /practice/:contestId/:index/verify`; show `NOT_SOLVED_YET` /
   `STILL_JUDGING` as notices (200), and `RATE_LIMITED` with a countdown from `retryAfterSeconds`.
 - ~~Stuck helper (F10 third bullet)~~ done in Session 10: `result.similar` (easier on gap topics). The
   frontend adds them to practice with `addedFrom: "stuck"`.
-- Frontend dashboard: `GET /users/me/stats/summary` (cards, bands bar chart, 30-day activity) and
+- ~~Frontend dashboard~~ (Session 13; the solved-by-rating bands are not shown yet). Was: `GET /users/me/stats/summary` (cards, bands bar chart, 30-day activity) and
   `GET /users/me/stats?kind=single|pair`. Show a notice for `meta.reason` `NO_HANDLE` (link a handle)
   and `NOT_SYNCED` (press "Sync now") instead of empty charts.
 - Existing users on Atlas get stats only after their next sync (cron or "Sync now"); no backfill script.
@@ -666,7 +716,7 @@ contestId/index`, title, known tags) because `bulkWrite` skips schema validators
   `excludeIds` (e.g. solved problems).
 - Any new feature that calls Codeforces should take `services.client` from `createServices`
   (one limiter per process).
-- Frontend: handle form (PUT/DELETE `/users/me/handle`), a "Sync now" button (POST
+- ~~Frontend: handle form~~ (Session 13). Was: handle form (PUT/DELETE `/users/me/handle`), a "Sync now" button (POST
   `/users/me/sync`, show `SYNC_IN_PROGRESS` / `CF_UNAVAILABLE` / `RATE_LIMITED` (20 s cooldown)
   notices), and `lastSyncedAt`.
 - Deploy: point an external scheduler at `POST /api/v1/internal/sync-all` with `x-cron-secret`.

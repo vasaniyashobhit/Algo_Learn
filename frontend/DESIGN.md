@@ -262,6 +262,32 @@ state.
   across to the new theme. The theme is set
   on `<html data-theme>` by an inline script before React mounts, so there is no flash.
 
+### Dashboard (Session 13)
+- **Where the plate goes.** The plate marks the next action, so it moves with the state: no handle →
+  the handle-link hero; linked but never synced → the first-sync notice with "Sync now"; synced → the
+  lead "Next topics" card. Sync is an outline (On chalk) button on the scoreboard; the best day in the
+  overs strip is inverted Ink, never plate.
+- **Scoreboard header.** A Chalk strip with the handle, rank and "Synced 2 hours ago", five figures
+  (Headline size, count-up once) and the sync/unlink controls. Its content is a parallax plane at
+  depth 0.12; the chalk surface stays put. Buttons on chalk use **On chalk** (Chalk Ink outline,
+  inverted on hover) and **Chalk text** (underlined Chalk Ink), in both themes.
+- **Focus on plate and chalk.** Inside `.on-plate` / `.on-chalk` the focus ring is Plate Ink /
+  Chalk Ink, because the plate-yellow ring disappears there.
+- **Fields on the plate** (`Input tone="plate"`): Plate Ink label, a Plate Ink focus rule, and errors
+  in Plate Ink with a leading ×. Miss Orange is never used on the plate.
+- **Wagon wheel** (Recharts radar): one series, so no legend; a Plate Text 2px outline with a 14%
+  fill, 8px dots on Ground, dashed Line rings, Ink Soft uppercase axis labels (long tags shortened).
+  The figure is one labelled image; "Show as table" swaps in the real table.
+- **Overs strip:** 30 days as 5 overs of 6 balls: number = accepted, W = tried but nothing
+  accepted (Miss ring), dot = no submissions. Also behind a "Show as table" toggle.
+- **Panels** sit in a 1px Line-ruled grid (Ground panels, no shadow). Every panel heading has its
+  plain title, then the cricket caption ("Topic strength · Wagon wheel", "Weak topics · Batting
+  card", "Topic pairs · Partnerships", "Last 30 days · Ball by ball", "Next topics · Next in").
+- **Confirm dialog:** a Band panel with a Miss top rule over an 80% Ground scrim; Cancel is focused
+  first, Escape and the scrim cancel, focus returns to the opener. Never `window.confirm`.
+- **Success micro-animation:** after an optimistic change is confirmed, a 280 ms self-drawing tick
+  in Plate Text next to plain words ("Added", "Marked solved"). A confirmation, not a celebration.
+
 ## Do's and Don'ts
 
 ### Do:

@@ -1,0 +1,34 @@
+/* Dashboard surfaces CSS does better than utilities: state marks, the Recharts radar
+   (SVG classes, so both themes switch through the tokens) and focus rings on chalk and plate. */
+.mark-miss {
+  background:
+    linear-gradient(45deg, transparent 43%, currentColor 43% 57%, transparent 57%),
+    linear-gradient(-45deg, transparent 43%, currentColor 43% 57%, transparent 57%);
+}
+
+.mark-skip { background: linear-gradient(transparent 42%, currentColor 42% 58%, transparent 58%); }
+
+/* The page's focus ring is plate yellow, which disappears on the plate and on light chalk. */
+.on-plate :focus-visible { outline-color: var(--plate-ink); }
+.on-chalk :focus-visible { outline-color: var(--chalk-ink); }
+
+.radar .recharts-polar-grid-concentric-polygon,
+.radar .recharts-polar-grid-concentric path { fill: none; stroke: var(--line); stroke-dasharray: 2 4; }
+.radar .recharts-polar-grid-angle line { stroke: var(--line); }
+.radar .recharts-polar-angle-axis-tick text {
+  fill: var(--ink-soft);
+  font: 600 12px var(--font-display);
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+}
+.radar .radar-area path { fill: var(--plate-text); fill-opacity: 0.14; stroke: var(--plate-text); stroke-width: 2; }
+.radar .radar-area .recharts-radar-dot,
+.radar .radar-dot { fill: var(--ground); stroke: var(--plate-text); stroke-width: 2; }
+.radar .recharts-tooltip-cursor { stroke: var(--line); }
+
+.radar-tooltip {
+  padding: 0.5rem 0.7rem;
+  background: var(--band);
+  color: var(--ink);
+  box-shadow: var(--shadow), inset 0 3px 0 var(--plate-text);
+}

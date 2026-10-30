@@ -28,7 +28,7 @@ describe('LoginForm', () => {
   it('logs in and redirects to the dashboard', async () => {
     const { router } = renderApp('/login');
     await fillAndSubmit('ananya.k@example.in', 'analytical1');
-    expect(await screen.findByRole('heading', { name: 'Dashboard' })).toBeInTheDocument();
+    expect(await screen.findByRole('heading', { name: 'Link your Codeforces handle' })).toBeInTheDocument();
     expect(router.state.location.pathname).toBe('/dashboard');
     expect(authStore.getToken()).toBe(TEST_TOKEN);
   });

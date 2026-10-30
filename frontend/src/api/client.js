@@ -39,3 +39,6 @@ export const apiClient = createApiClient({ getToken: authStore.getToken, onSessi
 
 /** The `data` of a success envelope. */
 export const unwrap = (response) => response.data.data;
+
+/** `data` plus `meta` (empty object when absent), for lists and the stats/recommendation reasons. */
+export const unwrapWithMeta = (response) => ({ data: response.data.data, meta: response.data.meta ?? {} });

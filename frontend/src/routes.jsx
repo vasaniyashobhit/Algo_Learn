@@ -5,6 +5,8 @@ import { AuthPage } from './pages/AuthPage.jsx';
 import { DashboardPage } from './pages/DashboardPage.jsx';
 import { LandingPage } from './pages/LandingPage.jsx';
 import { NotFoundPage } from './pages/NotFoundPage.jsx';
+import { PracticePage } from './pages/PracticePage.jsx';
+import { SimilarPage } from './pages/SimilarPage.jsx';
 
 /** Route objects, shared by the browser router and the tests' memory router. */
 export const routes = [
@@ -17,7 +19,11 @@ export const routes = [
       { path: 'signup', element: <AuthPage mode="signup" /> },
       {
         element: <ProtectedRoute />,
-        children: [{ path: 'dashboard', element: <DashboardPage /> }],
+        children: [
+          { path: 'dashboard', element: <DashboardPage /> },
+          { path: 'practice', element: <PracticePage /> },
+          { path: 'problems/:contestId/:index/similar', element: <SimilarPage /> },
+        ],
       },
       { path: '*', element: <NotFoundPage /> },
     ],
