@@ -29,6 +29,9 @@ export const vendorChunk = (id) => {
   return VENDOR_CHUNKS.find(([, patterns]) => patterns.some((pattern) => matches(name, pattern)))?.[0];
 };
 
+// The e2e run points the proxy (dev and preview) at its test backend; dev uses :4000.
+const apiTarget = process.env.VITE_API_PROXY ?? 'http://localhost:4000';
+
 export default defineConfig({
   plugins: [react(), tailwindcss()],
   build: {
@@ -38,6 +41,6 @@ export default defineConfig({
   },
   server: {
     port: 5173,
-    proxy: { '/api': { target: 'http://localhost:4000', changeOrigin: true } },
+    proxy: { '/api': { target: apiTarget, changeOrigin: true } },
   },
 });

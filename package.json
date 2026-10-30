@@ -4,7 +4,8 @@
   "type": "module",
   "workspaces": [
     "backend",
-    "frontend"
+    "frontend",
+    "e2e"
   ],
   "engines": {
     "node": ">=22"
@@ -20,7 +21,9 @@
     "check:atlas": "npm run check:atlas -w backend",
     "check:server": "npm run check:server -w backend",
     "check:gemini": "npm run check:gemini -w backend",
-    "check:stuck": "npm run check:stuck -w backend"
+    "check:stuck": "npm run check:stuck -w backend",
+    "e2e": "npm run e2e -w e2e",
+    "build": "npm run build -w frontend"
   },
   "devDependencies": {
     "@eslint/js": "^9.39.5",

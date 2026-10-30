@@ -57,6 +57,11 @@ export default [
     },
   },
   {
+    // Playwright specs run in Node, but the callbacks passed to evaluate() run in the page.
+    files: ['e2e/**/*.js'],
+    languageOptions: { globals: { ...globals.node, ...globals.browser } },
+  },
+  {
     files: ['frontend/**/*.{js,jsx}'],
     languageOptions: {
       parserOptions: { ecmaFeatures: { jsx: true } },

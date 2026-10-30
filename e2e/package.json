@@ -1,0 +1,15 @@
+{
+  "name": "@cp-coach/e2e",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "e2e": "playwright test",
+    "e2e:server": "node server/start.js",
+    "e2e:install": "playwright install chromium"
+  },
+  "devDependencies": {
+    "@playwright/test": "^1.64.1",
+    "mongodb-memory-server": "^11.3.0"
+  }
+}
