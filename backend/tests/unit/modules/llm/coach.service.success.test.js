@@ -30,23 +30,23 @@ describe('coach service (success paths)', () => {
     expect(gemini.generateJson.mock.calls[0][0].prompt).toContain('Known tags for this problem: math');
   });
 
-  it('retries a 429 with 1 s / 2 s backoff, then succeeds', async () => {
-    const gemini = fakeProvider('gemini', 'a', httpError(429), httpError(503), coachJson());
+  it('retries a 429 once after 1 s, then succeeds', async () => {
+    const gemini = fakeProvider('gemini', 'a', httpError(429), coachJson());
     const { coach, sleep, logger } = service([gemini]);
     const result = await coach.getCoachAnswer({ text: TEXT });
     expect(result).toMatchObject({ source: 'ai', model: 'a' });
-    expect(gemini.generateJson).toHaveBeenCalledTimes(3);
-    expect(sleep.mock.calls.map(([ms]) => ms)).toEqual([1000, 2000]);
+    expect(gemini.generateJson).toHaveBeenCalledTimes(2);
+    expect(sleep.mock.calls.map(([ms]) => ms)).toEqual([1000]);
     expect(logger.warn).toHaveBeenCalledWith(
       expect.objectContaining({ provider: 'gemini', model: 'a', attempt: 1, retry: true }), 'LLM call failed');
   });
 
-  it('moves to model B when model A is exhausted after 3 tries', async () => {
+  it('moves to model B when model A is exhausted after 2 tries', async () => {
     const a = fakeProvider('gemini', 'a', httpError(429));
     const b = fakeProvider('gemini', 'b', coachJson());
     const result = await service([a, b]).coach.getCoachAnswer({ text: TEXT });
     expect(result).toMatchObject({ source: 'ai', provider: 'gemini', model: 'b' });
-    expect(a.generateJson).toHaveBeenCalledTimes(3);
+    expect(a.generateJson).toHaveBeenCalledTimes(2);
   });
 
   it('falls through to Groq when every Gemini model fails', async () => {
@@ -58,11 +58,12 @@ describe('coach service (success paths)', () => {
     expect(b.generateJson).toHaveBeenCalledTimes(1);
   });
 
-  it('retries a call that hangs past the timeout', async () => {
-    const gemini = fakeProvider('gemini', 'a', 'hang', coachJson());
-    const result = await service([gemini], { timeoutMs: 10 }).coach.getCoachAnswer({ text: TEXT });
-    expect(result).toMatchObject({ source: 'ai', model: 'a' });
-    expect(gemini.generateJson).toHaveBeenCalledTimes(2);
+  it('moves on at once (no retry) when a model hangs past the timeout', async () => {
+    const a = fakeProvider('gemini', 'a', 'hang', coachJson());
+    const b = fakeProvider('gemini', 'b', coachJson());
+    const result = await service([a, b], { timeoutMs: 10 }).coach.getCoachAnswer({ text: TEXT });
+    expect(result).toMatchObject({ source: 'ai', model: 'b' });
+    expect(a.generateJson).toHaveBeenCalledTimes(1);
   });
 
   it('keys free text by its normalized hash, so whitespace changes hit the cache', async () => {

@@ -1,57 +1,50 @@
-import { LLM, LLM_FALLBACK_REASONS } from '../../config/constants.js';
-import { createMinuteBudget } from '../../lib/minuteBudget.js';
-import { defaultSleep } from '../../lib/retry.js';
-import { logger as defaultLogger } from '../../lib/logger.js';
+import { LLM_FALLBACK_REASONS } from '../../config/constants.js';
 import { buildCoachPrompt } from './prompts/buildCoachPrompt.js';
 import { parseCoachResponse } from './schema/coachResponse.schema.js';
 import { coachCacheKey } from './helpers/cacheKey.js';
 import { callProvider } from './helpers/callProvider.js';
+import { chainSettings } from './helpers/chainSettings.js';
 import { describeLlmError } from './helpers/llmError.js';
 
-/** Per-minute budget keyed by `name:model`, limits from LLM.budgetPerMinute by provider name. */
-export const createLlmBudget = ({ limits = LLM.budgetPerMinute, now } = {}) => createMinuteBudget({
-  limitFor: (key) => limits[key.split(':')[0]] ?? LLM.defaultBudgetPerMinute,
-  now,
-});
+export { createLlmBudget } from './helpers/chainSettings.js';
 
 const fallback = (reason) => ({ answer: null, source: 'fallback', reason });
 
-/**
- * `getCoachAnswer({ problemId, text, knownTags })` never throws. Order: cache → each provider in
- * `providers` order (Gemini models, then Groq) with retries → `{ answer: null, source: 'fallback' }`.
- * Only successful, schema-valid answers are cached.
- */
-export const createCoachService = ({
-  providers,
-  cache,
-  budget = createLlmBudget(),
-  logger = defaultLogger,
-  sleep = defaultSleep,
-  tries = LLM.tries,
-  backoffMs = LLM.backoffMs,
-  timeoutMs = LLM.timeoutMs,
-}) => {
-  const options = { budget, logger, sleep, tries, backoffMs, timeoutMs };
+const reasonOf = (failures) => {
+  if (failures.includes('timeout')) return LLM_FALLBACK_REASONS.timeout;
+  const allBusy = failures.length > 0 && failures.every((failed) => failed === 'busy');
+  return allBusy ? LLM_FALLBACK_REASONS.busy : LLM_FALLBACK_REASONS.unavailable;
+};
 
-  const askProviders = async (prompt) => {
+/**
+ * `getCoachAnswer({ problemId, text, knownTags, deadline })` never throws. Order: cache → each
+ * provider in `providers` order → `{ answer: null, source: 'fallback', reason }`. `deadline`
+ * (epoch ms, default now + LLM.deadlineMs) bounds the whole chain: once it passes, no other
+ * provider is tried (reason AI_TIMEOUT). Only successful, schema-valid answers are cached.
+ */
+export const createCoachService = ({ providers, cache, ...overrides }) => {
+  const settings = chainSettings(overrides);
+  const { logger, now, deadlineMs } = settings;
+
+  const askProviders = async (prompt, deadline) => {
     const call = async ({ generateJson }, signal) => parseCoachResponse(await generateJson({ prompt, signal }));
     const failures = [];
     for (const provider of providers) {
-      const { value, failed } = await callProvider(provider, call, options);
+      const { value, failed } = await callProvider(provider, call, { ...settings, deadline });
       if (value) return { answer: value, provider: provider.name, model: provider.model };
       failures.push(failed);
+      if (failed === 'timeout') break;
     }
-    const allBusy = failures.length > 0 && failures.every((failed) => failed === 'busy');
-    return { reason: allBusy ? LLM_FALLBACK_REASONS.busy : LLM_FALLBACK_REASONS.unavailable };
+    return { reason: reasonOf(failures) };
   };
 
-  const answer = async ({ problemId, text, knownTags = [] }) => {
+  const answer = async ({ problemId, text, knownTags = [], deadline = now() + deadlineMs }) => {
     const key = coachCacheKey({ problemId, text });
     if (!key) return fallback(LLM_FALLBACK_REASONS.noInput);
     const hit = await cache.get(key);
     if (hit) return { ...hit, source: 'cache' };
     if (!String(text ?? '').trim()) return fallback(LLM_FALLBACK_REASONS.noInput);
-    const result = await askProviders(buildCoachPrompt({ text, knownTags }));
+    const result = await askProviders(buildCoachPrompt({ text, knownTags }), deadline);
     if (!result.answer) {
       logger.warn({ key, reason: result.reason }, 'Every LLM provider failed, using the fallback');
       return fallback(result.reason);

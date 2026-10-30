@@ -17,13 +17,20 @@ describe('image text extraction wrapper', () => {
     expect(gemini.extractTextFromImage).toHaveBeenCalledWith(PNG, 'image/png', { signal: expect.any(AbortSignal) });
   });
 
-  it('retries a 503, then moves to the next model', async () => {
+  it('moves to the next model at once on a 503 (no retry)', async () => {
     const a = fakeProvider('gemini', 'a', httpError(503));
     const b = fakeProvider('gemini', 'b', 'text');
     const { extractImageText, sleep } = extractor([a, b]);
     expect(await extractImageText(PNG, 'image/png')).toMatchObject({ model: 'b' });
-    expect(a.extractTextFromImage).toHaveBeenCalledTimes(3);
-    expect(sleep.mock.calls.map(([ms]) => ms)).toEqual([1000, 2000]);
+    expect(a.extractTextFromImage).toHaveBeenCalledTimes(1);
+    expect(sleep).not.toHaveBeenCalled();
+  });
+
+  it('stops at the deadline without trying the other models', async () => {
+    const a = fakeProvider('gemini', 'a', 'text');
+    const { extractImageText } = extractor([a], { now: () => 100 });
+    expect(await extractImageText(PNG, 'image/png', { deadline: 100 })).toBeNull();
+    expect(a.extractTextFromImage).not.toHaveBeenCalled();
   });
 
   it('treats an empty transcription as a failure', async () => {

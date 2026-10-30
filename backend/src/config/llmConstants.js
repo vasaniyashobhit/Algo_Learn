@@ -1,14 +1,18 @@
 /** LLM coach constants (Session 9), re-exported by constants.js: import them from there. */
 
 /**
- * Fallback chain: each provider/model gets `tries` calls (backoff backoffMs · 2^(try−1), so
- * 1 s, 2 s, 4 s) of at most `timeoutMs` each. `budgetPerMinute` caps calls per provider model
- * (free tiers allow about 5–10/min on Gemini and 30/min on Groq). The rest bounds the answer.
+ * Fallback chain: the whole chain stops at `deadlineMs` (default total per call of the chain).
+ * Each call gets at most `timeoutMs`, clamped to the time left. Only 429/500/502/504 get a retry
+ * (`tries` 2, constant `backoffMs`); a timeout or 503 skips the model at once and opens its
+ * circuit for `circuitOpenMs`. `budgetPerMinute` caps calls per provider model (free tiers allow
+ * about 5–10/min on Gemini and 30/min on Groq). The rest bounds the answer.
  */
 export const LLM = Object.freeze({
-  tries: 3,
+  deadlineMs: 40_000,
+  tries: 2,
   backoffMs: 1_000,
-  timeoutMs: 20_000,
+  timeoutMs: 25_000,
+  circuitOpenMs: 2 * 60_000,
   temperature: 0.2,
   budgetPerMinute: Object.freeze({ gemini: 8, groq: 25 }),
   defaultBudgetPerMinute: 5,
@@ -29,4 +33,5 @@ export const LLM_FALLBACK_REASONS = Object.freeze({
   noInput: 'NO_INPUT',
   busy: 'AI_BUSY',
   unavailable: 'AI_UNAVAILABLE',
+  timeout: 'AI_TIMEOUT',
 });

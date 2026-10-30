@@ -1,5 +1,5 @@
 import { describe, expect, it, vi } from 'vitest';
-import { createLlm, createLlmProviders } from '../../../../src/modules/llm/llm.module.js';
+import { createLlm, createLlmProviders, createOfflineLlm } from '../../../../src/modules/llm/llm.module.js';
 import { coachJson, fakeCache, fakeLogger } from '../../../helpers/llm.js';
 
 const env = (overrides = {}) => ({ GEMINI_API_KEY: 'k', GEMINI_MODELS: ['a', 'b'], ...overrides });
@@ -11,9 +11,9 @@ describe('llm module wiring', () => {
       .toEqual(['gemini:a', 'gemini:b']);
   });
 
-  it('adds Groq last when key and model are set', () => {
+  it('puts Groq right after the first Gemini model when key and model are set', () => {
     const providers = createLlmProviders({ env: env({ GROQ_API_KEY: 'g', GROQ_MODEL: 'llama' }), ai: fakeAi() });
-    expect(providers.at(-1)).toMatchObject({ name: 'groq', model: 'llama' });
+    expect(providers.map((p) => `${p.name}:${p.model}`)).toEqual(['gemini:a', 'groq:llama', 'gemini:b']);
   });
 
   it('exposes getCoachAnswer and extractImageText over the same providers', async () => {
@@ -22,5 +22,12 @@ describe('llm module wiring', () => {
     expect(await llm.getCoachAnswer({ text: 'problem' })).toMatchObject({ source: 'ai', provider: 'gemini', model: 'a' });
     expect(await llm.extractImageText(Buffer.from('x'), 'image/png')).toMatchObject({ model: 'a' });
     expect(ai.models.generateContent).toHaveBeenCalledTimes(2);
+  });
+
+  it('offline LLM: no providers, coach falls back with AI_UNAVAILABLE, image reading returns null', async () => {
+    const llm = createOfflineLlm({ logger: fakeLogger() });
+    expect(llm.providers).toEqual([]);
+    expect(await llm.getCoachAnswer({ text: 'problem' })).toEqual({ answer: null, source: 'fallback', reason: 'AI_UNAVAILABLE' });
+    expect(await llm.extractImageText(Buffer.from('x'), 'image/png')).toBeNull();
   });
 });

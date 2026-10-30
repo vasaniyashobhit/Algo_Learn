@@ -46,12 +46,12 @@ describe('coach service (failure paths)', () => {
 
   it('goes straight to the next provider once the budget runs out mid-retry', async () => {
     let now = 0;
-    const budget = createLlmBudget({ limits: { gemini: 2, groq: 5 }, now: () => now });
+    const budget = createLlmBudget({ limits: { gemini: 1, groq: 5 }, now: () => now });
     const a = fakeProvider('gemini', 'a', httpError(429));
     const groq = fakeProvider('groq', 'g', coachJson());
     const result = await service([a, groq], { budget }).coach.getCoachAnswer({ text: TEXT });
     expect(result).toMatchObject({ provider: 'groq' });
-    expect(a.generateJson).toHaveBeenCalledTimes(2);
+    expect(a.generateJson).toHaveBeenCalledTimes(1);
     now = 60_000;
     expect(budget.tryTake('gemini:a')).toBe(true);
   });
