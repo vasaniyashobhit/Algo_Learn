@@ -19,6 +19,11 @@ describe('parseEnv', () => {
     expect(env.GROQ_MODEL).toBeUndefined();
   });
 
+  it('drops a trailing slash from CLIENT_URL so CORS matches the Origin header', () => {
+    expect(parseEnv(buildEnv({ CLIENT_URL: 'https://algolearn.vercel.app/' })).CLIENT_URL).toBe('https://algolearn.vercel.app');
+    expect(parseEnv(buildEnv({ CLIENT_URL: 'https://algolearn.vercel.app' })).CLIENT_URL).toBe('https://algolearn.vercel.app');
+  });
+
   it('flags production mode', () => {
     expect(parseEnv(buildEnv({ NODE_ENV: 'production' })).isProduction).toBe(true);
   });

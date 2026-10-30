@@ -51,13 +51,20 @@ IP limit.
 
 ### `GET /api/v1/health`
 
-Public. Liveness check.
+Public. Liveness check: always `200` while the process answers (use it for uptime pingers and
+the host's health check).
 
 ```json
-{ "success": true, "data": { "status": "ok", "uptime": 12.34, "time": "2026-10-28T16:41:50.482Z" } }
+{ "success": true, "data": { "status": "ok", "db": "up", "uptime": 12.34, "time": "2026-10-28T16:41:50.482Z" } }
 ```
 
-`uptime` is the process uptime in seconds; `time` is the server time (ISO 8601, UTC).
+`db` is `up` when MongoDB is connected, else `down` (then `status` is `degraded`). `uptime` is the
+process uptime in seconds; `time` is the server time (ISO 8601, UTC).
+
+### `GET /api/v1/health/ready`
+
+Public. Readiness check (Session 15): the same body as `/health` with `200` when MongoDB is
+connected, otherwise `503 DB_UNAVAILABLE` in the error shape.
 
 ### `GET /api/v1/meta/tags`
 

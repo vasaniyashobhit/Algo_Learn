@@ -16,7 +16,8 @@ export const envSchema = z.object({
   MONGODB_URI: z.string().regex(/^mongodb(\+srv)?:\/\//, 'Must be a mongodb:// or mongodb+srv:// URI'),
   JWT_SECRET: z.string().min(32, 'Must be at least 32 characters'),
   JWT_EXPIRES_IN: z.string().min(1).default('7d'),
-  CLIENT_URL: z.url().default('http://localhost:5173'),
+  // CORS compares it with the Origin header exactly, which never ends in a slash.
+  CLIENT_URL: z.url().default('http://localhost:5173').transform((url) => url.replace(/\/+$/, '')),
   GEMINI_API_KEY: z.string().min(1),
   GEMINI_MODELS: commaList,
   GROQ_API_KEY: z.preprocess(emptyToUndefined, z.string().min(1).optional()),
