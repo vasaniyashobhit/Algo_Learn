@@ -10,6 +10,7 @@ import { createErrorHandler } from './middlewares/errorHandler.js';
 import { API_BASE_PATH, createApiRouter } from './routes.js';
 import { createAuth } from './modules/auth/auth.module.js';
 import { createServices } from './services.js';
+import { STUCK } from './config/constants.js';
 
 export const BODY_LIMIT = '1mb';
 
@@ -25,6 +26,7 @@ export const createApp = ({
   trustProxy = false,
   auth,
   authRateLimit = AUTH_RATE_LIMIT,
+  stuckRateLimit = STUCK.rateLimit,
   services = createServices({ logger }),
   cronSecret,
 } = {}) => {
@@ -40,7 +42,9 @@ export const createApp = ({
   app.use(express.urlencoded({ extended: false, limit: BODY_LIMIT }));
   app.use('/api', createRateLimiter(rateLimit));
 
-  app.use(API_BASE_PATH, createApiRouter({ auth: createAuth(auth), authRateLimit, services, cronSecret }));
+  app.use(API_BASE_PATH, createApiRouter({
+    auth: createAuth(auth), authRateLimit, stuckRateLimit, services, cronSecret,
+  }));
 
   app.use(notFound);
   app.use(createErrorHandler({ isProduction, logger }));

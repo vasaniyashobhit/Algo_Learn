@@ -41,6 +41,7 @@ describe('StuckQuery model', () => {
       estimatedRating: null,
       gap: [],
       result: null,
+      solution: null,
     });
     expect(saved.tagsSource).toBeUndefined();
     expect(saved.createdAt).toBeInstanceOf(Date);
@@ -53,6 +54,9 @@ describe('StuckQuery model', () => {
     const saved = await StuckQuery.create(makeStuckQuery({ gap, result, tagsSource: 'ai', source: 'ai' }));
     const json = saved.toJSON();
     expect(json.gap).toEqual(gap);
+    const unseen = [{ topicKey: 'dp+graphs', kind: 'pair', status: 'unseen' }];
+    const second = await StuckQuery.create(makeStuckQuery({ gap: unseen }));
+    expect(second.toJSON().gap).toEqual([{ ...unseen[0], strength: null }]);
     expect(json.result).toEqual(result);
     expect(json).not.toHaveProperty('__v');
   });

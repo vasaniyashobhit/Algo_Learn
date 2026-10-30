@@ -232,18 +232,74 @@ Read this first, update it last, every session.
   `modules/llm` 100% lines. New helper `tests/helpers/llm.js` (`fakeProvider`, `fakeCache`,
   `coachJson`, `httpError`, `chainOptions`, open/closed budgets).
 
+### Session 10 (2026-10-30) — Stuck flow (POST /stuck, never blank) + LLM chain deadline
+
+- **LLM chain fixes (Session 9 follow-up):** `LLM` now `deadlineMs` 40 s, `tries` 2, constant
+  `backoffMs` 1 s, `timeoutMs` 25 s, `circuitOpenMs` 2 min; new reason `AI_TIMEOUT`.
+  `lib/circuitBreaker.js`; `llm/helpers/failureKind.js` (replaces `isRetryable.js`: `sick` = timeout/503,
+  `retry` = 429/500/502/504, `fail` = rest), `helpers/chainOrder.js` (first Gemini → Groq → other Gemini),
+  `helpers/chainSettings.js` (defaults + `createLlmBudget`/`createLlmBreaker`), `callProvider` rewritten.
+  `getCoachAnswer({ ..., deadline })`, `extractImageText(buf, mime, { deadline })`. `createOfflineLlm()`.
+- `config/stuckConstants.js` (`STUCK`, `GAP`, `STUCK_FALLBACK_NOTICE`). `GAP_STATUSES` is now
+  `unseen|weak|developing|strong`; gap items have `kind` and nullable `strength`; `stuckqueries.solution`.
+- `errors/httpErrors.js`: `UnprocessableError` (422). `middlewares/upload.js` (multer memory, 5 MB, 1 file,
+  pdf/png/jpeg/webp/txt). `rateLimit.js`: `keyGenerator` option + `userKey`. `lib/ocr.js` (lazy tesseract.js).
+- `modules/stuck/`: `input/` (`fromText`, `fromUrl`, `urlGuard` (SSRF), `fromPdf`, `fromImage`,
+  `resolveInput`), `helpers/` (`codeforcesUrl`, `privateAddress`, `extractMainText`, `readLimitedBody`,
+  `fileSignature`, `gapAnalysis`, `neighbors`, `problemMatch`, `fallbackHints`, `buildResult`, `stuckView`),
+  `stuck.repository.js`, `stuck.locate.js`, `stuck.service.js` (`solve`), `stuck.queries.js`,
+  `stuck.module.js` (`createStuckFeature`), schema, controller, routes.
+- `createServices({ llm, ocr, stuck })` builds `stuckService` (offline LLM by default); `server.js` passes
+  `createLlm({ env, logger })`. `createApp({ stuckRateLimit })` (default 10 / hour / user).
+- New deps: `cheerio`, `unpdf`, `tesseract.js`.
+- Endpoints: `POST /stuck`, `GET /stuck/history`, `GET /stuck/:id`, `GET /stuck/:id/solution`,
+  `DELETE /stuck/:id`. No new error codes. `docs/API.md` finalized as the full frontend contract.
+- Review: every controller handler has try/catch → `next(err)`; all 27 codes are in the API.md table.
+- Tests: 217 files, 1206 tests (no network: fake fetch/DNS/LLM/OCR; one real unpdf PDF).
+  Coverage 99.82% lines, 98.89% branches; `modules/stuck` 100% lines. New helpers
+  `tests/helpers/stuck.js`, `stuckService.js`, `stuckRoutes.js`.
+
 ## Decisions
+
+- **Stuck flow (Session 10):**
+  - Deadlines: image reading and the coach each get their own 40 s chain deadline (so one request is
+    at most about 80 s plus OCR). A call that timed out only because the deadline clamped it does not
+    open the circuit; reaching the deadline stops the chain (`AI_TIMEOUT`), no other provider is tried.
+  - Network errors (`fetch failed`, ECONNRESET) are **not** retried any more (only 429/500/502/504);
+    the next provider is tried at once. Circuit-skipped providers count as `AI_UNAVAILABLE`, not busy.
+  - Exact text match = statement's first line equals a stored title (index prefix like "A." removed,
+    case/spaces ignored) **or** the statement contains the first 200 chars of a stored description,
+    checked only among the 5 `$text` neighbors (one query, reused for the neighbor tags).
+  - Neighbor tags: tags shared by ≥ 2 of the 5 nearest (max 4), else the single most frequent tag.
+    Neighbor median rating (rounded to 100) only when neither the DB nor the AI gave a rating.
+  - "Easier on gap topics": if the gap has a weak/unseen **single** topic, `findSimilar` gets
+    rating − 150 (or the user's rating − 150 if the problem rating is unknown). Solved problems excluded.
+  - Gap = every single + pair key; `items` (weak + unseen) sorted weak first, then strength, singles
+    before pairs. Stored `gap` holds only the items. Strength rounded to 2 decimals.
+  - The AI solution is stored in `stuckqueries.solution` and only served by `/stuck/:id/solution`;
+    `result` holds exactly the public response. History rows read `result.problem` only.
+  - Malformed, unknown and other users' ids all → `404 STUCK_QUERY_NOT_FOUND`.
+  - SSRF: DNS checked per hop (redirects followed manually, max 3), ports 80/443 only, no credentials.
+    A DNS-rebinding race between our lookup and fetch's own lookup remains possible (accepted; no
+    pinned-IP agent). Validation `field` names use the `body.` prefix like the validate middleware.
+  - Uploads: mime allow-list in multer, then a magic-byte check per input type (`.txt` must have no
+    NUL byte). A second file is multer's `LIMIT_FILE_COUNT` → 400 `VALIDATION_FAILED`.
+  - tesseract.js is imported lazily and downloads `eng` data on first OCR (needs internet); an OCR
+    crash is logged at warn and kept as the `cause` of `INPUT_UNREADABLE`. No OCR timeout yet.
+  - Rate limit 10 / hour / user on `POST /stuck` only, before multer (failed requests count).
 
 - **LLM coach chain (Session 9):**
   - Result: `{ answer, source: 'cache'|'ai', provider, model }` or `{ answer: null, source: 'fallback',
     reason }`. `getCoachAnswer` has an outer catch too, so even a bug ends as `AI_UNAVAILABLE` (logged at error).
   - Order: cache → each provider in order (Gemini models from `GEMINI_MODELS`, then Groq). Every
     failure is logged at warn with `provider`/`model`/`attempt` and a short error summary (no key).
-  - Retryable: HTTP 429/500/502/503/504, `TimeoutError`/`AbortError`, network codes, `fetch failed`.
+  - ~~Retryable: HTTP 429/500/502/503/504, timeouts, network codes~~ (Session 10: only 429/500/502/504,
+    1 retry after 1 s; a timeout or 503 skips the model and opens its circuit for 2 min; total 40 s deadline;
+    order first Gemini → Groq → other Gemini models).
     Anything else (404 model gone, 400, invalid JSON, schema mismatch) moves to the next model at once.
   - Invalid JSON / schema mismatch = failure of **that model** (not retried, not cached), next model.
     Answers need ≥ 1 non-blank hint and an approach after sanitizing.
-  - With 3 tries the waits are 1 s and 2 s (4 s would be the 4th try's wait).
+  - ~~With 3 tries the waits are 1 s and 2 s~~ (Session 10: 2 tries, one 1 s wait).
   - Budget: one unit per call attempt, keyed `name:model`. A full budget skips straight to the next
     provider; if **every** provider was skipped for budget the reason is `AI_BUSY`, else `AI_UNAVAILABLE`.
     The budget is per process (in memory) and shared by coach and image reading.
@@ -469,14 +525,15 @@ contestId/index`, title, known tags) because `bulkWrite` skips schema validators
 
 ## Next
 
-- The worst case of the chain is long (3 × 20 s per model plus backoff). Session 10 should consider a
-  total deadline or 1 try for a model that times out, so a stuck request answers in reasonable time.
-- Session 10 (stuck): build `createLlm({ env, logger })` once (e.g. in `createServices`), call
-  `getCoachAnswer({ problemId, text, knownTags })`, and on `source: 'fallback'` show the DB fallback
-  (tags, editorial, similar problems, concept gap) with the notice. Use `extractImageText` for
-  screenshots, then tesseract when it returns null. Store `source` in `stuckqueries.source`.
-- Frontend: show "AI busy, try again in a minute" for `AI_BUSY` and the general notice for
-  `AI_UNAVAILABLE`; hints first, full solution on request.
+- Live check (human): run `npm run check:coach -- --fresh` and a real `POST /stuck` (text, a CF link,
+  a PDF, a screenshot) against Atlas; confirm the stuck request answers within ~40 s and that Groq is now
+  reached when the first Gemini model fails. Record the timings here.
+- Stuck frontend (Session 11+): `POST /stuck` as multipart; show `hints` + `gap` first, a "Show
+  solution" button → `GET /stuck/:id/solution` (`kind` ai/editorial/none); `notice` for `fallback`
+  with "AI busy, try again in a minute" for `fallbackReason: AI_BUSY`; history page with paging and
+  delete; the 10/hour limit (`RATE_LIMITED`, show the wait). UI copy: practice/upsolving only.
+- Possible later: an OCR timeout / worker pool for tesseract, a pinned-IP fetch agent against DNS
+  rebinding, and `addedFrom: "stuck"` in a one-click "add similar to practice" from the stuck result.
 - Frontend: store the JWT, send `Authorization: Bearer`, and on any 401 `AUTH_*` (except
   `AUTH_INVALID_CREDENTIALS`) clear the token and go to login.
 - Frontend: recommendations page (`GET /recommendations`; show `reason`, a notice for `meta.reason`,
@@ -484,8 +541,8 @@ contestId/index`, title, known tags) because `bulkWrite` skips schema validators
   add/patch/delete reconciled from the returned item; treat `404 NOT_FOUND` on DELETE as done.
   "I solved it" button → `POST /practice/:contestId/:index/verify`; show `NOT_SOLVED_YET` /
   `STILL_JUDGING` as notices (200), and `RATE_LIMITED` with a countdown from `retryAfterSeconds`.
-- Stuck helper (F10 third bullet, "after a stuck query") is not done yet: reuse `findSimilar` with the
-  stuck problem's tags and the practice `addedFrom: "stuck"`.
+- ~~Stuck helper (F10 third bullet)~~ done in Session 10: `result.similar` (easier on gap topics). The
+  frontend adds them to practice with `addedFrom: "stuck"`.
 - Frontend dashboard: `GET /users/me/stats/summary` (cards, bands bar chart, 30-day activity) and
   `GET /users/me/stats?kind=single|pair`. Show a notice for `meta.reason` `NO_HANDLE` (link a handle)
   and `NOT_SYNCED` (press "Sync now") instead of empty charts.

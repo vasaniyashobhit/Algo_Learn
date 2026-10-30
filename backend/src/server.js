@@ -6,6 +6,7 @@ import { createLogger } from './lib/logger.js';
 import { registerGracefulShutdown } from './lib/gracefulShutdown.js';
 import { connectDB, disconnectDB } from './db/connect.js';
 import { createServices } from './services.js';
+import { createLlm } from './modules/llm/llm.module.js';
 import { startScheduler } from './jobs/scheduler.js';
 
 const listen = async (expressApp, port) => {
@@ -17,7 +18,7 @@ const listen = async (expressApp, port) => {
 /**
  * Connects the DB, then starts HTTP and the cron scheduler, and wires graceful shutdown
  * (which stops the scheduler and closes the DB). Resolves once listening. If HTTP fails
- * to start, the DB connection is closed again.
+ * to start, the DB connection is closed again. The real LLM chain (createLlm) is built from env.
  */
 export const startServer = async ({
   env,
@@ -26,7 +27,7 @@ export const startServer = async ({
   proc = process,
   exit,
   db = { connect: connectDB, disconnect: disconnectDB },
-  services = createServices({ logger }),
+  services = createServices({ logger, llm: createLlm({ env, logger }) }),
   scheduler = startScheduler,
 } = {}) => {
   await db.connect(env.MONGODB_URI, { logger });

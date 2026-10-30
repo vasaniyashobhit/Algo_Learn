@@ -44,6 +44,9 @@ standard `RateLimit` / `RateLimit-Policy` headers (draft-7). When exceeded: `429
 **per-user cooldown of 20 s** after `lastSyncedAt`: `429 RATE_LIMITED` with
 `details.retryAfterSeconds` (1–20). The background sync job ignores the cooldown.
 
+`POST /stuck` is limited to **10 per hour per user** (`retryAfterSeconds` 3600), in addition to the
+IP limit.
+
 ## Endpoints
 
 ### `GET /api/v1/health`
@@ -526,6 +529,147 @@ looks for an `OK` on the problem or a Div1/Div2 copy (same title, contest ±2).
 Errors: `404 PROBLEM_NOT_FOUND` (checked before syncing), `400 CF_HANDLE_NOT_LINKED`,
 `409 SYNC_IN_PROGRESS`, `429 RATE_LIMITED`, `503 CF_UNAVAILABLE`, `400 VALIDATION_FAILED` (params).
 
+### Stuck helper (protected, practice and upsolving only)
+
+The user is stuck on a problem they are **practising or upsolving** (never a live rated contest).
+`POST /stuck` turns text, a link, a PDF or a screenshot into a coaching result that is **never
+blank**: when every AI provider fails, the result still has the likely topics, the user's weak
+areas, similar problems and the editorial (`source: "fallback"` plus `notice`).
+UX: show `hints` and `gap` first; fetch `GET /stuck/:id/solution` only when the user asks.
+
+#### `POST /api/v1/stuck`
+
+`multipart/form-data` (needed for files) or JSON. **Rate limit: 10 per hour per user**
+(`429 RATE_LIMITED`, `details.retryAfterSeconds` = the window, 3600), counted before the upload
+is read; failed requests count too.
+
+| Field | Required for | Notes |
+|---|---|---|
+| `inputType` | always | `text` \| `url` \| `pdf` \| `image` |
+| `text` | `text` (or a `.txt` file) | ≥ 40 chars after trimming, ≤ 20,000 |
+| `url` | `url` | ≤ 2,048 chars, full `http(s)://` link |
+| `file` | `pdf`, `image` (optional `.txt` for `text`) | one file, ≤ 5 MB; `application/pdf`, `image/png`, `image/jpeg`, `image/webp`, `text/plain`. The first bytes must match the type |
+
+How each input is read:
+
+- **Codeforces link** (`codeforces.com`/`codeforces.ru`, `www.`/`m1-3.`; `/contest/{id}/problem/{idx}`,
+  `/problemset/problem/{id}/{idx}`, `/gym/{id}/problem/{idx}`) → problem id, **no fetch**.
+- **Other link** → fetched server-side, best effort (many sites block bots): only `http`/`https` on
+  ports 80/443, no `user:pass@`, every address the host resolves to must be public (localhost,
+  private, link-local incl. `169.254.169.254`, CGNAT, multicast, reserved → `URL_NOT_ALLOWED`),
+  re-checked on each redirect (max 3). 8 s for the whole fetch, 2 MB max, HTML or plain text only;
+  the main text is extracted (`.problem-statement`, `main`, `article`, … `body`).
+- **PDF** → text layer (scanned PDFs have none → `INPUT_UNREADABLE`; upload a screenshot instead).
+- **Image** → Gemini reads it, then tesseract OCR (English) if Gemini returns nothing.
+
+Then: find the problem in our DB (by id, else an exact title / statement match among the 5
+nearest `$text` results) → AI coach (cache → providers, 40 s deadline) → tags (`db` → `ai` →
+`neighbors`: most common tags of the 5 nearest problems) → concept gap → similar problems
+(rating window centred **150 below** the problem's rating, or the user's rating if unknown, when
+there is a weak/unseen single topic; solved problems excluded) → saved.
+
+`201`:
+
+```json
+{
+  "success": true,
+  "data": {
+    "id": "6720f0c2a1b2c3d4e5f60718",
+    "inputType": "url",
+    "createdAt": "2026-10-30T12:00:00.000Z",
+    "source": "fallback",
+    "notice": "AI solution temporarily unavailable. Here are the likely topics, your weak areas, similar problems and editorials.",
+    "fallbackReason": "AI_TIMEOUT",
+    "problem": {
+      "matchedProblemId": "1/A", "requestedProblemId": "1/A", "title": "Theatre Square",
+      "tags": ["math"], "tagsSource": "db", "rating": 1000
+    },
+    "hints": ["This problem most likely uses math.", "Review math first. You have not practised math yet.", "From the editorial: ..."],
+    "hasSolution": false,
+    "editorialAvailable": true,
+    "gap": {
+      "message": "This problem needs math. You have not practised math yet.",
+      "items": [{ "topicKey": "math", "kind": "single", "strength": null, "status": "unseen", "attempted": 0, "message": "You have not practised math yet." }],
+      "topics": [{ "topicKey": "math", "kind": "single", "strength": null, "status": "unseen", "attempted": 0, "message": "..." }]
+    },
+    "similar": {
+      "items": [{ "id": "4/A", "contestId": 4, "index": "A", "title": "Watermelon", "rating": 800, "tags": ["math"], "hasEditorial": true, "source": "hf", "similarity": { } }],
+      "easier": true, "targetRating": 850, "strategies": ["primary"]
+    }
+  }
+}
+```
+
+- `source`: `ai` \| `cache` (AI answer) \| `fallback`. `notice` and `fallbackReason` are `null` unless
+  `fallback`. `fallbackReason`: `AI_BUSY` (every model's per-minute budget used up: "try again in a
+  minute"), `AI_TIMEOUT` (the 40 s deadline passed), `AI_UNAVAILABLE`, `NO_INPUT` (no statement
+  text, e.g. a gym link we do not have).
+- `problem.matchedProblemId`: our DB id or `null`; `requestedProblemId`: the id parsed from a
+  Codeforces link (even if we do not have it), else `null`. `title` is the stored title or the
+  statement's first line (≤ 120 chars), `null` if unknown. `tagsSource` is `null` when no tags were
+  found (`tags: []`); `rating` may be `null`.
+- `hints`: 1–3 strings. AI hints, or (fallback / AI gave none) the likely topics, the weakest gap
+  topic and the editorial's first paragraph; never empty.
+- `hasSolution`: an AI solution exists for `GET /stuck/:id/solution`. `editorialAvailable`: the
+  matched problem has an editorial.
+- `gap.topics`: every topic key of the problem (single tags and sorted pairs) with `strength`
+  (0–1, 2 decimals, `null` = no stats) and `status` `weak` (< 0.4) \| `developing` (0.4–0.7) \|
+  `strong` (> 0.7) \| `unseen`. `gap.items` = the gap (`weak` + `unseen`), weakest first (weak
+  before unseen, singles before pairs). Users without a handle/stats see everything `unseen`.
+- `similar.items` use the problem summary shape of `/problems`; `easier` says the window was
+  shifted down; `strategies` as in `/problems/:contestId/:index/similar` (show a "broader picks"
+  notice when it contains anything but `primary`).
+
+Errors: `400 VALIDATION_FAILED` (`body.inputType`, `body.text`, `body.url`, `file` missing, a
+second file, unknown fields), `400 PROBLEM_TEXT_TOO_SHORT` (`details: { minLength: 40, length }`),
+`400 URL_NOT_ALLOWED` (`details.reason`: `scheme` \| `credentials` \| `port` \| `private`),
+`502/503 URL_FETCH_FAILED` (`details.reason`: `dns` \| `status` (+ `status`) \| `unsupported_type`
+\| `no_text` \| `too_large` (+ `maxBytes`) \| `too_many_redirects` \| `network` \| `timeout` (503)),
+`413 FILE_TOO_LARGE`, `415 FILE_TYPE_UNSUPPORTED` (type not allowed, bytes do not match the type,
+wrong file for the input type, or a file field other than `file`), `422 INPUT_UNREADABLE`
+(`details.inputType`: `pdf` \| `image`), `429 RATE_LIMITED`, `401 AUTH_*`.
+AI failures are **never** errors (see `source: "fallback"`).
+
+#### `GET /api/v1/stuck/history?page=1`
+
+The user's queries, newest first, 20 per page. `meta: { page, limit, total, totalPages }`.
+Items: `{ id, inputType, createdAt, source, problem: { matchedProblemId, requestedProblemId, title,
+tags, tagsSource, rating }, gapTopics: ["bitmasks", "bitmasks+dp"] }`.
+Errors: `400 VALIDATION_FAILED` (`page` < 1).
+
+#### `GET /api/v1/stuck/:id`
+
+The same object `POST /stuck` returned (never the solution or the raw input).
+
+#### `GET /api/v1/stuck/:id/solution`
+
+Shown only on request (hints first):
+
+```json
+{
+  "success": true,
+  "data": {
+    "id": "6720f0c2a1b2c3d4e5f60718",
+    "kind": "ai",
+    "solution": { "approach": "...", "solutionSteps": ["..."], "complexity": "O(1)", "code": "...", "pitfalls": ["..."] },
+    "editorial": "Full editorial text, or null",
+    "notice": null,
+    "similarWithEditorial": [{ "id": "4/A", "title": "Watermelon", "hasEditorial": true }]
+  }
+}
+```
+
+`kind`: `ai` (AI solution, plus the editorial when we have one) \| `editorial` (no AI solution) \|
+`none` (neither: `notice` is the fallback notice; show `similarWithEditorial`, the similar problems
+from the result that have editorials). `solution` fields may be `null` (e.g. `code`).
+
+#### `DELETE /api/v1/stuck/:id`
+
+`200 { "id": "...", "deleted": true }`.
+
+`GET /:id`, `/:id/solution` and `DELETE /:id` answer `404 STUCK_QUERY_NOT_FOUND` for an unknown id,
+a malformed id **and another user's id** (no difference is revealed).
+
 ### Unknown routes
 
 Any unmatched method or path → `404 ROUTE_NOT_FOUND`, e.g. `"Route GET /api/v1/nope not found"`.
@@ -552,24 +696,25 @@ Source: `backend/src/errors/codes.js`. Every code needs a frontend message in
 | `CF_HANDLE_NOT_LINKED` | 400 | Feature needs a linked Codeforces handle |
 | `CF_UNAVAILABLE` | 502/503 | Codeforces API down, slow or erroring |
 | `SYNC_IN_PROGRESS` | 409 | A sync for this user is already running |
-| `RATE_LIMITED` | 429 | Too many requests, or a sync within 20 s of the last one. `details: { retryAfterSeconds }` |
-| `FILE_TOO_LARGE` | 413 | Upload or request body over the size limit (JSON body limit: 1 MB) |
-| `FILE_TYPE_UNSUPPORTED` | 415 | Unsupported upload type or unexpected file field |
-| `URL_NOT_ALLOWED` | 400 | URL not on the allow-list for problem import |
-| `URL_FETCH_FAILED` | 502/503 | Fetching an external URL failed (`details.reason`: `timeout`/`network`/`aborted`) |
-| `INPUT_UNREADABLE` | 422 | Uploaded file or page could not be parsed into text |
-| `PROBLEM_TEXT_TOO_SHORT` | 400 | Pasted/extracted problem text is too short to analyse |
+| `RATE_LIMITED` | 429 | Too many requests (IP limit, auth limit, 10 stuck queries/hour/user), or a sync within 20 s of the last one. `details: { retryAfterSeconds }` |
+| `FILE_TOO_LARGE` | 413 | Upload over 5 MB, or a JSON body over 1 MB |
+| `FILE_TYPE_UNSUPPORTED` | 415 | Upload type not allowed (pdf/png/jpeg/webp/txt), bytes not matching the type, wrong file for `inputType`, or a field other than `file` |
+| `URL_NOT_ALLOWED` | 400 | Stuck link refused by the SSRF guard. `details.reason`: `scheme`/`credentials`/`port`/`private` |
+| `URL_FETCH_FAILED` | 502/503 | Fetching a stuck link failed. `details.reason`: `dns`/`status`/`unsupported_type`/`no_text`/`too_large`/`too_many_redirects`/`network`, or `timeout` (503) |
+| `INPUT_UNREADABLE` | 422 | No text in the PDF, or neither Gemini nor OCR could read the image. `details: { inputType }` |
+| `PROBLEM_TEXT_TOO_SHORT` | 400 | Pasted text under 40 characters. `details: { minLength, length }` |
 | `PRACTICE_ITEM_EXISTS` | 409 | Problem already in the user's practice list |
-| `STUCK_QUERY_NOT_FOUND` | 404 | Stuck-helper query id does not exist for this user |
+| `STUCK_QUERY_NOT_FOUND` | 404 | Stuck query id unknown, malformed, or another user's |
 | `DUPLICATE_RESOURCE` | 409 | Generic unique-index violation. `details: { fields: [...] }` (field names only) |
 | `DB_UNAVAILABLE` | 503 | Could not connect to or close MongoDB (startup/shutdown; not yet sent by any endpoint) |
 | `INTERNAL_ERROR` | 500 | Anything unexpected. Message is always generic |
 
 Auth codes are confirmed (Session 4). CF and sync codes (`CF_HANDLE_*`, `CF_UNAVAILABLE`,
 `SYNC_IN_PROGRESS`) and `FORBIDDEN` are confirmed (Session 6). `PRACTICE_ITEM_EXISTS` (409) and the
-sync use of `RATE_LIMITED` are confirmed (Session 8; no new codes). Statuses for codes not yet emitted
-by any endpoint (upload, stuck, practice) are the intended ones; the sessions that implement
-those features confirm them here.
+sync use of `RATE_LIMITED` are confirmed (Session 8; no new codes). Upload and stuck codes
+(`FILE_*`, `URL_*`, `INPUT_UNREADABLE`, `PROBLEM_TEXT_TOO_SHORT`, `STUCK_QUERY_NOT_FOUND`) are
+confirmed (Session 10; no new codes). Only `DB_UNAVAILABLE` is not sent by any endpoint. This table
+is the complete list for the frontend's messages.
 
 ## Data model (MongoDB)
 
@@ -626,10 +771,12 @@ upsert-replace every current key).
 ### `stuckqueries`
 
 `userId`, `inputType` (`text|url|pdf|image`), `rawInput` (truncated to 20,000 chars),
-`matchedProblemId` (nullable), `detectedTags`, `tagsSource` (`db|ai|neighbors`, unset until
-known), `estimatedRating` (nullable), `gap` (`[{ topicKey, strength, status }]`, status
-`untouched|weak|ok|strong`), `result` (free-form), `source` (`ai|cache|fallback`),
-`createdAt` (no `updatedAt`). Index `{userId: 1, createdAt: -1}`.
+`matchedProblemId` (nullable), `detectedTags`, `tagsSource` (`db|ai|neighbors`, unset when no
+tags were found), `estimatedRating` (nullable), `gap` (the gap items only:
+`[{ topicKey, kind, strength (null when unseen), status }]`, status `unseen|weak|developing|strong`),
+`result` (the public result returned by the API), `solution` (the AI solution, only served by
+`/stuck/:id/solution`; `null` without one), `source` (`ai|cache|fallback`), `createdAt` (no
+`updatedAt`). Index `{userId: 1, createdAt: -1}`.
 
 ### `llmcaches` (internal, never returned directly)
 

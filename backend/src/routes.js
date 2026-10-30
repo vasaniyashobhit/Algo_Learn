@@ -7,6 +7,7 @@ import { problemsRouter } from './modules/problems/problems.routes.js';
 import { createInternalRouter } from './modules/internal/internal.routes.js';
 import { createRecommendationsRouter } from './modules/recommendations/recommendations.routes.js';
 import { createPracticeRouter } from './modules/practice/practice.routes.js';
+import { createStuckRouter } from './modules/stuck/stuck.routes.js';
 
 export const API_BASE_PATH = '/api/v1';
 
@@ -14,9 +15,9 @@ export const API_BASE_PATH = '/api/v1';
  * Mounts every feature router under /api/v1. `auth` comes from createAuth(),
  * `services` from createServices() (feature services and jobs).
  */
-export const createApiRouter = ({ auth, authRateLimit, services, cronSecret }) => {
+export const createApiRouter = ({ auth, authRateLimit, stuckRateLimit, services, cronSecret }) => {
   const { authService, requireAuth } = auth;
-  const { handleService, syncService, statsService, recommendationsService, practiceService, jobs } = services;
+  const { handleService, syncService, statsService, recommendationsService, practiceService, stuckService, jobs } = services;
   const router = Router();
   router.use('/health', healthRouter);
   router.use('/meta', metaRouter);
@@ -25,6 +26,7 @@ export const createApiRouter = ({ auth, authRateLimit, services, cronSecret }) =
   router.use('/problems', problemsRouter);
   router.use('/recommendations', createRecommendationsRouter({ requireAuth, recommendationsService }));
   router.use('/practice', createPracticeRouter({ requireAuth, practiceService }));
+  router.use('/stuck', createStuckRouter({ requireAuth, stuckService, rateLimit: stuckRateLimit }));
   router.use('/internal', createInternalRouter({ cronSecret, jobs }));
   return router;
 };

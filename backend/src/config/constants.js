@@ -41,7 +41,7 @@ export const TOPIC_KINDS = Object.freeze(['single', 'pair']);
 export const STUCK_INPUT_TYPES = Object.freeze(['text', 'url', 'pdf', 'image']);
 export const TAG_SOURCES = Object.freeze(['db', 'ai', 'neighbors']);
 export const ANSWER_SOURCES = Object.freeze(['ai', 'cache', 'fallback']);
-export const GAP_STATUSES = Object.freeze(['untouched', 'weak', 'ok', 'strong']);
+export const GAP_STATUSES = Object.freeze(['unseen', 'weak', 'developing', 'strong']);
 export const PRACTICE_STATUSES = Object.freeze(['todo', 'solved', 'skipped']);
 export const PRACTICE_ORIGINS = Object.freeze(['recommendation', 'similar', 'stuck', 'manual']);
 
@@ -80,3 +80,5 @@ export * from './statsConstants.js';
 export * from './recommendationConstants.js';
 /** LLM coach chain (Session 9) lives in llmConstants.js. */
 export * from './llmConstants.js';
+/** Stuck flow (Session 10) lives in stuckConstants.js. */
+export * from './stuckConstants.js';

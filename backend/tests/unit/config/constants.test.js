@@ -36,7 +36,7 @@ describe('constants', () => {
     expect(constants.ANSWER_SOURCES).toEqual(['ai', 'cache', 'fallback']);
     expect(constants.PRACTICE_STATUSES).toEqual(['todo', 'solved', 'skipped']);
     expect(constants.PRACTICE_ORIGINS).toEqual(['recommendation', 'similar', 'stuck', 'manual']);
-    expect(constants.GAP_STATUSES).toEqual(['untouched', 'weak', 'ok', 'strong']);
+    expect(constants.GAP_STATUSES).toEqual(['unseen', 'weak', 'developing', 'strong']);
   });
 
   it('lists every Codeforces verdict once, including OK', () => {

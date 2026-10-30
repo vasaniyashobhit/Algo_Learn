@@ -50,3 +50,10 @@ export class ExternalServiceError extends AppError {
     super(statusCode, code, message, details, { cause });
   }
 }
+
+/** 422: the input was received but could not be turned into anything usable (e.g. unreadable file). */
+export class UnprocessableError extends AppError {
+  constructor(code = codes.INPUT_UNREADABLE, message = 'The input could not be read', details, options) {
+    super(422, code, message, details, options);
+  }
+}

@@ -3,7 +3,7 @@ import { AppError } from '../../../src/errors/AppError.js';
 import { codes } from '../../../src/errors/codes.js';
 import {
   AuthError, ConflictError, ExternalServiceError, ForbiddenError, NotFoundError, PayloadError,
-  RateLimitError, ValidationError,
+  RateLimitError, UnprocessableError, ValidationError,
 } from '../../../src/errors/httpErrors.js';
 
 describe('http error subclasses', () => {
@@ -15,6 +15,7 @@ describe('http error subclasses', () => {
     [ConflictError, 409, codes.DUPLICATE_RESOURCE],
     [PayloadError, 415, codes.FILE_TYPE_UNSUPPORTED],
     [RateLimitError, 429, codes.RATE_LIMITED],
+    [UnprocessableError, 422, codes.INPUT_UNREADABLE],
   ])('%o has status %i and default code %s', (ErrorClass, status, code) => {
     const err = new ErrorClass();
     expect(err).toBeInstanceOf(AppError);
