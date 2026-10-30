@@ -21,6 +21,14 @@ describe('Navbar (score bug)', () => {
     expect(await within(header).findByText(testUser.name)).toBeInTheDocument();
     expect(within(header).getByRole('link', { name: 'Dashboard' })).toHaveAttribute('aria-current', 'page');
     expect(within(header).getByRole('link', { name: 'AlgoLearn' })).toHaveAttribute('href', '/dashboard');
+    const nav = within(header).getByRole('navigation', { name: 'Main' });
+    expect(within(nav).getAllByRole('link').map((link) => link.textContent)).toEqual([
+      'Dashboard',
+      "I'm stuck",
+      'Problems',
+      'Practice',
+      'History',
+    ]);
   });
 
   it('logs out back to the landing page', async () => {

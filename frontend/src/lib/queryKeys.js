@@ -20,7 +20,16 @@ export const queryKeys = {
     list: (status = null) => ['practice', 'list', { status }],
   },
   problems: {
+    all: ['problems'],
+    list: (params) => ['problems', 'list', params],
+    detail: (problemId) => ['problems', 'detail', problemId],
     similar: (problemId, params) => ['problems', 'similar', problemId, params],
+  },
+  stuck: {
+    all: ['stuck'],
+    history: (page) => ['stuck', 'history', { page }],
+    detail: (id) => ['stuck', 'detail', id],
+    solution: (id) => ['stuck', 'solution', id],
   },
 };
 

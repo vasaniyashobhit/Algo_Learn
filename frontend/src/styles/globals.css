@@ -3,6 +3,7 @@
 @import './theme.css';
 @import './effects.css';
 @import './dashboard.css';
+@import './content.css';
 
 @layer base {
   html {

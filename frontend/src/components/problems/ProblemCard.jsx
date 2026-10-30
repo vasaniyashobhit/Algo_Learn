@@ -1,13 +1,15 @@
-import { codeforcesUrl, ratingText, similarPath } from '../../lib/problemLinks.js';
+import { Link } from 'react-router';
+import { codeforcesUrl, problemPath, ratingText, similarPath } from '../../lib/problemLinks.js';
 import { AddToPracticeButton } from '../practice/AddToPracticeButton.jsx';
+import { VerifyButton } from '../practice/VerifyButton.jsx';
 import { Button } from '../ui/Button.jsx';
 import { Tag } from '../ui/Tag.jsx';
 
 /**
- * A problem: id, title, rating, tags and three actions (open on Codeforces, find similar,
- * add to practice). `note` is a short qualifier such as "Broader pick".
+ * A problem: id, title, rating, tags and its actions (add to practice, "I solved it" when
+ * `verify`, details, open on Codeforces). `note` is a short qualifier such as "Broader pick".
  */
-export const ProblemCard = ({ problem, note, addedFrom }) => (
+export const ProblemCard = ({ problem, note, addedFrom, verify = false }) => (
   <article
     aria-labelledby={`problem-${problem.id}`}
     className="grid h-full content-start gap-2 bg-band p-4 shadow-[inset_0_-3px_0_var(--line)] transition-shadow duration-[160ms] hover:shadow-[inset_0_-3px_0_var(--plate-text)]"
@@ -19,7 +21,9 @@ export const ProblemCard = ({ problem, note, addedFrom }) => (
           {note && <span> · {note}</span>}
         </p>
         <h3 id={`problem-${problem.id}`} className="m-0 text-[1.4rem] leading-none">
-          {problem.title}
+          <Link to={problemPath(problem.id)} className="no-underline hover:underline">
+            {problem.title}
+          </Link>
         </h3>
       </div>
       <p className="m-0 text-right">
@@ -38,6 +42,7 @@ export const ProblemCard = ({ problem, note, addedFrom }) => (
     )}
     <div className="mt-1 flex flex-wrap items-center gap-x-4 gap-y-2">
       <AddToPracticeButton problem={problem} addedFrom={addedFrom} />
+      {verify && <VerifyButton problemId={problem.id} />}
       <Button variant="text" to={similarPath(problem.id)} aria-label={`Find problems similar to ${problem.id}`}>
         Find similar
       </Button>

@@ -7,3 +7,17 @@ export const formatWait = (seconds) => {
   const hours = Math.ceil(minutes / 60);
   return `${hours} hour${hours === 1 ? '' : 's'}`;
 };
+
+const CLOCK = { hour: '2-digit', minute: '2-digit', hour12: false };
+
+/** The local clock time `seconds` from now, e.g. "02:14", for "your next request opens at …". */
+export const retryClock = (seconds, now = Date.now()) =>
+  new Date(now + Math.max(0, Number(seconds) || 0) * 1000).toLocaleTimeString('en-GB', CLOCK);
+
+/** "30 Oct · 01:12" in local time, for history rows. */
+export const formatWhen = (iso) => {
+  const date = new Date(iso);
+  if (Number.isNaN(date.getTime())) return '';
+  const day = date.toLocaleDateString('en-GB', { day: 'numeric', month: 'short' });
+  return `${day} · ${date.toLocaleTimeString('en-GB', CLOCK)}`;
+};

@@ -1,4 +1,5 @@
 import { apiClient, unwrap, unwrapWithMeta } from '../client.js';
+import { SYNC_TIMEOUT_MS } from './users.api.js';
 
 const BASE = '/api/v1/practice';
 
@@ -19,3 +20,10 @@ export const updatePractice = async ({ problemId, status }) =>
 
 /** @returns {Promise<object>} the deleted item */
 export const removePractice = async ({ problemId }) => unwrap(await apiClient.delete(practicePath(problemId)));
+
+/**
+ * "I solved it": runs a sync first, so it gets the sync timeout.
+ * @returns {Promise<{ verified: true, item: object } | { verified: false, reason: 'NOT_SOLVED_YET' | 'STILL_JUDGING' }>}
+ */
+export const verifyPractice = async ({ problemId }) =>
+  unwrap(await apiClient.post(`${practicePath(problemId)}/verify`, null, { timeout: SYNC_TIMEOUT_MS }));

@@ -2,12 +2,22 @@ import { useStatsSummaryQuery } from '../../hooks/queries/stats.queries.js';
 import { LEVEL_LABELS, formatStrength, strengthLevel } from '../../lib/strength.js';
 import { StaggerItem } from '../motion/StaggerItem.jsx';
 import { StaggerList } from '../motion/StaggerList.jsx';
+import { Mark } from '../ui/Mark.jsx';
 import { PanelHeading } from '../ui/PanelHeading.jsx';
 import { QueryState } from '../ui/QueryState.jsx';
+import { LastResults } from './LastResults.jsx';
 import { PanelSkeleton } from './PanelSkeleton.jsx';
 
 const HEAD = 'label border-b border-line pb-2 text-right text-[0.8rem] tracking-[0.1em] text-ink-soft';
 const CELL = 'border-b border-line py-[0.55rem] text-right whitespace-nowrap';
+
+const Legend = () => (
+  <p className="mt-3 mb-0 flex flex-wrap items-center gap-x-4 gap-y-1 text-step--1 text-ink-soft">
+    <span className="flex items-center gap-2"><Mark shape="solved" /> solved</span>
+    <span className="flex items-center gap-2"><Mark shape="open" /> not solved</span>
+    <span>Last 5 reads newest first</span>
+  </p>
+);
 
 const WeakTable = ({ rows }) => (
   <table aria-labelledby="weak-title" className="w-full border-collapse">
@@ -21,6 +31,9 @@ const WeakTable = ({ rows }) => (
         </th>
         <th scope="col" className={HEAD}>
           Solved / tried
+        </th>
+        <th scope="col" className={HEAD}>
+          Last 5
         </th>
       </tr>
     </thead>
@@ -38,6 +51,9 @@ const WeakTable = ({ rows }) => (
             </td>
             <td className={`${CELL} num`}>
               {row.solved}/{row.attempted}
+            </td>
+            <td className={CELL}>
+              <LastResults results={row.lastResults} />
             </td>
           </StaggerItem>
         );
@@ -64,7 +80,12 @@ export const WeakTopics = () => {
           </p>
         }
       >
-        {(answer) => <WeakTable rows={answer.data.weakest} />}
+        {(answer) => (
+          <>
+            <WeakTable rows={answer.data.weakest} />
+            <Legend />
+          </>
+        )}
       </QueryState>
     </section>
   );

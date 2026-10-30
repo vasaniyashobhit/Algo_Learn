@@ -17,7 +17,10 @@ export const Navbar = () => {
           {signedIn ? (
             <>
               <NavItem to="/dashboard">Dashboard</NavItem>
+              <NavItem to="/stuck">I'm stuck</NavItem>
+              <NavItem to="/problems">Problems</NavItem>
               <NavItem to="/practice">Practice</NavItem>
+              <NavItem to="/history">History</NavItem>
             </>
           ) : (
             <>

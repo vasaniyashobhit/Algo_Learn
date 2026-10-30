@@ -1,0 +1,46 @@
+/* Long-form content: statements, hints, solutions, editorials (Markdown + KaTeX), code, uploads. */
+
+.prose-board { line-height: 1.7; overflow-wrap: anywhere; }
+.prose-board > :first-child { margin-top: 0; }
+.prose-board > :last-child { margin-bottom: 0; }
+.prose-board p { margin: 0 0 0.9em; max-width: 72ch; }
+.prose-board ul, .prose-board ol { margin: 0 0 0.9em; padding-left: 1.3rem; }
+.prose-board li + li { margin-top: 0.3em; }
+.prose-board strong { font-weight: 700; }
+.prose-board a { text-decoration: underline; }
+.prose-board .katex { font-size: 1.06em; }
+.prose-board .katex-display { margin: 1rem 0; overflow-x: auto; overflow-y: hidden; padding-block: 0.2rem; }
+
+.prose-board code, .code-block {
+  font-family: ui-monospace, 'Cascadia Code', Consolas, monospace;
+  font-size: 0.88em;
+}
+
+.prose-board :not(pre) > code { padding: 0.05rem 0.3rem; background: var(--band-2); }
+.prose-board pre, .code-block {
+  margin: 0.8rem 0 0;
+  padding: 0.9rem 1rem;
+  background: var(--ground);
+  color: var(--ink);
+  overflow-x: auto;
+  line-height: 1.55;
+  tab-size: 4;
+  scrollbar-color: var(--line) var(--ground);
+}
+
+.code-block ::selection, .prose-board pre ::selection { background: var(--plate); color: var(--plate-ink); }
+
+/* The upload target: a diagonal-ruled band, outlined in plate while a file is over it. */
+.drop-zone {
+  background: repeating-linear-gradient(-45deg, var(--band-2) 0 10px, var(--band) 10px 20px);
+  transition: box-shadow 160ms var(--ease);
+}
+
+.drop-zone[data-over='true'] { box-shadow: inset 0 0 0 3px var(--plate); }
+.drop-zone:focus-within { box-shadow: inset 0 0 0 2px var(--focus); }
+
+.stuck-textarea {
+  min-height: 14rem;
+  resize: vertical;
+  line-height: 1.55;
+}

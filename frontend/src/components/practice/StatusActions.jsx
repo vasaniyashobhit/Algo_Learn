@@ -2,6 +2,7 @@ import { useRemovePracticeMutation, useUpdatePracticeMutation } from '../../hook
 import { useFlash } from '../../hooks/useFlash.js';
 import { SuccessTick } from '../motion/SuccessTick.jsx';
 import { Button } from '../ui/Button.jsx';
+import { VerifyButton } from './VerifyButton.jsx';
 
 const SMALL = 'px-[0.7rem] py-[0.4rem] text-[0.9rem]';
 
@@ -34,6 +35,7 @@ export const StatusActions = ({ item }) => {
           </>
         )}
       </span>
+      {item.status === 'todo' && !item.optimistic && <VerifyButton problemId={problemId} align="right" />}
       {MOVES[item.status].map((move) => (
         <Button
           key={move.status}

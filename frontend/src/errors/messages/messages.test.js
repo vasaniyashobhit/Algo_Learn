@@ -23,7 +23,7 @@ describe('feature messages with params', () => {
 
   it('distinguishes unreadable PDFs from images', () => {
     expect(stuckMessages.INPUT_UNREADABLE.default({ inputType: 'pdf' })).toMatch(/no selectable text/);
-    expect(stuckMessages.INPUT_UNREADABLE.default({ inputType: 'image' })).toMatch(/couldn't read that file/);
+    expect(stuckMessages.INPUT_UNREADABLE.default({ inputType: 'image' })).toMatch(/couldn't read a problem from that file/);
     expect(stuckMessages.PROBLEM_TEXT_TOO_SHORT.default({ minLength: 60 })).toMatch(/60 characters/);
   });
 

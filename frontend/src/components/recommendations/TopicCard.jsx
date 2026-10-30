@@ -40,6 +40,7 @@ export const TopicCard = ({ topic, lead = false }) => (
             <ProblemCard
               problem={problem}
               addedFrom="recommendation"
+              verify
               note={problem.pickedBy === 'similar_fallback' ? 'Broader pick' : undefined}
             />
           </StaggerItem>

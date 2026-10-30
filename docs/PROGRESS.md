@@ -388,7 +388,70 @@ Read this first, update it last, every session.
 - Checked in headless Chrome (mock API) at 1366 px dark/light and 760 px: fixed a clipped radar
   label and line-coloured empty slots in the problem grid.
 
+### Session 14 (2026-10-30) — Stuck input/result, problem pages, history, "I solved it", Last 5
+
+- **Session 13 extras first.**
+  - "I solved it" (`VerifyButton`) on every recommended problem card and every to-do practice row,
+    shown only with a linked handle. `POST /practice/:id/verify` (sync timeout). Verified → the
+    item becomes `solved` in every cached list at once, a drawn tick ("Solved on Codeforces") and a
+    toast, stats/user/practice refresh, recommendations refresh after 1.8 s (so the card does not
+    vanish under the cursor). `NOT_SOLVED_YET` / `STILL_JUDGING` → status line; `RATE_LIMITED` →
+    a live countdown from `details.retryAfterSeconds` with the button disabled; other errors → a
+    toast with new `verify` message contexts (CF_HANDLE_NOT_LINKED, CF_UNAVAILABLE, SYNC_IN_PROGRESS).
+  - **Backend: `lastResults`** on topic stats: the recompute keeps every attempted problem per key
+    and stores the 5 newest `{ problemId, solved }` (`STATS.lastResults`, model field, `statView`).
+    Returned by `GET /users/me/stats` and the summary lists. Weak topics table has a "Last 5" column
+    (■ solved, □ not solved, an `img` with a sentence, a legend). API.md updated.
+- **/stuck:** four tabs (keyboard tabs), text with a live count, link, PDF and image drop zones
+  (drag-and-drop, browse, Ctrl+V pastes a screenshot from anywhere on the page). Client checks
+  mirror the backend (`lib/stuckInput.js`: 40 chars, http(s) only, credentials, ports, private
+  hosts, 5 MB, types per tab) and are worded through `getUserMessage` like server errors. Specific
+  messages for every stuck code (URL_NOT_ALLOWED per reason, FILE_TYPE_UNSUPPORTED per tab,
+  INPUT_UNREADABLE / URL_FETCH_FAILED with "Paste text instead", RATE_LIMITED with the reopening
+  clock time and a History link). Practice-only note. "I'm stuck on this" on a problem page
+  pre-fills the link. Success seeds the result cache and opens `/stuck/:id`.
+- **/stuck/:id:** `StuckResultSkeleton`; chalk strap with detected tags and their source badge;
+  plate fallback banner by `fallbackReason`; hints one at a time (wipe, focus moves to the new
+  hint); concept gap cards (weak/unseen, strength bars); warm-up problems (+ practice,
+  `addedFrom: stuck`, broader-picks note); "Show full solution"/"Show editorial" lazy-loads
+  `/stuck/:id/solution` (skeleton, AI approach/steps/complexity/code with copy/pitfalls + editorial,
+  editorial alone, or similar problems with editorials; error with retry). Unknown id → its message.
+- **LaTeX:** `lib/latex.js` (`$$$$$$x$$$$$$` → display block, `$$$x$$$` → `$x$`) and `ui/Markdown`
+  (react-markdown + remark-math + rehype-katex, `throwOnError: false`, no raw HTML).
+- **/problems/:contestId/:index:** chalk strap (id, title, rating, tags, Codeforces link), statement
+  sections, "Add to practice" on the plate, "I'm stuck on this", folded editorial, a no-statement
+  notice for `cf_api` rows, similar problems with `meta.strategy` in small print, skeleton, and the
+  PROBLEM_NOT_FOUND message with the id. **/problems:** topic / rating-from / rating-to filters in the
+  URL (crossed range corrected, page reset), skeleton rows, kept previous page while loading, pager,
+  empty state. Problem titles on cards now link to the detail page.
+- **/history:** table (when, problem → result, input, answer, gap tags), pager, empty state. Delete
+  is optimistic with an **Undo** toast: the row leaves every cached page at once, the DELETE is sent
+  after 5 s (or on leaving the page); Undo restores it without a request; a failed DELETE restores
+  it with a specific toast; STUCK_QUERY_NOT_FOUND counts as done.
+- Navbar: Dashboard, I'm stuck, Problems, Practice, History (links never wrap).
+- **Production build bug found and fixed (pre-existing since Session 12):** the built app was a blank
+  page ("Cannot set properties of undefined (setting 'Activity')"). The name-based `manualChunks`
+  put React's CommonJS wrapper in the `charts` chunk, creating a react ↔ charts import cycle. Vendor
+  chunks are now assigned by package path (`vendorChunk` in `vite.config.js`); new `markdown` chunk.
+  The dev server never showed it, which is why earlier visual checks passed.
+- Tests: `test/nodeFormData.js` swaps in Node's FormData/File (jsdom's hang inside MSW uploads);
+  Testing Library async timeout 3 s (coverage makes cold renders slow). Frontend 86 → 106 test files,
+  431 → 542 tests, coverage 99.7% lines / 95.7% branches. Backend 1232 tests. Lint, tests and build green.
+- Checked the production build in headless Chrome (mock API) at 1366 px dark/light and 760 px:
+  stuck, result (AI and fallback), problem, browser, history, practice, dashboard Last 5. Fixed: the
+  hint buttons stacked (now one row), an empty line-coloured gap cell at 760 px (`auto-fit`), a
+  doubled 3px rule on list tables, and the nav wrapping "I'm stuck".
+
 ## Decisions
+
+- **Stuck / problems / history (Session 14):**
+  - Client checks return ApiError-shaped `{ code, details }` so one message table words both the
+    client and the server; client-only issues use `{ clientMessage }` (never the raw ApiError message).
+  - History delete waits 5 s before the DELETE (Undo has no server endpoint, so nothing is deleted
+    until the window ends). The hook lives in the page, not the table, so deleting the last row
+    (table unmounts) does not commit early.
+  - Problem pages are behind login like the rest of the app (they offer practice actions).
+  - The solution and editorial are folded until asked (hints first), on both the result and problem pages.
 
 - **Dashboard (Session 13):**
   - One plate per screen, chosen by state (hero / first-sync notice / lead next topic). The page
@@ -683,10 +746,10 @@ contestId/index`, title, known tags) because `bulkWrite` skips schema validators
 ## Next
 
 - ~~Dashboard session~~ done in Session 13 (wagon wheel, batting card, overs strip, handle form, Sync now).
-- **Practice "I solved it"**: wire `POST /practice/:contestId/:index/verify` (NOT_SOLVED_YET /
-  STILL_JUDGING notices, RATE_LIMITED countdown) next to the manual "Mark solved".
-- Frontend: a problem detail page (statement + LaTeX) is still to come; "Find similar" currently opens
-  `/problems/:contestId/:index/similar` only. The summary's solved-by-rating bands are not drawn yet.
+- ~~Practice "I solved it"~~ and ~~problem detail page~~ done in Session 14. Still open: the summary's
+  solved-by-rating bands are not drawn yet; existing topicstat docs get `lastResults` on their next sync.
+- Session 15: a polish/audit pass; consider lazy-loading the `markdown` chunk (KaTeX, ~120 kB gzip)
+  only on stuck/problem pages, and a per-hour quota figure on /stuck if the API exposes it.
 - ~~Live stuck check~~ done in Fix-up 10.5 (`npm run check:stuck`, table above). Groq was not reached
   (the first Gemini model answered every time); its order is covered by tests only.
 - Possibly tighten the coach prompt or validate C++ code (the lite model once dropped `include <`).

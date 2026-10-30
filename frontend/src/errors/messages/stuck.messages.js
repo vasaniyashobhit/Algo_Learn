@@ -9,11 +9,26 @@ const URL_REASONS = {
   network: "We couldn't connect to that page.",
 };
 
+const URL_BLOCKED = {
+  scheme: 'Use a full link that starts with http:// or https://.',
+  credentials: "Links with a username or password in them aren't allowed.",
+  port: "Links on unusual ports aren't allowed. Use the page's normal address.",
+  private: "That link points to a private or local address, which we can't open.",
+};
+
+const FILE_TYPES = {
+  pdf: 'Choose a PDF file.',
+  image: 'Use a PNG, JPEG or WebP screenshot.',
+};
+
 export const stuckMessages = {
   FILE_TOO_LARGE: { default: () => 'That file is over 5 MB. Try a smaller PDF or a cropped screenshot.' },
-  FILE_TYPE_UNSUPPORTED: { default: () => 'Upload a PDF, PNG, JPEG, WebP or plain text file.' },
+  FILE_TYPE_UNSUPPORTED: {
+    default: ({ inputType }) => FILE_TYPES[inputType] ?? 'Upload a PDF, PNG, JPEG, WebP or plain text file.',
+  },
   URL_NOT_ALLOWED: {
-    default: () => "We can't open that link. Use a public http(s) link, such as the Codeforces problem page.",
+    default: ({ reason }) =>
+      `${URL_BLOCKED[reason] ?? "We can't open that link."} The Codeforces problem page always works.`,
   },
   URL_FETCH_FAILED: {
     default: ({ reason }) =>
@@ -22,12 +37,13 @@ export const stuckMessages = {
   INPUT_UNREADABLE: {
     default: ({ inputType }) =>
       inputType === 'pdf'
-        ? 'That PDF has no selectable text. Paste the statement or upload a screenshot instead.'
-        : "We couldn't read that file. Paste the statement as text instead.",
+        ? 'That PDF has no selectable text (it may be a scan). Paste the statement as text, or upload a screenshot.'
+        : "We couldn't read a problem from that file. Paste the statement as text instead.",
   },
   PROBLEM_TEXT_TOO_SHORT: {
-    default: ({ minLength = 40 }) =>
-      `Paste at least ${minLength} characters of the problem statement so we can match it.`,
+    default: ({ minLength = 40, length }) =>
+      `Paste at least ${minLength} characters of the problem statement so we can match it` +
+      (Number.isFinite(length) ? ` (you have ${length}).` : '.'),
   },
   STUCK_QUERY_NOT_FOUND: { default: () => "We couldn't find that stuck request. It may have been deleted." },
 };

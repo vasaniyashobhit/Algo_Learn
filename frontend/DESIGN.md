@@ -58,6 +58,11 @@ typography:
     fontWeight: 600
     lineHeight: 1.2
     letterSpacing: "0.06em"
+  code:
+    fontFamily: "ui-monospace, Cascadia Code, Consolas, monospace"
+    fontSize: "0.88em"
+    fontWeight: 400
+    lineHeight: 1.55
 rounded:
   cut: "2px"
   none: "0px"
@@ -287,6 +292,30 @@ state.
   first, Escape and the scrim cancel, focus returns to the opener. Never `window.confirm`.
 - **Success micro-animation:** after an optimistic change is confirmed, a 280 ms self-drawing tick
   in Plate Text next to plain words ("Added", "Marked solved"). A confirmation, not a celebration.
+
+### Stuck, problems and history (Session 14)
+- **Stuck input:** a Band panel with four square tabs (Band 2 idle, Band with a 4px plate top rule
+  when selected; arrow keys, Home, End). Panels wipe in on tab change. Uploads use a diagonal-ruled
+  drop zone that gets a 3px plate inset while a file is over it. "Get hints" is the screen's plate.
+  Errors sit below the field as an error Notice with the way out ("Paste text instead", the hourly
+  limit's reopening time plus "Open history").
+- **Chalk strap:** stuck results and problem pages open with a Chalk strap: id and source line,
+  the title at clamp(2rem, 4vw, 3rem), the rating as a Display figure on the right, the topics as
+  tags and a `chalkText` link. The detected-tag source is an outlined Chalk Ink label ("From our
+  database", "From AI", "Estimated").
+- **Where the plate goes:** an AI result puts it on "Next hint"; a fallback result puts it on the
+  notice strap ("AI hints are busy…", with an On plate "Ask again"), and "Next hint" drops to
+  outline. The problem page puts it on "Add to practice".
+- **Hints:** numbered Band rows with a Plate Text figure; each new one wipes in and takes focus.
+  The solution toggle shares the row and opens a Band panel with an Ink top rule below it.
+- **Concept gap:** a Band panel with a Miss top rule; gap topics as a 1px Line-ruled grid of cards
+  (Miss figure, a word, a thin strength bar that grows from the left, the reason). Unseen topics
+  show an en dash, never 0.
+- **Code:** the `code` stack on Ground, scrollable, with a text "Copy code" button and the drawn tick.
+- **Lists** (problem browser, history): column heads in Label type over a 1px Line rule under the
+  page header's 3px Ink rule; ratings as Plate Text figures (an en dash plus "Unrated" for screen
+  readers). Deleting a history row removes it at once with an "Undo" toast (5 s).
+- **Last 5:** ■ solved, □ not solved, newest first, with a sentence for screen readers and a legend.
 
 ## Do's and Don'ts
 

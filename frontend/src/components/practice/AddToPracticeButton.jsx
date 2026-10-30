@@ -8,7 +8,7 @@ import { Button } from '../ui/Button.jsx';
  * "Add to practice". The card switches to "In practice" at once (optimistic); a tick draws
  * when the server confirms. A failed add rolls the card back and a toast says why.
  */
-export const AddToPracticeButton = ({ problem, addedFrom = 'recommendation' }) => {
+export const AddToPracticeButton = ({ problem, addedFrom = 'recommendation', variant = 'outline', className }) => {
   const statuses = usePracticeStatuses();
   const add = useAddPracticeMutation();
   const [confirmed, flashConfirmed] = useFlash();
@@ -24,8 +24,8 @@ export const AddToPracticeButton = ({ problem, addedFrom = 'recommendation' }) =
   }
   return (
     <Button
-      variant="outline"
-      className="px-[0.7rem] py-[0.45rem] text-[0.9rem]"
+      variant={variant}
+      className={className ?? (variant === 'outline' ? 'px-[0.7rem] py-[0.45rem] text-[0.9rem]' : undefined)}
       aria-label={`Add ${problem.id} ${problem.title} to practice`}
       onClick={() => add.mutate({ problemId: problem.id, addedFrom, problem }, { onSuccess: flashConfirmed })}
     >

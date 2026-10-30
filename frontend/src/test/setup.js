@@ -1,10 +1,16 @@
 import '@testing-library/jest-dom/vitest';
-import { cleanup } from '@testing-library/react';
+import { cleanup, configure } from '@testing-library/react';
 import { toast } from 'sonner';
 import { afterAll, afterEach, beforeAll, beforeEach } from 'vitest';
 import { authStore } from '../lib/authStore.js';
 import { installMatchMedia } from './matchMedia.js';
 import { server } from './msw/server.js';
+import { installNodeFormData } from './nodeFormData.js';
+
+await installNodeFormData();
+
+// Coverage instrumentation slows the first render of a page (KaTeX, motion) past the 1 s default.
+configure({ asyncUtilTimeout: 3000 });
 
 beforeAll(() => server.listen({ onUnhandledRequest: 'error' }));
 
