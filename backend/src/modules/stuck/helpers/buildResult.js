@@ -16,6 +16,8 @@ export const buildResult = ({ coach, problem, editorial, gap, similar }) => {
   const aiHints = coach.answer?.hints ?? [];
   return {
     source: coach.source,
+    provider: coach.provider ?? null,
+    model: coach.model ?? null,
     notice: isFallback ? STUCK_FALLBACK_NOTICE : null,
     fallbackReason: isFallback ? coach.reason : null,
     problem,

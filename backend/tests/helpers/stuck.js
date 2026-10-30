@@ -62,6 +62,9 @@ export const fakeLlm = ({ coach = { answer: null, source: 'fallback', reason: 'A
   extractImageText: vi.fn(async () => image),
 });
 
+/** OCR with the createOcr interface; `recognize` resolves to `text`. */
+export const fakeOcr = (text = '') => ({ recognize: vi.fn(async () => text), terminate: vi.fn(async () => {}) });
+
 /** A sanitized coach answer as getCoachAnswer returns it. */
 export const coachAnswer = (overrides = {}) => ({
   tags: ['math'],

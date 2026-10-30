@@ -51,6 +51,7 @@ export const startServer = async ({
   const cron = scheduler({ env, jobs: services.jobs, logger });
   const onClose = async () => {
     await cron.stop();
+    await services.ocr?.terminate();
     await db.disconnect({ logger });
   };
   const shutdown = registerGracefulShutdown({ server, logger, onClose, proc, exit });

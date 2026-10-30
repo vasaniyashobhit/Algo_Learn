@@ -14,6 +14,12 @@ export const STUCK = Object.freeze({
     mimeTypes: Object.freeze(['application/pdf', 'image/png', 'image/jpeg', 'image/webp', 'text/plain']),
   }),
   ocrLanguage: 'eng',
+  // One shared deadline per POST /stuck: Gemini image reading gets at most imageMaxMs, OCR at
+  // most ocrTimeoutMs, the coach whatever is left (skipped for the fallback below coachMinMs).
+  requestDeadlineMs: 50_000,
+  imageMaxMs: 20_000,
+  ocrTimeoutMs: 15_000,
+  coachMinMs: 10_000,
   neighbors: 5,
   maxNeighborTags: 4,
   similarK: 10,

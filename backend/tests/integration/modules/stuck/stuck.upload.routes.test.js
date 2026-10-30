@@ -1,8 +1,8 @@
-import { describe, expect, it, vi } from 'vitest';
+import { describe, expect, it } from 'vitest';
 import request from 'supertest';
 import { useTestDB } from '../../../helpers/db.js';
 import { expectErrorShape } from '../../../helpers/auth.js';
-import { JPEG, PNG, STATEMENT, fakeLlm, makePdf } from '../../../helpers/stuck.js';
+import { JPEG, PNG, STATEMENT, fakeLlm, fakeOcr, makePdf } from '../../../helpers/stuck.js';
 import { STUCK_PATH, stuckApp, stuckUser, uploadStuck } from '../../../helpers/stuckRoutes.js';
 
 useTestDB();
@@ -23,11 +23,11 @@ describe('POST /api/v1/stuck (files)', () => {
     const app = stuckApp({ llm: gemini });
     const { auth } = await stuckUser(app);
     expect((await uploadStuck(app, auth, 'image', PNG, 'image/png', 's.png')).status).toBe(201);
-    const ocr = vi.fn(async () => STATEMENT);
+    const ocr = fakeOcr(STATEMENT);
     const ocrApp = stuckApp({ ocr });
     const second = await stuckUser(ocrApp);
     expect((await uploadStuck(ocrApp, second.auth, 'image', JPEG, 'image/jpeg', 's.jpg')).status).toBe(201);
-    expect(ocr).toHaveBeenCalled();
+    expect(ocr.recognize).toHaveBeenCalledWith(expect.any(Buffer), { timeoutMs: expect.any(Number) });
   });
 
   it('accepts a .txt file for the text type', async () => {

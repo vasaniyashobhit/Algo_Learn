@@ -9,9 +9,10 @@ const similar = { items: [], easier: false, targetRating: 1000, strategies: ['pr
 
 describe('buildResult', () => {
   it('uses the AI hints and has no notice for an AI answer', () => {
-    const result = buildResult({ coach: { answer: coachAnswer(), source: 'ai' }, problem, editorial: 'E', gap, similar });
+    const coach = { answer: coachAnswer(), source: 'ai', provider: 'groq', model: 'g' };
+    const result = buildResult({ coach, problem, editorial: 'E', gap, similar });
     expect(result).toEqual({
-      source: 'ai', notice: null, fallbackReason: null, problem,
+      source: 'ai', provider: 'groq', model: 'g', notice: null, fallbackReason: null, problem,
       hints: ['Each side needs ceil(n / a) stones'], hasSolution: true, editorialAvailable: true, gap, similar,
     });
   });
@@ -20,7 +21,7 @@ describe('buildResult', () => {
     const coach = { answer: null, source: 'fallback', reason: 'AI_BUSY' };
     const result = buildResult({ coach, problem, editorial: 'Ceil both sides.', gap, similar });
     expect(result).toMatchObject({
-      source: 'fallback', notice: STUCK_FALLBACK_NOTICE, fallbackReason: 'AI_BUSY', hasSolution: false, editorialAvailable: true,
+      source: 'fallback', provider: null, model: null, notice: STUCK_FALLBACK_NOTICE, fallbackReason: 'AI_BUSY', hasSolution: false, editorialAvailable: true,
     });
     expect(result.hints).toEqual(['This problem most likely uses math.', 'From the editorial: Ceil both sides.']);
   });

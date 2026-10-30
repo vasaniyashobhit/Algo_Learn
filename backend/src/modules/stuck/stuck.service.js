@@ -1,4 +1,4 @@
-import { LLM, STUCK } from '../../config/constants.js';
+import { LLM_FALLBACK_REASONS, STUCK } from '../../config/constants.js';
 import { topicKeysFor } from '../stats/helpers/topicKeys.js';
 import { analyzeGap } from './helpers/gapAnalysis.js';
 import { buildResult, solutionOf } from './helpers/buildResult.js';
@@ -12,14 +12,17 @@ const titleGuess = (text) => stripIndexPrefix(firstLine(text)).slice(0, MAX_TITL
 
 const gapDoc = ({ topicKey, kind, strength, status }) => ({ topicKey, kind, strength, status });
 
+const tooLate = { answer: null, source: 'fallback', reason: LLM_FALLBACK_REASONS.timeout };
+
 /**
  * `solve({ userId, inputType, payload })` → the saved, never-blank stuck result. Steps: resolve
  * the input → find the problem in the DB → coach (AI or fallback) → tags (db/ai/neighbors) →
- * concept gap → similar problems (easier on gap topics) → save. Image reading and the coach
- * each get their own `deadlineMs` chain deadline.
+ * concept gap → similar problems (easier on gap topics) → save. One request deadline
+ * (`requestDeadlineMs`, 50 s) is shared: input reading (image ≤ 20 s, OCR ≤ 15 s) uses it first,
+ * the coach gets what is left, or is skipped (AI_TIMEOUT fallback) when under `coachMinMs`.
  */
 export const createStuckService = ({
-  resolveInput, getCoachAnswer, findSimilar, repo, now = Date.now, deadlineMs = LLM.deadlineMs,
+  resolveInput, getCoachAnswer, findSimilar, repo, now = Date.now, limits = STUCK,
 }) => {
   const { locate, detectTags } = createLocator({ repo });
 
@@ -37,13 +40,17 @@ export const createStuckService = ({
     return { items, easier, targetRating: meta.targetRating, strategies: meta.strategies };
   };
 
+  const coachFor = async ({ match, input, text, deadline }) => {
+    if (deadline - now() < limits.coachMinMs) return tooLate;
+    return getCoachAnswer({ problemId: match?._id ?? input.problemId, text, knownTags: match?.tags ?? [], deadline });
+  };
+
   const solve = async ({ userId, inputType, payload }) => {
-    const input = await resolveInput({ inputType, ...payload, deadline: now() + deadlineMs });
+    const deadline = now() + limits.requestDeadlineMs;
+    const input = await resolveInput({ inputType, ...payload, deadline });
     const { match, neighbors } = await locate(input);
     const text = input.text ?? (match ? statementOf(match) : '');
-    const coach = await getCoachAnswer({
-      problemId: match?._id ?? input.problemId, text, knownTags: match?.tags ?? [], deadline: now() + deadlineMs,
-    });
+    const coach = await coachFor({ match, input, text, deadline });
     const { tags, tagsSource, rating } = await detectTags({ match, answer: coach.answer, neighbors, text });
     const [context, stats] = await Promise.all([
       repo.userContext(userId),

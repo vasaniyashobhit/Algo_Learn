@@ -5,7 +5,8 @@ import { isPrivateAddress } from '../helpers/privateAddress.js';
 
 const ALLOWED_PORTS = new Set(['', '80', '443']);
 
-const notAllowed = (message, reason) => new ValidationError(codes.URL_NOT_ALLOWED, message, { reason });
+export const notAllowed = (message, reason, cause) =>
+  new ValidationError(codes.URL_NOT_ALLOWED, message, { reason }, { cause });
 
 /** Parses user input into a URL, or VALIDATION_FAILED on the `url` field. */
 export const parseUrl = (raw) => {

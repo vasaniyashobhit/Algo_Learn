@@ -5,7 +5,8 @@ import { createFetchWithTimeout } from '../../../lib/fetchWithTimeout.js';
 import { parseCodeforcesUrl } from '../helpers/codeforcesUrl.js';
 import { extractMainText, tidyText } from '../helpers/extractMainText.js';
 import { BodyTooLargeError, readLimitedBody } from '../helpers/readLimitedBody.js';
-import { createUrlGuard, parseUrl } from './urlGuard.js';
+import { createUrlGuard, notAllowed, parseUrl } from './urlGuard.js';
+import { createSafeFetch, isPrivateAddressError } from './safeFetch.js';
 
 const REDIRECTS = new Set([301, 302, 303, 307, 308]);
 
@@ -20,26 +21,35 @@ const pageText = (body, contentType) => {
 
 /**
  * URL input → `{ problemId }` for a Codeforces problem link (no fetch), else `{ text }` from the
- * page: SSRF-checked on every redirect hop, `timeoutMs` for the whole fetch, at most `maxBytes`,
- * cheerio main text. Any failure is URL_NOT_ALLOWED or URL_FETCH_FAILED (`details.reason`).
+ * page: SSRF-checked on every redirect hop (before fetching, and again at connect time by the
+ * default safe fetch), `timeoutMs` for the whole fetch, at most `maxBytes`, cheerio main text.
+ * Any failure is URL_NOT_ALLOWED or URL_FETCH_FAILED (`details.reason`).
  */
 export const createFromUrl = ({
-  fetchImpl = globalThis.fetch,
   lookup,
+  fetchImpl = createSafeFetch({ lookup }),
   now = Date.now,
   limits: { timeoutMs, maxBytes, maxRedirects } = STUCK.url,
 } = {}) => {
   const guard = createUrlGuard({ lookup });
   const fetchHop = createFetchWithTimeout({ fetchImpl });
 
+  // The connect-time refusal (DNS changed after the guard's lookup) is still URL_NOT_ALLOWED.
+  const fetchSafely = async (url, ms) => {
+    try {
+      return await fetchHop(url.href, { redirect: 'manual', timeoutMs: ms, headers: { accept: 'text/html, text/plain' } });
+    } catch (err) {
+      if (!isPrivateAddressError(err)) throw err;
+      throw notAllowed('Links to private or local network addresses are not allowed', 'private', err);
+    }
+  };
+
   const fetchPage = async (start) => {
     const deadline = now() + timeoutMs;
     let url = start;
     for (let hop = 0; hop <= maxRedirects; hop += 1) {
       await guard(url);
-      const response = await fetchHop(url.href, {
-        redirect: 'manual', timeoutMs: Math.max(1, deadline - now()), headers: { accept: 'text/html, text/plain' },
-      });
+      const response = await fetchSafely(url, Math.max(1, deadline - now()));
       if (!REDIRECTS.has(response.status)) return response;
       const location = response.headers.get('location');
       if (!location) throw failed('The link redirects nowhere', { reason: 'status', status: response.status });

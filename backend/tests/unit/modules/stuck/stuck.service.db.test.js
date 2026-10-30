@@ -13,9 +13,9 @@ describe('stuck solve() — problem found in the DB (tagsSource db)', () => {
     });
     const result = await service.solve({ userId: USER_ID, inputType: 'url', payload: { url } });
 
-    expect(resolveInput).toHaveBeenCalledWith({ inputType: 'url', url, deadline: 41_000 });
+    expect(resolveInput).toHaveBeenCalledWith({ inputType: 'url', url, deadline: 51_000 });
     expect(getCoachAnswer).toHaveBeenCalledWith({
-      problemId: '1/A', text: expect.stringContaining('Theatre Square in the capital'), knownTags: ['math'], deadline: 41_000,
+      problemId: '1/A', text: expect.stringContaining('Theatre Square in the capital'), knownTags: ['math'], deadline: 51_000,
     });
     expect(result.problem).toEqual({
       matchedProblemId: '1/A', requestedProblemId: '1/A', title: 'Theatre Square', tags: ['math'], tagsSource: 'db', rating: 1000,

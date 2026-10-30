@@ -18,7 +18,8 @@ import { createSyncProblemsetJob } from './jobs/syncProblemset.job.js';
  * After every successful sync the user's topic stats are recomputed (`onSynced`).
  * The recommendations service holds the 1-hour tag-frequency cache (one per process).
  * `llm` (createLlm in server.js, offline by default) feeds the stuck flow; `ocr`, `fetchImpl`,
- * `lookup` and `extractPdfText` are injectable for tests.
+ * `lookup` and `extractPdfText` are injectable for tests. `ocr` (one reused tesseract worker) is
+ * returned so server.js can terminate it on shutdown.
  */
 export const createServices = ({
   logger,
@@ -27,7 +28,7 @@ export const createServices = ({
   onSynced = statsService.recomputeForUser,
   recommendationsService = createRecommendationsService(),
   llm = createOfflineLlm({ logger }),
-  ocr = createOcr({ language: STUCK.ocrLanguage }),
+  ocr = createOcr({ language: STUCK.ocrLanguage, logger }),
   stuck = {},
 } = {}) => {
   const syncService = createSyncService({ client, onSynced });
@@ -38,6 +39,7 @@ export const createServices = ({
     statsService,
     recommendationsService,
     practiceService: { ...createPracticeService(), ...createVerifyService({ syncService }) },
+    ocr,
     stuckService: createStuckFeature({ llm, ocr, logger, ...stuck }),
     jobs: {
       syncAllUsers: createSyncAllUsersJob({ syncService, logger }),

@@ -563,10 +563,14 @@ How each input is read:
 - **Image** → Gemini reads it, then tesseract OCR (English) if Gemini returns nothing.
 
 Then: find the problem in our DB (by id, else an exact title / statement match among the 5
-nearest `$text` results) → AI coach (cache → providers, 40 s deadline) → tags (`db` → `ai` →
+nearest `$text` results) → AI coach (cache → providers) → tags (`db` → `ai` →
 `neighbors`: most common tags of the 5 nearest problems) → concept gap → similar problems
 (rating window centred **150 below** the problem's rating, or the user's rating if unknown, when
 there is a weak/unseen single topic; solved problems excluded) → saved.
+
+**Timing:** one 50 s deadline per request is shared by every step: Gemini image reading ≤ 20 s, OCR
+≤ 15 s, link fetch ≤ 8 s, then the coach gets the time left (skipped, `fallbackReason: AI_TIMEOUT`,
+when under 10 s). The answer always arrives before 55 s; set the client timeout to about 60 s.
 
 `201`:
 
@@ -578,6 +582,8 @@ there is a weak/unseen single topic; solved problems excluded) → saved.
     "inputType": "url",
     "createdAt": "2026-10-30T12:00:00.000Z",
     "source": "fallback",
+    "provider": null,
+    "model": null,
     "notice": "AI solution temporarily unavailable. Here are the likely topics, your weak areas, similar problems and editorials.",
     "fallbackReason": "AI_TIMEOUT",
     "problem": {
@@ -600,9 +606,10 @@ there is a weak/unseen single topic; solved problems excluded) → saved.
 }
 ```
 
-- `source`: `ai` \| `cache` (AI answer) \| `fallback`. `notice` and `fallbackReason` are `null` unless
+- `source`: `ai` \| `cache` (AI answer) \| `fallback`. `provider`/`model` name the model that wrote
+  the answer (e.g. `gemini` / `gemini-3.5-flash-lite`, also for `cache`), `null` for `fallback`. `notice` and `fallbackReason` are `null` unless
   `fallback`. `fallbackReason`: `AI_BUSY` (every model's per-minute budget used up: "try again in a
-  minute"), `AI_TIMEOUT` (the 40 s deadline passed), `AI_UNAVAILABLE`, `NO_INPUT` (no statement
+  minute"), `AI_TIMEOUT` (the request deadline left no time for the AI), `AI_UNAVAILABLE`, `NO_INPUT` (no statement
   text, e.g. a gym link we do not have).
 - `problem.matchedProblemId`: our DB id or `null`; `requestedProblemId`: the id parsed from a
   Codeforces link (even if we do not have it), else `null`. `title` is the stored title or the

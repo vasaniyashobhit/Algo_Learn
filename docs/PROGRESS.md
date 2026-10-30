@@ -259,11 +259,44 @@ Read this first, update it last, every session.
   Coverage 99.82% lines, 98.89% branches; `modules/stuck` 100% lines. New helpers
   `tests/helpers/stuck.js`, `stuckService.js`, `stuckRoutes.js`.
 
+### Fix-up 10.5 (2026-10-30) — Shared deadline, local OCR data, connect-time IP check
+
+- **One request deadline** for `POST /stuck`: `STUCK.requestDeadlineMs` 50 s, shared by input reading
+  and the coach. Gemini image reading ≤ `imageMaxMs` 20 s, OCR ≤ `ocrTimeoutMs` 15 s (never past the
+  deadline), the coach gets what is left, or is skipped for the `AI_TIMEOUT` fallback when less than
+  `coachMinMs` 10 s remain. `createStuckService({ limits })` replaces `deadlineMs`.
+- **OCR** (`lib/ocr.js`): `createOcr()` → `{ recognize(buffer, { timeoutMs }), terminate() }`. One
+  worker, created lazily and reused; hard timeout (a timed-out worker is terminated, the next call starts
+  a fresh one); `server.js` terminates it on shutdown (`services.ocr`, before the DB closes).
+- **Local language data:** `@tesseract.js-data/eng` (npm, ~14 MB unpacked, `4.0.0_best_int`) as
+  `langPath` with `gzip: true`, `cacheMethod: 'none'`: no download and no cache file at runtime.
+- **DNS rebinding closed:** `stuck/input/safeFetch.js` — `undici` `fetch` on an `Agent` whose
+  `connect.lookup` resolves the host and refuses private/local addresses, so the checked IP is the one
+  the socket uses. A connect-time refusal maps to `400 URL_NOT_ALLOWED` (`reason: private`). The
+  pre-fetch guard stays (IP literals skip DNS, and it gives a clear error before any connection).
+- Stuck result now has `provider`/`model` (who wrote the answer; `null` for the fallback).
+- New deps: `undici` ^7, `@tesseract.js-data/eng`. New check: `npm run check:stuck` (`scripts/checks/
+  stuck.js` + `stuck/` helpers: generated PDF, generated PNG with a 5×7 bitmap font, problem texts).
+- Tests: 222 files, 1229 tests (+ shared-deadline on fake timers with the real limits, OCR timeout /
+  reuse / langPath, one real tesseract run on a generated PNG, safe fetch against a local server).
+- **Live `npm run check:stuck` (2026-10-30, running dev server, Atlas, demo user ShobhitVasaniya 1253):**
+
+  | Input | HTTP | Time | Source | Provider/model | Tags (source) | Match | Hints | Gap | Similar |
+  |---|---|---|---|---|---|---|---|---|---|
+  | text (71A) | 201 | 6.8 s | ai | gemini/gemini-3.5-flash-lite | strings (db) | 71/A | 3 | 0 | 10 |
+  | url 4/A | 201 | 6.4 s | ai | gemini/gemini-3.5-flash-lite | brute force, math (db) | 4/A | 3 | 0 | 10 |
+  | pdf (231A) | 201 | 8.6 s | ai | gemini/gemini-3.5-flash-lite | brute force, greedy (db) | 231/A | 3 | 0 | 10 |
+  | png (1A) | 201 | 14.4 s | cache | gemini/gemini-3.5-flash-lite | math (db) | 1/A | 3 | 0 | 10 |
+
+  All under 55 s, none blank. Gap 0 is correct (the demo user is strong there, e.g. math 0.95).
+  `GET /stuck/:id/solution` for 71A: `kind ai` in 282 ms. Note: the model's C++ had
+  `#iostream>` instead of `#include <iostream>` (verbatim from the model; our code only trims).
+
 ## Decisions
 
 - **Stuck flow (Session 10):**
-  - Deadlines: image reading and the coach each get their own 40 s chain deadline (so one request is
-    at most about 80 s plus OCR). A call that timed out only because the deadline clamped it does not
+  - ~~Image reading and the coach each get their own 40 s deadline~~ (Fix-up 10.5: one shared 50 s
+    request deadline, see above). A call that timed out only because the deadline clamped it does not
     open the circuit; reaching the deadline stops the chain (`AI_TIMEOUT`), no other provider is tried.
   - Network errors (`fetch failed`, ECONNRESET) are **not** retried any more (only 429/500/502/504);
     the next provider is tried at once. Circuit-skipped providers count as `AI_UNAVAILABLE`, not busy.
@@ -279,13 +312,15 @@ Read this first, update it last, every session.
   - The AI solution is stored in `stuckqueries.solution` and only served by `/stuck/:id/solution`;
     `result` holds exactly the public response. History rows read `result.problem` only.
   - Malformed, unknown and other users' ids all → `404 STUCK_QUERY_NOT_FOUND`.
-  - SSRF: DNS checked per hop (redirects followed manually, max 3), ports 80/443 only, no credentials.
-    A DNS-rebinding race between our lookup and fetch's own lookup remains possible (accepted; no
-    pinned-IP agent). Validation `field` names use the `body.` prefix like the validate middleware.
+  - SSRF: DNS checked per hop (redirects followed manually, max 3), ports 80/443 only, no credentials,
+    and again at connect time by the undici Agent (Fix-up 10.5), so there is no rebinding window.
+    Validation `field` names use the `body.` prefix like the validate middleware.
   - Uploads: mime allow-list in multer, then a magic-byte check per input type (`.txt` must have no
     NUL byte). A second file is multer's `LIMIT_FILE_COUNT` → 400 `VALIDATION_FAILED`.
-  - tesseract.js is imported lazily and downloads `eng` data on first OCR (needs internet); an OCR
-    crash is logged at warn and kept as the `cause` of `INPUT_UNREADABLE`. No OCR timeout yet.
+  - tesseract.js is imported lazily and reads the bundled `eng` data (no internet needed); one reused
+    worker with a 15 s hard timeout. An OCR failure or timeout is logged at warn and kept as the
+    `cause` of `INPUT_UNREADABLE`. Concurrent OCR requests queue on the one worker (their wait counts
+    toward their own timeout).
   - Rate limit 10 / hour / user on `POST /stuck` only, before multer (failed requests count).
 
 - **LLM coach chain (Session 9):**
@@ -525,15 +560,14 @@ contestId/index`, title, known tags) because `bulkWrite` skips schema validators
 
 ## Next
 
-- Live check (human): run `npm run check:coach -- --fresh` and a real `POST /stuck` (text, a CF link,
-  a PDF, a screenshot) against Atlas; confirm the stuck request answers within ~40 s and that Groq is now
-  reached when the first Gemini model fails. Record the timings here.
+- ~~Live stuck check~~ done in Fix-up 10.5 (`npm run check:stuck`, table above). Groq was not reached
+  (the first Gemini model answered every time); its order is covered by tests only.
+- Possibly tighten the coach prompt or validate C++ code (the lite model once dropped `include <`).
 - Stuck frontend (Session 11+): `POST /stuck` as multipart; show `hints` + `gap` first, a "Show
   solution" button → `GET /stuck/:id/solution` (`kind` ai/editorial/none); `notice` for `fallback`
   with "AI busy, try again in a minute" for `fallbackReason: AI_BUSY`; history page with paging and
   delete; the 10/hour limit (`RATE_LIMITED`, show the wait). UI copy: practice/upsolving only.
-- Possible later: an OCR timeout / worker pool for tesseract, a pinned-IP fetch agent against DNS
-  rebinding, and `addedFrom: "stuck"` in a one-click "add similar to practice" from the stuck result.
+- Possible later: `addedFrom: "stuck"` in a one-click "add similar to practice" from the stuck result.
 - Frontend: store the JWT, send `Authorization: Bearer`, and on any 401 `AUTH_*` (except
   `AUTH_INVALID_CREDENTIALS`) clear the token and go to login.
 - Frontend: recommendations page (`GET /recommendations`; show `reason`, a notice for `meta.reason`,

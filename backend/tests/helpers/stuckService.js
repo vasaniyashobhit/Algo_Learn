@@ -32,7 +32,6 @@ export const stuckService = ({ resolved, coach, repo = fakeRepo(), now = () => 1
     findSimilar: fakeFindSimilar(),
     repo,
     now,
-    deadlineMs: 40_000,
   };
   return { ...deps, service: createStuckService(deps) };
 };

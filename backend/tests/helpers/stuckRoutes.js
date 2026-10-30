@@ -1,9 +1,8 @@
-import { vi } from 'vitest';
 import request from 'supertest';
 import { createTestApp } from './testApp.js';
 import { bearer, signupViaApi } from './auth.js';
 import { fakeCfClient } from './codeforces.js';
-import { fakeFetch, fakeLlm, fakeLookup } from './stuck.js';
+import { fakeFetch, fakeLlm, fakeLookup, fakeOcr } from './stuck.js';
 import { createServices } from '../../src/services.js';
 
 export const STUCK_PATH = '/api/v1/stuck';
@@ -11,7 +10,7 @@ const GENEROUS = { windowMs: 60_000, limit: 1_000 };
 
 /** App whose stuck flow uses a fake LLM, OCR, fetch and DNS (no network). */
 export const stuckApp = ({
-  llm = fakeLlm(), ocr = vi.fn(async () => ''), fetchImpl = fakeFetch(), lookup = fakeLookup(),
+  llm = fakeLlm(), ocr = fakeOcr(), fetchImpl = fakeFetch(), lookup = fakeLookup(),
   stuckRateLimit = GENEROUS,
 } = {}) => createTestApp({
   services: createServices({ client: fakeCfClient(), llm, ocr, stuck: { fetchImpl, lookup } }),
