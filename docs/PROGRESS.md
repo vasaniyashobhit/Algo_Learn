@@ -465,7 +465,7 @@ contestId/index`, title, known tags) because `bulkWrite` skips schema validators
 - Live sync test (Session 6) on Atlas: handle <your handle> linked, first sync
   newSubmissions <N> in <~X> s, second sync newSubmissions 0.
 - sync:problemset (second run): inserted <N> · updated <N>.
-Groq key added, model <name>
+- Groq key added, model openai/gpt-oss-120b (configured, not yet needed in live test).
 
 ## Next
 
