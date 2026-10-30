@@ -1,6 +1,6 @@
 import { useId, useState } from 'react';
 import { useTopicStatsQuery } from '../../hooks/queries/stats.queries.js';
-import { RADAR_TOPICS, radarRows, radarSummary } from '../../lib/dashboardData.js';
+import { RADAR_PARAMS, radarRows, radarSummary } from '../../lib/dashboardData.js';
 import { PanelHeading } from '../ui/PanelHeading.jsx';
 import { QueryState } from '../ui/QueryState.jsx';
 import { TableToggle } from '../ui/TableToggle.jsx';
@@ -8,7 +8,6 @@ import { PanelSkeleton } from './PanelSkeleton.jsx';
 import { TopicRadarChart } from './TopicRadarChart.jsx';
 import { TopicTable } from './TopicTable.jsx';
 
-export const RADAR_PARAMS = { kind: 'single', sort: 'attempted', limit: RADAR_TOPICS };
 // A polygon needs at least three corners; with fewer topics the table says it better.
 const MIN_RADAR_TOPICS = 3;
 

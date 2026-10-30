@@ -1,11 +1,10 @@
 import { useTopicStatsQuery } from '../../hooks/queries/stats.queries.js';
+import { PAIR_PARAMS } from '../../lib/dashboardData.js';
 import { PAIR_MIN_ATTEMPTED, pairInsights } from '../../lib/pairs.js';
 import { PanelHeading } from '../ui/PanelHeading.jsx';
 import { QueryState } from '../ui/QueryState.jsx';
 import { PairList } from './PairList.jsx';
 import { PanelSkeleton } from './PanelSkeleton.jsx';
-
-export const PAIR_PARAMS = { kind: 'pair', sort: 'attempted', limit: 100 };
 
 /** Topic pairs: the combinations that fall apart together and the ones that hold ("Partnerships"). */
 export const PairInsights = () => {

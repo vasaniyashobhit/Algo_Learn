@@ -1,8 +1,9 @@
-import { screen } from '@testing-library/react';
+import { screen, waitFor } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { http, HttpResponse } from 'msw';
 import { describe, expect, it } from 'vitest';
 import { authStore } from '../../lib/authStore.js';
+import { queryKeys } from '../../lib/queryKeys.js';
 import { errorBody, TEST_TOKEN } from '../../test/fixtures.js';
 import { server } from '../../test/msw/server.js';
 import { renderApp } from '../../test/renderWithProviders.jsx';
@@ -38,6 +39,13 @@ describe('LoginForm', () => {
     await fillAndSubmit('ananya.k@example.in', 'analytical1');
     expect(await screen.findByRole('heading', { name: "That page isn't here" })).toBeInTheDocument();
     expect(router.state.location.pathname).toBe('/somewhere');
+  });
+
+  it('prefetches the dashboard data right after logging in', async () => {
+    const { queryClient } = renderApp({ pathname: '/login', state: { from: '/somewhere' } });
+    await fillAndSubmit('ananya.k@example.in', 'analytical1');
+    // The user went elsewhere, yet the dashboard summary is already cached for later.
+    await waitFor(() => expect(queryClient.getQueryData(queryKeys.stats.summary())).toBeDefined());
   });
 
   it('shows the specific message for wrong credentials', async () => {

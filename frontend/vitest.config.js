@@ -9,6 +9,8 @@ export default defineConfig({
     setupFiles: ['src/test/setup.js'],
     css: false,
     restoreMocks: true,
+    // Multi-step flows (sync, stuck) plus a lazy page import can pass 5 s under full parallel load.
+    testTimeout: 10_000,
     coverage: {
       provider: 'v8',
       include: ['src/**/*.{js,jsx}'],

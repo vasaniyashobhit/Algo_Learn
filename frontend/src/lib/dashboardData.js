@@ -2,6 +2,10 @@ import { activityTotals } from './overs.js';
 
 export const RADAR_TOPICS = 8;
 
+// The stats requests the dashboard makes (also prefetched right after login).
+export const RADAR_PARAMS = { kind: 'single', sort: 'attempted', limit: RADAR_TOPICS };
+export const PAIR_PARAMS = { kind: 'pair', sort: 'attempted', limit: 100 };
+
 /** The 8 most practised topics for the radar and its table, in the API's order (most attempted first). */
 export const radarRows = (stats = []) =>
   stats.slice(0, RADAR_TOPICS).map(({ topicKey, strength, attempted, solved }) => ({
