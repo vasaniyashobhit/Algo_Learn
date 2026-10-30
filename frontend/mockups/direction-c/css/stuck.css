@@ -1,0 +1,52 @@
+.sheet-wrap { position: relative; margin-top: 2rem; }
+
+.index-tabs { display: flex; gap: 0.3rem; padding-left: 1.4rem; }
+
+.index-tabs [role='tab'] {
+  padding: 0.55rem 1.1rem 0.7rem;
+  border: 0;
+  border-radius: 10px 10px 0 0;
+  background: var(--note-2);
+  color: var(--pencil);
+  font: 700 0.95rem var(--font-ui);
+  cursor: pointer;
+  translate: 0 6px;
+  transition: translate 320ms var(--spring), background 200ms;
+}
+
+.index-tabs [role='tab']:nth-child(2) { background: var(--note-3); }
+.index-tabs [role='tab']:nth-child(3) { background: var(--note); }
+.index-tabs [aria-selected='true'] { background: var(--card) !important; color: var(--ink); translate: 0 0; }
+
+.sheet {
+  padding: 1.8rem 2rem 1.6rem 2.6rem;
+  background: var(--card);
+  border-left: 2px solid var(--margin);
+  border-radius: 0 6px 6px 6px;
+  box-shadow: var(--lift);
+}
+
+[role='tabpanel']:not([hidden]) { animation: land 420ms var(--spring) both; }
+.field-label { display: block; margin-bottom: 0.4rem; font-weight: 700; color: var(--ink); }
+.textarea { resize: vertical; line-height: 1.6; }
+
+.drop {
+  display: grid;
+  justify-items: center;
+  gap: 0.3rem;
+  padding: 2.8rem 1rem;
+  border: 2.5px dashed var(--grid-strong);
+  border-radius: 14px;
+  text-align: center;
+  transition: border-color 200ms, background 200ms, scale 300ms var(--spring);
+}
+
+.drop svg { width: 36px; height: 36px; color: var(--pen); }
+.drop p { margin: 0; }
+.drop.is-over { border-color: var(--pen); background: var(--note-2); scale: 1.02; }
+.pick { color: var(--pen); text-decoration: underline; cursor: pointer; }
+
+.submit-row { display: flex; align-items: center; gap: 1.2rem; margin-top: 1.4rem; }
+.side-note { position: absolute; right: -12.5rem; top: 6rem; width: 11rem; }
+
+@media (max-width: 1250px) { .side-note { position: static; width: auto; margin-top: 1rem; } }

@@ -1,0 +1,72 @@
+/* Direction A · Module — a calm study module printed on cool stone stock. */
+@import url('https://fonts.googleapis.com/css2?family=Public+Sans:wght@400;500;600;700&family=Source+Serif+4:opsz,wght@8..60,400;8..60,600;8..60,700&display=swap');
+
+:root {
+  color-scheme: light;
+  --font-text: 'Source Serif 4', Georgia, serif;
+  --font-ui: 'Public Sans', system-ui, sans-serif;
+
+  --paper: #eceee9;
+  --sheet: #f8f9f6;
+  --sheet-2: #e2e5df;
+  --ink: #1b2430;
+  --ink-soft: #4f5966;
+  --rule: #c9cec6;
+  --accent: #1d5e4e;
+  --accent-ink: #f4f7f3;
+  --accent-wash: #d6e6df;
+  --weak: #8a3b12;
+  --weak-wash: #f1e1d4;
+  --focus: #1d5e4e;
+
+  --radius: 3px;
+  --shadow: 0 1px 2px rgb(27 36 48 / 0.06), 0 8px 24px rgb(27 36 48 / 0.07);
+
+  --step--1: 0.84rem;
+  --step-0: 1rem;
+  --step-1: 1.2rem;
+  --step-2: 1.6rem;
+  --step-3: 2.3rem;
+  --step-4: 3.6rem;
+
+  --ease: cubic-bezier(0.22, 1, 0.36, 1);
+  --dur-enter: 620ms;
+  --dur-press: 140ms;
+  --stagger: 70ms;
+}
+
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme='light']) {
+    color-scheme: dark;
+    --paper: #11151b;
+    --sheet: #181d25;
+    --sheet-2: #20262f;
+    --ink: #e4e7e1;
+    --ink-soft: #a2abb5;
+    --rule: #333b46;
+    --accent: #84c9b3;
+    --accent-ink: #0e1a16;
+    --accent-wash: #1d3a32;
+    --weak: #f0a77b;
+    --weak-wash: #3a261b;
+    --focus: #84c9b3;
+    --shadow: 0 1px 2px rgb(0 0 0 / 0.3), 0 10px 30px rgb(0 0 0 / 0.35);
+  }
+}
+
+:root[data-theme='dark'] {
+  color-scheme: dark;
+  --paper: #11151b;
+  --sheet: #181d25;
+  --sheet-2: #20262f;
+  --ink: #e4e7e1;
+  --ink-soft: #a2abb5;
+  --rule: #333b46;
+  --accent: #84c9b3;
+  --accent-ink: #0e1a16;
+  --accent-wash: #1d3a32;
+  --weak: #f0a77b;
+  --weak-wash: #3a261b;
+  --focus: #84c9b3;
+  --shadow: 0 1px 2px rgb(0 0 0 / 0.3), 0 10px 30px rgb(0 0 0 / 0.35);
+}

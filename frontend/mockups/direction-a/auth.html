@@ -1,0 +1,63 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>AlgoLearn · Log in or sign up · A</title>
+  <link rel="stylesheet" href="css/tokens.css">
+  <link rel="stylesheet" href="css/base.css">
+  <link rel="stylesheet" href="css/controls.css">
+  <link rel="stylesheet" href="css/auth.css">
+  <script defer src="../shared/interact.js"></script>
+  <script defer src="../shared/motion.js"></script>
+</head>
+<body>
+  <header class="masthead">
+    <a class="wordmark" href="landing.html">Algo<b>Learn</b></a>
+    <nav aria-label="Main"></nav>
+    <button class="btn btn-quiet" data-theme-toggle type="button">Theme</button>
+  </header>
+
+  <main class="auth">
+    <section class="auth-sheet" aria-labelledby="auth-title" data-stagger>
+      <h1 id="auth-title">Pick up where you left off</h1>
+      <div class="tabs" role="tablist" aria-label="Account">
+        <button role="tab" id="tab-login" aria-selected="true" aria-controls="panel-login">Log in</button>
+        <button role="tab" id="tab-signup" aria-selected="false" aria-controls="panel-signup" tabindex="-1">Sign up</button>
+      </div>
+
+      <form id="panel-login" role="tabpanel" aria-labelledby="tab-login">
+        <div class="field">
+          <label for="login-email">Email</label>
+          <input class="input" id="login-email" type="email" autocomplete="email" value="ananya.k@example.in">
+        </div>
+        <div class="field">
+          <label for="login-password">Password</label>
+          <input class="input" id="login-password" type="password" autocomplete="current-password" aria-invalid="true" aria-describedby="login-error" value="wrongpass">
+          <p class="field-error" id="login-error">That email and password don't match. Check both and try again.</p>
+        </div>
+        <button class="btn btn-primary btn-wide" type="button">Log in</button>
+      </form>
+
+      <form id="panel-signup" role="tabpanel" aria-labelledby="tab-signup" hidden>
+        <div class="field">
+          <label for="signup-email">Email</label>
+          <input class="input" id="signup-email" type="email" autocomplete="email">
+        </div>
+        <div class="field">
+          <label for="signup-password">Password</label>
+          <input class="input" id="signup-password" type="password" autocomplete="new-password" aria-describedby="signup-hint">
+          <p class="small muted" id="signup-hint">At least 8 characters.</p>
+        </div>
+        <div class="field">
+          <label for="signup-handle">Codeforces handle <span class="muted">(optional, you can add it later)</span></label>
+          <input class="input" id="signup-handle" autocomplete="off" placeholder="e.g. ananya_k">
+        </div>
+        <button class="btn btn-primary btn-wide" type="button">Create account</button>
+      </form>
+
+      <p class="small muted auth-foot">AlgoLearn is for practice and upsolving. Please don't use it during live rated contests or placement tests.</p>
+    </section>
+  </main>
+</body>
+</html>

@@ -1,0 +1,98 @@
+/* Buttons, tags, fields and the motion grammar for Graph notebook:
+   playful but precise. Notes land with a small spring and settle square. */
+.btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.5rem;
+  padding: 0.65rem 1.15rem;
+  border: 2px solid var(--ink);
+  border-radius: 999px;
+  background: var(--card);
+  color: var(--ink);
+  font: 700 0.95rem / 1.1 var(--font-ui);
+  text-decoration: none;
+  cursor: pointer;
+  box-shadow: var(--shadow);
+  transition: transform var(--dur-press) var(--ease), box-shadow var(--dur-press) var(--ease), background 200ms;
+}
+
+.btn:hover { transform: translateY(-2px); box-shadow: var(--lift); }
+.btn:active { transform: translateY(1px) scale(0.97); box-shadow: none; }
+.btn[disabled] { opacity: 0.5; cursor: not-allowed; transform: none; }
+.btn-pen { background: var(--pen); border-color: var(--pen); color: var(--pen-ink); }
+.btn-soft { border-color: transparent; background: transparent; box-shadow: none; color: var(--pen); padding-inline: 0.5rem; }
+.btn-soft:hover, .btn-soft:active { box-shadow: none; }
+.btn svg { width: 17px; height: 17px; }
+
+.tag {
+  display: inline-block;
+  padding: 0.12rem 0.55rem;
+  border: 1.5px solid var(--grid-strong);
+  border-radius: 6px;
+  background: var(--card);
+  color: var(--ink);
+  font-size: 0.8rem;
+  font-weight: 600;
+  white-space: nowrap;
+}
+
+.tag.is-gap { border-color: transparent; background: var(--hl-pink); }
+
+.note {
+  position: relative;
+  padding: 1.1rem 1.2rem 1.2rem;
+  background: var(--note);
+  border-radius: 3px;
+  box-shadow: var(--shadow);
+  rotate: var(--tilt, 0deg);
+}
+
+.note-blue { background: var(--note-2); }
+.note-pink { background: var(--note-3); }
+
+.field { display: grid; gap: 0.35rem; margin-bottom: 1rem; }
+.field label { font-weight: 700; font-size: 0.9rem; color: var(--ink); }
+
+.input, .textarea {
+  width: 100%;
+  padding: 0.7rem 0.85rem;
+  border: 2px solid var(--grid-strong);
+  border-radius: var(--radius);
+  background: var(--card);
+  color: var(--ink-body);
+  font: inherit;
+}
+
+.input:focus-visible, .textarea:focus-visible { outline: 0; border-color: var(--pen); box-shadow: 0 0 0 3px color-mix(in oklab, var(--pen) 25%, transparent); }
+.input[aria-invalid='true'] { border-color: var(--margin); }
+.field-error { margin: 0; color: color-mix(in oklab, var(--margin) 70%, var(--ink-body)); font-size: 0.86rem; font-weight: 600; }
+
+.skeleton {
+  display: block;
+  border-radius: 8px;
+  background: linear-gradient(100deg, var(--grid) 30%, var(--card) 50%, var(--grid) 70%) 0 0 / 300% 100%;
+  animation: shimmer 1.4s var(--ease) infinite;
+}
+
+@keyframes shimmer { from { background-position: 100% 0; } to { background-position: -100% 0; } }
+
+@keyframes land {
+  from { opacity: 0; translate: 0 18px; rotate: calc(var(--tilt, 0deg) - 4deg); }
+  to { opacity: 1; translate: 0 0; rotate: var(--tilt, 0deg); }
+}
+
+.is-ready [data-stagger] > * {
+  animation: land var(--dur-enter) var(--spring) both;
+  animation-delay: calc(var(--i, 0) * var(--stagger));
+}
+
+.is-revealed { animation: land 480ms var(--spring) both; }
+
+@media (prefers-reduced-motion: reduce) {
+  *, *::before, *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+  }
+  .skeleton { animation: none; background: var(--grid); }
+}

@@ -1,0 +1,69 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>AlgoLearn · I'm stuck · B</title>
+  <link rel="stylesheet" href="css/tokens.css">
+  <link rel="stylesheet" href="css/base.css">
+  <link rel="stylesheet" href="css/controls.css">
+  <link rel="stylesheet" href="css/stuck.css">
+  <script defer src="../shared/interact.js"></script>
+  <script defer src="../shared/motion.js"></script>
+</head>
+<body>
+  <header class="bug">
+    <div class="wrap">
+      <a class="wordmark" href="index.html">Algo<span>Learn</span></a>
+      <nav aria-label="Main"><a href="dashboard.html">Card</a><a href="stuck.html" aria-current="page">I'm stuck</a><a href="practice.html">Practice</a><a href="history.html">History</a></nav>
+      <div class="bug-meta"><button class="btn btn-text" data-theme-toggle type="button">Theme</button></div>
+    </div>
+  </header>
+
+  <main class="wrap page stuck">
+    <div class="stuck-head">
+      <h1>Stuck? Bring the problem.</h1>
+      <p class="muted">Hints first, then the concept you're missing, then easier problems on it. Upsolving and practice only, never during a live contest.</p>
+    </div>
+
+    <div class="input-panel">
+      <div class="input-tabs" role="tablist" aria-label="Problem input">
+        <button role="tab" id="t1" aria-selected="true" aria-controls="p1">Text</button>
+        <button role="tab" id="t2" aria-selected="false" aria-controls="p2" tabindex="-1">Link</button>
+        <button role="tab" id="t3" aria-selected="false" aria-controls="p3" tabindex="-1">PDF</button>
+        <button role="tab" id="t4" aria-selected="false" aria-controls="p4" tabindex="-1">Image</button>
+      </div>
+      <form class="input-body" action="stuck-result.html">
+        <div id="p1" role="tabpanel" aria-labelledby="t1">
+          <label class="sr-only" for="txt">Problem statement</label>
+          <textarea class="textarea" id="txt" rows="9">Vlad has n tiles in a row, each with a colour c_i. A path of length p is nice if p is divisible by k and every block of k consecutive tiles in the path has one colour. Count the nice paths of maximum length, modulo 10^9+7. n ≤ 5000.</textarea>
+          <p class="small muted num">214 / 20,000</p>
+        </div>
+        <div id="p2" role="tabpanel" aria-labelledby="t2" hidden>
+          <label class="sr-only" for="url">Problem link</label>
+          <input class="input" id="url" type="url" value="https://codeforces.com/contest/1811/problem/G2">
+          <p class="small muted">Codeforces links match our problem set instantly. Other sites: best effort.</p>
+        </div>
+        <div id="p3" role="tabpanel" aria-labelledby="t3" hidden>
+          <div class="drop" data-dropzone>
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><path d="M12 15V4m0 0L8 8m4-4 4 4M5 15v4h14v-4"/></svg>
+            <p><b>Drop a PDF</b> or <label class="pick">browse<input type="file" accept="application/pdf" hidden></label></p>
+            <p class="small muted" data-file-name>One file · max 5 MB</p>
+          </div>
+        </div>
+        <div id="p4" role="tabpanel" aria-labelledby="t4" hidden>
+          <div class="drop" data-dropzone>
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><rect x="3" y="5" width="18" height="14"/><path d="m3 16 5-5 4 4 3-3 6 6"/></svg>
+            <p><b>Drop a screenshot</b> or <label class="pick">browse<input type="file" accept="image/png,image/jpeg,image/webp" hidden></label></p>
+            <p class="small muted" data-file-name>PNG, JPG, WebP · max 5 MB · crop to the statement</p>
+          </div>
+        </div>
+        <div class="submit">
+          <button class="btn btn-plate" type="submit">Get hints</button>
+          <p class="quota"><span class="fig">7</span><span class="small muted">of 10 left this hour</span></p>
+        </div>
+      </form>
+    </div>
+  </main>
+</body>
+</html>

@@ -1,0 +1,40 @@
+.res-head p { margin: 0 0 0.5rem; }
+.res-head h1 { margin-bottom: 0.6rem; }
+
+.res-grid { display: grid; grid-template-columns: minmax(0, 1.4fr) minmax(280px, 1fr); gap: 3.5rem; align-items: start; }
+
+.hints { list-style: none; margin: 1rem 0 1.2rem; padding: 0; display: grid; gap: 1rem; }
+.hints .hand { font-size: 1.1rem; }
+.hints p { margin: 0.2rem 0 0; font-size: 1.05rem; }
+
+code, pre { font-family: ui-monospace, 'Cascadia Code', Consolas, monospace; font-size: 0.9em; }
+
+.solution { margin-top: 1rem; padding: 1.2rem 1.4rem; background: var(--card); border-left: 2px solid var(--margin); border-radius: 0 6px 6px 0; box-shadow: var(--shadow); }
+.solution pre { margin: 0.8rem 0 0; padding: 0.9rem; background: var(--paper); border-radius: 8px; overflow-x: auto; }
+
+.gap { margin-top: 2.2rem; }
+.gap h2 { margin-top: 0; }
+.gap-list { list-style: none; margin: 0.8rem 0 0; padding: 0; }
+.gap-list li { display: flex; justify-content: space-between; gap: 1rem; padding: 0.4rem 0; border-top: 1.5px dashed color-mix(in oklab, var(--ink) 25%, transparent); }
+
+.sim { list-style: none; margin: 0; padding: 0; }
+.sim li { display: flex; justify-content: space-between; align-items: center; gap: 0.8rem; padding: 0.7rem 0; border-bottom: 1.5px dashed var(--grid-strong); }
+.sim a { display: grid; text-decoration: none; color: var(--ink); }
+.sim a:hover b { text-decoration: underline; }
+
+.fallback {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 1.5rem;
+  margin: 1.4rem 0 0;
+  padding: 1.1rem 1.3rem;
+  background: var(--card);
+  border: 2px dashed var(--pen);
+  border-radius: var(--radius);
+}
+
+.fallback p { margin: 0; }
+.fallback .margin-note { font-size: 1.2rem; }
+
+@media (max-width: 1000px) { .res-grid { grid-template-columns: 1fr; gap: 1rem; } }

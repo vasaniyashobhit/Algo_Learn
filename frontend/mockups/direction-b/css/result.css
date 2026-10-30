@@ -1,0 +1,49 @@
+.strap-head { padding: 1.6rem 0 1.4rem; background: var(--chalk); color: var(--chalk-ink); }
+.strap-head .wrap { display: grid; grid-template-columns: 1fr auto; align-items: end; column-gap: 2rem; }
+.strap-head p { margin: 0; opacity: 0.75; }
+.strap-head h1 { grid-column: 1; margin: 0.2rem 0 0; font-size: clamp(2rem, 4vw, var(--step-3)); }
+.strap-rating { grid-column: 2; grid-row: 1 / span 2; font-size: var(--step-4); line-height: 0.85; opacity: 1 !important; }
+
+.result { display: grid; grid-template-columns: 1.4fr 1fr; gap: 2.5rem; align-items: start; }
+.result h2 { color: var(--ink-soft); }
+.full { grid-column: 1 / -1; }
+
+.hints { list-style: none; padding: 0; margin: 1rem 0; display: grid; gap: 0.6rem; }
+.hints li { display: grid; grid-template-columns: 3rem 1fr; gap: 0.6rem; padding: 1rem 1.1rem; background: var(--band); }
+.hints .fig { font-size: 2.6rem; line-height: 0.9; color: var(--plate-text); }
+.hints p { margin: 0; font-size: 1.05rem; }
+.hint-actions { display: flex; flex-wrap: wrap; gap: 0.6rem; }
+
+code, pre { font-family: ui-monospace, 'Cascadia Code', Consolas, monospace; font-size: 0.88em; }
+
+.solution { margin-top: 1rem; padding: 1.1rem 1.2rem; background: var(--band); box-shadow: inset 0 3px 0 var(--ink); }
+.solution pre { margin: 0.8rem 0 0; padding: 0.9rem; background: var(--ground); overflow-x: auto; }
+
+.gap { padding: 1.1rem 1.2rem 1.3rem; background: var(--band); box-shadow: inset 0 3px 0 var(--miss); margin-bottom: 1.6rem; }
+.gap-stats { display: grid; grid-template-columns: repeat(3, 1fr); gap: 1px; margin: 0.8rem 0 0; background: var(--line); }
+.gap-stats div { padding: 0.7rem; background: var(--band); }
+.gap-stats dt { font: 600 0.85rem var(--font-display); text-transform: uppercase; letter-spacing: 0.06em; color: var(--ink-soft); }
+.gap-stats dd { margin: 0; }
+.gap-stats .fig { font-size: 2.4rem; line-height: 1; color: var(--miss); }
+
+.sim { list-style: none; padding: 0; margin: 0.6rem 0 0; }
+.sim li { display: flex; align-items: center; justify-content: space-between; gap: 1rem; padding: 0.6rem 0; border-bottom: 1px solid var(--line); }
+.sim a { display: flex; align-items: center; gap: 1rem; text-decoration: none; }
+.sim a > .fig { font-size: 1.8rem; color: var(--plate-text); }
+.sim b { display: block; font: 700 1.1rem / 1.1 var(--font-display); text-transform: uppercase; }
+.sim a:hover b { text-decoration: underline; }
+
+.notice-strap {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 1.5rem;
+  padding: 1rem 1.2rem;
+  background: var(--plate);
+  color: var(--plate-ink);
+}
+
+.notice-strap p { margin: 0; }
+.notice-strap .btn { border-color: var(--plate-ink); color: var(--plate-ink); }
+
+@media (max-width: 900px) { .result { grid-template-columns: 1fr; } }

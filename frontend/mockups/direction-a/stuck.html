@@ -1,0 +1,66 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>AlgoLearn · I'm stuck · A</title>
+  <link rel="stylesheet" href="css/tokens.css">
+  <link rel="stylesheet" href="css/base.css">
+  <link rel="stylesheet" href="css/controls.css">
+  <link rel="stylesheet" href="css/stuck.css">
+  <script defer src="../shared/interact.js"></script>
+  <script defer src="../shared/motion.js"></script>
+</head>
+<body>
+  <header class="masthead">
+    <a class="wordmark" href="index.html">Algo<b>Learn</b></a>
+    <nav aria-label="Main"><a href="dashboard.html">Report</a><a href="stuck.html" aria-current="page">I'm stuck</a><a href="practice.html">Practice</a><a href="history.html">History</a></nav>
+    <button class="btn btn-quiet" data-theme-toggle type="button">Theme</button>
+  </header>
+
+  <main class="page stuck">
+    <h1>Stuck on a problem?</h1>
+    <p class="muted">Give us the problem. You get hints first, the concept you're missing, and easier problems on it.
+      For practice and upsolving only, never during a live contest.</p>
+
+    <div class="tabs" role="tablist" aria-label="Problem input">
+      <button role="tab" id="t-text" aria-selected="true" aria-controls="p-text">Text</button>
+      <button role="tab" id="t-url" aria-selected="false" aria-controls="p-url" tabindex="-1">Link</button>
+      <button role="tab" id="t-pdf" aria-selected="false" aria-controls="p-pdf" tabindex="-1">PDF</button>
+      <button role="tab" id="t-img" aria-selected="false" aria-controls="p-img" tabindex="-1">Image</button>
+    </div>
+
+    <form class="input-sheet" action="stuck-result.html">
+      <div id="p-text" role="tabpanel" aria-labelledby="t-text">
+        <label class="field-label" for="problem-text">Problem statement</label>
+        <textarea class="textarea" id="problem-text" rows="9">Vlad has n tiles in a row, each with a colour c_i. A path of length p is nice if p is divisible by k and every block of k consecutive tiles in the path has one colour. Count the nice paths of maximum length, modulo 10^9+7. n ≤ 5000.</textarea>
+        <p class="small muted"><span class="num">214</span> / 20,000 characters</p>
+      </div>
+      <div id="p-url" role="tabpanel" aria-labelledby="t-url" hidden>
+        <label class="field-label" for="problem-url">Problem link</label>
+        <input class="input" id="problem-url" type="url" value="https://codeforces.com/contest/1811/problem/G2">
+        <p class="small muted">Codeforces links are matched to our problem set instantly. Other sites are read on a best-effort basis.</p>
+      </div>
+      <div id="p-pdf" role="tabpanel" aria-labelledby="t-pdf" hidden>
+        <div class="dropzone" data-dropzone>
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" aria-hidden="true"><path d="M12 15V4m0 0L8 8m4-4 4 4M5 15v4h14v-4"/></svg>
+          <p><b>Drop a PDF here</b> or <label class="file-link">choose a file<input type="file" accept="application/pdf" hidden></label></p>
+          <p class="small muted" data-file-name>One file, up to 5 MB. Text PDFs work best.</p>
+        </div>
+      </div>
+      <div id="p-img" role="tabpanel" aria-labelledby="t-img" hidden>
+        <div class="dropzone" data-dropzone>
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" aria-hidden="true"><rect x="3" y="5" width="18" height="14" rx="1"/><path d="m3 16 5-5 4 4 3-3 6 6"/></svg>
+          <p><b>Drop a screenshot here</b> or <label class="file-link">choose an image<input type="file" accept="image/png,image/jpeg,image/webp" hidden></label></p>
+          <p class="small muted" data-file-name>PNG, JPG or WebP, up to 5 MB. Crop to the statement for the best reading.</p>
+        </div>
+      </div>
+
+      <div class="submit-row">
+        <button class="btn btn-primary" type="submit">Get hints</button>
+        <p class="small muted"><span class="num">7</span> of 10 requests left this hour</p>
+      </div>
+    </form>
+  </main>
+</body>
+</html>

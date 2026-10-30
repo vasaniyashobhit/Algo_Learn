@@ -1,0 +1,63 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>AlgoLearn · Stuck history · A</title>
+  <link rel="stylesheet" href="css/tokens.css">
+  <link rel="stylesheet" href="css/base.css">
+  <link rel="stylesheet" href="css/controls.css">
+  <link rel="stylesheet" href="css/lists.css">
+  <script defer src="../shared/interact.js"></script>
+  <script defer src="../shared/motion.js"></script>
+</head>
+<body>
+  <header class="masthead">
+    <a class="wordmark" href="index.html">Algo<b>Learn</b></a>
+    <nav aria-label="Main"><a href="dashboard.html">Report</a><a href="stuck.html">I'm stuck</a><a href="practice.html">Practice</a><a href="history.html" aria-current="page">History</a></nav>
+    <button class="btn btn-quiet" data-theme-toggle type="button">Theme</button>
+  </header>
+
+  <main class="page">
+    <header class="list-head">
+      <div>
+        <h1>Stuck history</h1>
+        <p class="muted">Every problem you asked about, with its hints and gap. <span class="num">23</span> in total.</p>
+      </div>
+    </header>
+
+    <ol class="history" data-stagger>
+      <li>
+        <time class="num muted" datetime="2026-10-30T01:12">30 Oct, 1:12 am</time>
+        <a href="stuck-result.html"><span class="num">1811/G2</span> Vlad and the Nice Paths (hard version)</a>
+        <span class="muted small">Link · AI hints · gap: combinatorics, dp</span>
+        <button class="btn btn-quiet" type="button">Delete</button>
+      </li>
+      <li>
+        <time class="num muted" datetime="2026-10-29T23:40">29 Oct, 11:40 pm</time>
+        <a href="stuck-fallback.html"><span class="num">580/D</span> Kefa and Dishes</a>
+        <span class="muted small">Screenshot · AI was busy, editorial shown · gap: bitmasks</span>
+        <button class="btn btn-quiet" type="button">Delete</button>
+      </li>
+      <li>
+        <time class="num muted" datetime="2026-10-27T22:05">27 Oct, 10:05 pm</time>
+        <a href="stuck-result.html">Text problem: “minimum operations to make the array good”</a>
+        <span class="muted small">Text · AI hints · likely topics: greedy, binary search</span>
+        <button class="btn btn-quiet" type="button">Delete</button>
+      </li>
+      <li>
+        <time class="num muted" datetime="2026-10-25T00:31">25 Oct, 12:31 am</time>
+        <a href="stuck-result.html"><span class="num">1029/C</span> Maximal Intersection</a>
+        <span class="muted small">PDF · from cache · gap: sortings</span>
+        <button class="btn btn-quiet" type="button">Delete</button>
+      </li>
+    </ol>
+
+    <nav class="pager" aria-label="Pages">
+      <a class="btn" aria-disabled="true">Newer</a>
+      <span class="num muted">Page 1 of 6</span>
+      <a class="btn" href="#">Older</a>
+    </nav>
+  </main>
+</body>
+</html>

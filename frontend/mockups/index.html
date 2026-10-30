@@ -1,0 +1,78 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>AlgoLearn · Design directions</title>
+  <link rel="stylesheet" href="compare.css">
+</head>
+<body>
+  <main>
+    <h1>AlgoLearn: three design directions</h1>
+    <p class="lede">Same product, same screens, same sample data (a 1487-rated student stuck on 1811/G2). Each direction
+      differs in type, colour, density and motion. Open one, click through its screens, use its Theme button for
+      light and dark, then pick one.</p>
+
+    <section class="dir" style="--a:#1d5e4e; --b:#eceee9; --c:#1b2430; --d:#8a3b12">
+      <div class="chips" aria-hidden="true"><i></i><i></i><i></i><i></i></div>
+      <div>
+        <h2>A · Module <span>calm editorial</span></h2>
+        <p>Feels like a well-made study module from a coaching institute, minus the clutter. Cool stone paper (not
+          cream), a serif (Source Serif 4) for reading problems and hints, a plain sans (Public Sans) for controls, and one
+          examiner-green ink. Low density with generous margins. Hatched meters plus numbers show weakness, never colour alone.</p>
+        <p class="motion"><b>Motion:</b> slow and settled. Things rise 10 px and fade in over 620 ms, buttons sink 1 px when
+          pressed, the hero's paper sheets drift at different speeds, skeletons shimmer gently.</p>
+        <p class="why"><b>Why it fits:</b> late-night upsolving needs calm and long reading comfort. The risk is that it can feel
+          quiet, even a little too familiar.</p>
+        <nav><a class="go" href="direction-a/index.html">Open A</a><a href="direction-a/landing.html">Landing</a><a href="direction-a/dashboard.html">Dashboard</a><a href="direction-a/stuck-result.html">Stuck result</a></nav>
+      </div>
+    </section>
+
+    <section class="dir" style="--a:#ffc629; --b:#0a1322; --c:#f3efe4; --d:#ff7a59">
+      <div class="chips" aria-hidden="true"><i></i><i></i><i></i><i></i></div>
+      <div>
+        <h2>B · Scorecard <span>bold dark arena</span></h2>
+        <p>A floodlit cricket scoreboard and broadcast graphics: night navy ground, chalk score boards, condensed
+          uppercase type (Barlow Condensed), and exactly one yellow plate per screen for the thing that matters most.
+          Dense: the dashboard is a scoreboard strip, a topic “wagon wheel”, a batting card of weak topics with
+          last-five marks (■ □ ×), and the last 30 days as five overs, ball by ball. Dark first.</p>
+        <p class="motion"><b>Motion:</b> fast and clean. Graphics wipe in from the left (380 ms, 45 ms stagger), buttons
+          snap to 96 % when pressed, the board and floodlight beams move on separate planes, skeletons sweep quickly.</p>
+        <p class="why"><b>Why it fits:</b> Indian students read scorecards fluently, and topic strength reads like batting
+          averages. The risk is energy: it has to stay a scorecard, never a game, and dense pages need care on phones.</p>
+        <nav><a class="go" href="direction-b/index.html">Open B</a><a href="direction-b/landing.html">Landing</a><a href="direction-b/dashboard.html">Dashboard</a><a href="direction-b/stuck-result.html">Stuck result</a></nav>
+      </div>
+    </section>
+
+    <section class="dir" style="--a:#2443c8; --b:#fbfbf6; --c:#ffe45c; --d:#ffb3cc">
+      <div class="chips" aria-hidden="true"><i></i><i></i><i></i><i></i></div>
+      <div>
+        <h2>C · Graph notebook <span>playful but precise</span></h2>
+        <p>The squared notebook every student practises in: graph-paper ground, ballpoint blue, a pink margin line,
+          highlighter on what matters and sticky notes for hints and recommendations. Figtree for UI, Kalam (an Indian
+          handwriting face) only for short margin notes. Medium density, with an index-tab sidebar instead of a top bar.</p>
+        <p class="motion"><b>Motion:</b> playful but exact. Notes land with a small spring and settle square, the
+          highlighter swipes across key phrases, checkboxes bounce, floating notes drift above the page on scroll.</p>
+        <p class="why"><b>Why it fits:</b> it feels like the student's own work, and highlighting the weak spot is
+          the product's whole job. The risk is that handwriting overuse would turn childish, so it stays limited to notes.</p>
+        <nav><a class="go" href="direction-c/index.html">Open C</a><a href="direction-c/landing.html">Landing</a><a href="direction-c/dashboard.html">Dashboard</a><a href="direction-c/stuck-result.html">Stuck result</a></nav>
+      </div>
+    </section>
+
+    <section class="shared">
+      <h2>True in all three</h2>
+      <ul>
+        <li>Every screen: landing, auth, dashboard (+ loading, empty, error), stuck input, stuck result (+ AI-unavailable
+          fallback, loading, empty, error), problem detail with KaTeX, practice list, stuck history.</li>
+        <li>Press animation on buttons, staggered entrances, a parallax hero and skeleton shimmer, all switched off by
+          <code>prefers-reduced-motion</code>.</li>
+        <li>Hints reveal one at a time, and the full solution sits behind a deliberate second button. AI output is labelled
+          as AI, and practice-only copy appears on the landing page, auth and stuck input.</li>
+        <li>Sample data with real Codeforces problems and tags. No testimonials, user counts or Codeforces branding.</li>
+      </ul>
+      <p class="small">Reference only: not imported by the app and excluded from lint and tests. Behaviour lives in
+        <code>shared/</code>; each direction's look lives in its own <code>css/</code>.</p>
+    </section>
+  </main>
+</body>
+</html>

@@ -1,0 +1,15 @@
+.problem-head { display: flex; justify-content: space-between; align-items: end; gap: 2rem; }
+.problem-actions { display: flex; gap: 0.6rem; flex-shrink: 0; }
+
+.statement {
+  margin-top: 2rem;
+  font: 400 1.08rem / 1.75 var(--font-text);
+}
+
+.statement p { max-width: 66ch; }
+.statement h2 { font-size: var(--step-1); margin-top: 1.8em; }
+.statement .katex-display { margin: 1.2rem 0; overflow-x: auto; overflow-y: hidden; }
+
+@media (max-width: 900px) {
+  .problem-head { flex-direction: column; align-items: start; }
+}

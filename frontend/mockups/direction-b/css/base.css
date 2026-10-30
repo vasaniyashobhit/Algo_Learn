@@ -1,0 +1,87 @@
+*, *::before, *::after { box-sizing: border-box; }
+[hidden] { display: none !important; }
+
+html { background: var(--ground); scrollbar-color: var(--line) var(--ground); }
+
+body {
+  margin: 0;
+  background: var(--ground);
+  color: var(--ink);
+  font: 400 var(--step-0) / 1.5 var(--font-ui);
+  -webkit-font-smoothing: antialiased;
+}
+
+h1, h2, h3 {
+  margin: 0 0 0.4em;
+  font-family: var(--font-display);
+  font-weight: 700;
+  line-height: 1;
+  text-transform: uppercase;
+  letter-spacing: 0.01em;
+  text-wrap: balance;
+}
+
+h1 { font-size: var(--step-3); }
+h2 { font-size: var(--step-1); letter-spacing: 0.04em; }
+h3 { font-size: var(--step-1); }
+p { margin: 0 0 0.9em; max-width: 68ch; }
+
+a { color: var(--ink); text-underline-offset: 0.2em; }
+::selection { background: var(--plate); color: var(--plate-ink); }
+:focus-visible { outline: 2px solid var(--focus); outline-offset: 2px; }
+
+.num { font-variant-numeric: tabular-nums; }
+.fig { font-family: var(--font-display); font-weight: 700; font-variant-numeric: tabular-nums; }
+.muted { color: var(--ink-soft); }
+.small { font-size: var(--step--1); }
+.sr-only { position: absolute; width: 1px; height: 1px; overflow: hidden; clip-path: inset(50%); }
+
+.wrap { width: min(1280px, 100% - 2.5rem); margin-inline: auto; }
+.page { padding-block: 1.5rem 4rem; }
+
+/* The score bug: a fixed broadcast strip across the top of every screen. */
+.bug {
+  position: sticky;
+  top: 0;
+  z-index: 10;
+  background: var(--band);
+  border-bottom: 1px solid var(--line);
+}
+
+.bug .wrap { display: flex; align-items: stretch; gap: 1.5rem; min-height: 52px; }
+
+.wordmark {
+  display: flex;
+  align-items: center;
+  gap: 0.4rem;
+  padding-inline: 0.9rem;
+  background: var(--plate);
+  color: var(--plate-ink);
+  font: 800 1.35rem / 1 var(--font-display);
+  text-transform: uppercase;
+  letter-spacing: 0.02em;
+  text-decoration: none;
+}
+
+.wordmark span { font-weight: 500; }
+
+.bug nav { display: flex; margin-right: auto; }
+
+.bug nav a {
+  display: flex;
+  align-items: center;
+  padding-inline: 0.9rem;
+  color: var(--ink-soft);
+  font: 600 1rem / 1 var(--font-display);
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  text-decoration: none;
+}
+
+.bug nav a:hover { color: var(--ink); }
+.bug nav a[aria-current='page'] { color: var(--ink); box-shadow: inset 0 -3px 0 var(--plate); }
+
+.bug-meta { display: flex; align-items: center; gap: 1rem; font-size: var(--step--1); color: var(--ink-soft); }
+.bug-meta b { color: var(--ink); font: 700 1rem var(--font-display); letter-spacing: 0.04em; }
+
+.footnote { margin-top: 3rem; padding-top: 1rem; border-top: 1px solid var(--line); font-size: var(--step--1); color: var(--ink-soft); }

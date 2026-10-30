@@ -1,0 +1,56 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>AlgoLearn · Practice list · A</title>
+  <link rel="stylesheet" href="css/tokens.css">
+  <link rel="stylesheet" href="css/base.css">
+  <link rel="stylesheet" href="css/controls.css">
+  <link rel="stylesheet" href="css/lists.css">
+  <script defer src="../shared/interact.js"></script>
+  <script defer src="../shared/motion.js"></script>
+</head>
+<body>
+  <header class="masthead">
+    <a class="wordmark" href="index.html">Algo<b>Learn</b></a>
+    <nav aria-label="Main"><a href="dashboard.html">Report</a><a href="stuck.html">I'm stuck</a><a href="practice.html" aria-current="page">Practice</a><a href="history.html">History</a></nav>
+    <button class="btn btn-quiet" data-theme-toggle type="button">Theme</button>
+  </header>
+
+  <main class="page">
+    <header class="list-head">
+      <div>
+        <h1>Practice list</h1>
+        <p class="muted"><span class="num">6</span> problems · <span class="num">2</span> solved · added from your report and from stuck results</p>
+      </div>
+      <div class="filters" role="group" aria-label="Filter by status">
+        <button class="chip" aria-pressed="true" type="button">All</button>
+        <button class="chip" aria-pressed="false" type="button">To do</button>
+        <button class="chip" aria-pressed="false" type="button">Solved</button>
+      </div>
+    </header>
+
+    <div class="notice-line" role="status">
+      <b>Not solved yet.</b> We checked Codeforces and found no accepted submission for 1288/C. Submit there, then press "I solved it" again.
+    </div>
+
+    <table class="list-table">
+      <thead><tr><th scope="col">Problem</th><th scope="col">Rating</th><th scope="col">Topics</th><th scope="col">From</th><th scope="col">Status</th><th scope="col"><span class="sr-only">Actions</span></th></tr></thead>
+      <tbody data-stagger>
+        <tr><td><a href="problem.html"><span class="num muted">1811/G1</span> Vlad and the Nice Paths (easy version)</a></td><td class="num">1700</td><td><span class="tag">dp</span> <span class="tag">combinatorics</span></td><td class="muted">stuck</td><td><span class="status">To do</span></td><td><button class="btn btn-quiet" type="button">I solved it</button></td></tr>
+        <tr><td><a href="problem.html"><span class="num muted">1288/C</span> Two Arrays</a></td><td class="num">1600</td><td><span class="tag">combinatorics</span> <span class="tag">dp</span></td><td class="muted">stuck</td><td><span class="status">To do</span></td><td><button class="btn btn-quiet" type="button">I solved it</button></td></tr>
+        <tr><td><a href="problem.html"><span class="num muted">474/D</span> Flowers</a></td><td class="num">1700</td><td><span class="tag">dp</span></td><td class="muted">report</td><td><span class="status">To do</span></td><td><button class="btn btn-quiet" type="button">I solved it</button></td></tr>
+        <tr><td><a href="problem.html"><span class="num muted">580/D</span> Kefa and Dishes</a></td><td class="num">1800</td><td><span class="tag">bitmasks</span> <span class="tag">dp</span></td><td class="muted">report</td><td><span class="status">To do</span></td><td><button class="btn btn-quiet" type="button">I solved it</button></td></tr>
+        <tr class="is-done"><td><a href="problem.html"><span class="num muted">455/A</span> Boredom</a></td><td class="num">1500</td><td><span class="tag">dp</span></td><td class="muted">report</td><td><span class="status status-done"><svg viewBox="0 0 16 16" aria-hidden="true"><path d="m3 8 3 3 7-7" fill="none" stroke="currentColor" stroke-width="2"/></svg>Solved</span></td><td><button class="btn btn-quiet" type="button">Remove</button></td></tr>
+        <tr class="is-done"><td><a href="problem.html"><span class="num muted">189/A</span> Cut Ribbon</a></td><td class="num">1300</td><td><span class="tag">brute force</span> <span class="tag">dp</span></td><td class="muted">manual</td><td><span class="status status-done"><svg viewBox="0 0 16 16" aria-hidden="true"><path d="m3 8 3 3 7-7" fill="none" stroke="currentColor" stroke-width="2"/></svg>Solved</span></td><td><button class="btn btn-quiet" type="button">Remove</button></td></tr>
+      </tbody>
+    </table>
+
+    <section class="state-mini" aria-labelledby="empty-title">
+      <h2 id="empty-title">When the list is empty</h2>
+      <p class="muted">Nothing to practise yet. Add problems from <a href="dashboard.html">your report</a> or from a <a href="stuck.html">stuck result</a>.</p>
+    </section>
+  </main>
+</body>
+</html>

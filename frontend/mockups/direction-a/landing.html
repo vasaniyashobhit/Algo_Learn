@@ -1,0 +1,75 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>AlgoLearn · Landing · A</title>
+  <link rel="stylesheet" href="css/tokens.css">
+  <link rel="stylesheet" href="css/base.css">
+  <link rel="stylesheet" href="css/controls.css">
+  <link rel="stylesheet" href="css/landing.css">
+  <script defer src="../shared/interact.js"></script>
+  <script defer src="../shared/motion.js"></script>
+</head>
+<body>
+  <header class="masthead">
+    <a class="wordmark" href="index.html">Algo<b>Learn</b></a>
+    <nav aria-label="Main"><a href="#how">How it works</a><a href="#features">What you get</a></nav>
+    <button class="btn btn-quiet" data-theme-toggle type="button">Theme</button>
+    <a class="btn" href="auth.html">Log in</a>
+  </header>
+
+  <main>
+    <section class="hero" aria-labelledby="hero-title">
+      <div class="sheet sheet-back" data-depth="0.18" aria-hidden="true"></div>
+      <div class="sheet sheet-mid" data-depth="0.09" aria-hidden="true"></div>
+      <article class="sheet sheet-front">
+        <p class="sheet-head small muted">Practice module · prepared from your Codeforces submissions</p>
+        <h1 id="hero-title">Find the topic that keeps stopping you, then practise exactly that.</h1>
+        <p class="lede">AlgoLearn reads your Codeforces history and scores you on all 36 topics and 630 topic pairs.
+          When you are stuck on a problem, it names the missing concept and hands you easier problems on it first.</p>
+        <ol class="contents" aria-label="Sample contents for a 1487-rated student" data-stagger>
+          <li><span>Combinatorics</span><i></i><b class="num">0.29</b></li>
+          <li><span>Bitmasks + DP</span><i></i><b class="num">0.21</b></li>
+          <li><span>Shortest paths</span><i></i><b class="num">0.31</b></li>
+          <li><span>Dynamic programming</span><i></i><b class="num">0.38</b></li>
+        </ol>
+        <div class="hero-actions">
+          <a class="btn btn-primary" href="auth.html#signup">Build my topic report</a>
+          <a class="btn btn-quiet" href="dashboard.html">See a sample report</a>
+        </div>
+        <p class="sample-flag">Sample figures. Strength runs from 0 to 1.</p>
+      </article>
+    </section>
+
+    <section id="how" class="page how" aria-labelledby="how-title">
+      <h2 id="how-title">How it works</h2>
+      <ol class="steps" data-stagger>
+        <li><h3>Link your handle</h3><p>Enter your Codeforces handle. AlgoLearn checks it and imports your submissions.</p></li>
+        <li><h3>Read your report</h3><p>See strength per topic and per pair, like <span class="tag">bitmasks+dp</span>, with the numbers behind each score.</p></li>
+        <li><h3>Practise the gap</h3><p>Solve the next problems we pick, 100–300 above your comfort rating for that topic.</p></li>
+      </ol>
+    </section>
+
+    <section id="features" class="page features" aria-labelledby="features-title">
+      <h2 id="features-title">What you get</h2>
+      <dl class="feature-list" data-stagger>
+        <div><dt>Hints before answers</dt><dd>When you are stuck, hints arrive one at a time. The full solution waits until you ask for it.</dd></div>
+        <div><dt>The concept you were missing</dt><dd>“This needs DP and combinatorics. Your combinatorics strength is 0.29.” Then three easier problems on it.</dd></div>
+        <div><dt>Similar problems, any input</dt><dd>Paste text, a link, a PDF or a screenshot. Matches come from about 11,700 Codeforces problems.</dd></div>
+        <div><dt>Never a blank page</dt><dd>If the AI is busy, you still get likely topics, your weak areas, similar problems and the editorial.</dd></div>
+      </dl>
+      <aside class="practice-note">
+        <h3>For practice and upsolving only</h3>
+        <p>AlgoLearn is built for the hours between contests. Do not use it during a live rated contest
+          or a placement test: that breaks their rules, and it would not teach you anything.</p>
+      </aside>
+      <div class="closing">
+        <p>Your next problem is waiting at the right difficulty.</p>
+        <a class="btn btn-primary" href="auth.html#signup">Create a free account</a>
+      </div>
+      <p class="note-practice">AlgoLearn is an independent tool that uses public Codeforces data.</p>
+    </section>
+  </main>
+</body>
+</html>

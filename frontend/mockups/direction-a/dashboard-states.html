@@ -1,0 +1,84 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>AlgoLearn · Dashboard states · A</title>
+  <link rel="stylesheet" href="css/tokens.css">
+  <link rel="stylesheet" href="css/base.css">
+  <link rel="stylesheet" href="css/controls.css">
+  <link rel="stylesheet" href="css/dashboard.css">
+  <link rel="stylesheet" href="css/states.css">
+  <script defer src="../shared/interact.js"></script>
+  <script defer src="../shared/motion.js"></script>
+</head>
+<body>
+  <header class="masthead">
+    <a class="wordmark" href="index.html">Algo<b>Learn</b></a>
+    <nav aria-label="Main"><a href="dashboard.html" aria-current="page">Report</a><a href="stuck.html">I'm stuck</a><a href="practice.html">Practice</a><a href="history.html">History</a></nav>
+    <button class="btn btn-quiet" data-theme-toggle type="button">Theme</button>
+  </header>
+
+  <main class="page">
+    <h1>Dashboard states</h1>
+    <p class="muted">Each frame below is the dashboard in one state. The real page shows one at a time.</p>
+
+    <section class="state-frame" aria-labelledby="s-loading">
+      <h2 id="s-loading" class="state-name">Loading</h2>
+      <div aria-busy="true" aria-label="Loading your report">
+        <span class="skeleton" style="width: 40%; height: 2.4rem"></span>
+        <div class="figures sk-figures">
+          <div><span class="skeleton" style="height: 2.6rem"></span></div><div><span class="skeleton" style="height: 2.6rem"></span></div>
+          <div><span class="skeleton" style="height: 2.6rem"></span></div><div><span class="skeleton" style="height: 2.6rem"></span></div>
+        </div>
+        <div class="strength">
+          <span class="skeleton sk-radar"></span>
+          <div class="sk-rows"><span class="skeleton"></span><span class="skeleton"></span><span class="skeleton"></span><span class="skeleton"></span><span class="skeleton"></span></div>
+        </div>
+      </div>
+    </section>
+
+    <section class="state-frame" aria-labelledby="s-nohandle">
+      <h2 id="s-nohandle" class="state-name">Empty · no handle linked</h2>
+      <div class="empty">
+        <h3>Link your Codeforces handle to get your report</h3>
+        <p class="muted">We read your public submissions to score you on each topic. It takes about a minute the first time.</p>
+        <form class="inline-form">
+          <label class="sr-only" for="handle">Codeforces handle</label>
+          <input class="input" id="handle" placeholder="Your Codeforces handle" autocomplete="off">
+          <button class="btn btn-primary" type="button">Link handle</button>
+        </form>
+        <p class="field-error">We couldn't find "ananya-k" on Codeforces. Check the spelling and try again.</p>
+      </div>
+    </section>
+
+    <section class="state-frame" aria-labelledby="s-notsynced">
+      <h2 id="s-notsynced" class="state-name">Empty · linked, not synced yet</h2>
+      <div class="empty">
+        <h3>ananya_k is linked. Your first sync hasn't run yet.</h3>
+        <p class="muted">Sync now to import your submissions. Meanwhile, here are popular problems near rating 1500.</p>
+        <button class="btn btn-primary" type="button">Sync now</button>
+        <ul class="mini-list">
+          <li><a href="problem.html">455/A Boredom</a> <span class="num muted">1500 · dp</span></li>
+          <li><a href="problem.html">1520/E Arranging The Sheep</a> <span class="num muted">1400 · greedy, math</span></li>
+        </ul>
+      </div>
+    </section>
+
+    <section class="state-frame" aria-labelledby="s-error">
+      <h2 id="s-error" class="state-name">Error · sync failed</h2>
+      <div class="notice" role="status">
+        <p><b>Codeforces isn't answering right now.</b> Your report below is from your last sync, 2 hours ago. Try again in a few minutes.</p>
+        <button class="btn" type="button">Try again</button>
+      </div>
+      <div class="notice notice-quiet" role="status">
+        <p><b>A sync is already running.</b> Give it about a minute; the report refreshes by itself.</p>
+      </div>
+      <div class="notice notice-error" role="alert">
+        <p><b>Something went wrong loading your report.</b> Reload the page. If it keeps happening, send us this code.</p>
+        <p class="small muted num">Request ID 7f3c2a91-0d4e</p>
+      </div>
+    </section>
+  </main>
+</body>
+</html>

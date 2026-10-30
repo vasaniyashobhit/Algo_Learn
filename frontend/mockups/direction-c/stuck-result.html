@@ -1,0 +1,77 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>AlgoLearn · Stuck result · C</title>
+  <link rel="stylesheet" href="css/tokens.css">
+  <link rel="stylesheet" href="css/base.css">
+  <link rel="stylesheet" href="css/controls.css">
+  <link rel="stylesheet" href="css/result.css">
+  <script defer src="../shared/interact.js"></script>
+  <script defer src="../shared/motion.js"></script>
+</head>
+<body>
+  <div class="shell">
+    <aside class="rail">
+      <a class="wordmark" href="index.html">Algo<span>Learn</span></a>
+      <nav aria-label="Main"><a class="tab" href="dashboard.html">Notebook</a><a class="tab" href="stuck.html" aria-current="page">I'm stuck</a><a class="tab" href="practice.html">Practice</a><a class="tab" href="history.html">History</a></nav>
+      <div class="rail-foot"><span>ananya_k · linked</span><button class="btn btn-soft" data-theme-toggle type="button">Theme</button></div>
+    </aside>
+
+    <main class="main">
+      <header class="res-head">
+        <p class="num muted">1811/G2 · rated 2200 · matched from your link</p>
+        <h1>Vlad and the Nice Paths (hard version)</h1>
+        <p><span class="tag is-gap">dp</span> <span class="tag is-gap">combinatorics</span> <span class="tag">math</span></p>
+      </header>
+
+      <div class="res-grid">
+        <section aria-labelledby="h-title">
+          <h2 id="h-title">Hints</h2>
+          <p class="small muted">Written by AI (Gemini). It can be wrong, so test each idea yourself.</p>
+          <ol class="hints" id="hint-list" aria-live="polite">
+            <li data-hint class="note" style="--tilt:-0.8deg"><span class="hand">hint 1</span><p>Let <code>dp[i]</code> be the longest nice path that ends exactly at tile <var>i</var>, plus how many paths reach that length.</p></li>
+            <li data-hint class="note note-blue" style="--tilt:0.7deg" hidden><span class="hand">hint 2</span><p>To close a block at <var>i</var>, walk left counting tiles of colour <var>c<sub>i</sub></var>. After <var>k</var> − 1 of them, any earlier start works; the middle tiles are a binomial choice.</p></li>
+            <li data-hint class="note note-pink" style="--tilt:-0.5deg" hidden><span class="hand">hint 3</span><p>Extend only from maximum-length states. Precompute binomials up to 5000 mod 10<sup>9</sup>+7 and it's O(n²).</p></li>
+          </ol>
+          <button class="btn" type="button" data-next-hint="hint-list">Unfold the next hint <span class="num">(<span data-left>2</span> left)</span></button>
+
+          <h2>Full solution</h2>
+          <p class="muted">Give the hints a real try first. It'll be here.</p>
+          <button class="btn btn-soft" type="button" data-reveal aria-expanded="false" aria-controls="sol" data-open="Fold the solution away" data-closed="Show the full solution">Show the full solution</button>
+          <div id="sol" class="solution" hidden>
+            <p>For each <var>i</var>, scan <var>j</var> from <var>i</var> down while counting colour <var>c<sub>i</sub></var>. When the count reaches <var>k</var>, start <var>j</var> adds <code>ways[j−1] · C(cnt−2, k−2)</code> at length <code>len[j−1] + 1</code>. Keep the best length per <var>i</var>.</p>
+            <pre><code>for i in 1..n:
+  cnt = 0
+  for j in i down to 1:
+    if c[j] == c[i]: cnt += 1
+    if cnt >= k: relax(i, j, cnt)</code></pre>
+          </div>
+        </section>
+
+        <aside aria-label="Concept gap and similar problems">
+          <section class="gap note note-pink" style="--tilt:1deg" aria-labelledby="g-title">
+            <h2 id="g-title">What you're missing</h2>
+            <p>This one needs <span class="hl">dp + combinatorics</span>, and it's 700 above your dp comfort rating.</p>
+            <ul class="gap-list">
+              <li><b>combinatorics</b><span class="num">0.29 · 4 of 14</span></li>
+              <li><b>combinatorics + dp</b><span class="num">0.24 · 2 of 7</span></li>
+              <li><b>dp</b><span class="num">0.38 · comfort 1500</span></li>
+            </ul>
+          </section>
+          <section aria-labelledby="s-title">
+            <h2 id="s-title">Warm up first</h2>
+            <ul class="sim" data-stagger>
+              <li><a href="problem.html"><b>Vlad and the Nice Paths (easy version)</b><span class="num muted small">1811/G1 · 1700</span></a><button class="btn btn-soft" type="button">+ practice</button></li>
+              <li><a href="problem.html"><b>Two Arrays</b><span class="num muted small">1288/C · 1600</span></a><button class="btn btn-soft" type="button">+ practice</button></li>
+              <li><a href="problem.html"><b>Flowers</b><span class="num muted small">474/D · 1700</span></a><button class="btn btn-soft" type="button">+ practice</button></li>
+            </ul>
+          </section>
+        </aside>
+      </div>
+      <p class="small muted">Sample data. Variants: <a href="stuck-fallback.html">AI unavailable</a> · <a href="stuck-states.html">loading and errors</a>.</p>
+    </main>
+  </div>
+</body>
+</html>

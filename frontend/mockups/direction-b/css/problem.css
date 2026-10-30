@@ -1,0 +1,4 @@
+.statement { padding: 1.4rem 1.6rem; background: var(--band); font-size: 1.06rem; line-height: 1.7; }
+.statement h2 { margin-top: 1.6rem; color: var(--ink-soft); }
+.statement .katex-display { margin: 1rem 0; overflow-x: auto; overflow-y: hidden; }
+.problem-actions { display: flex; gap: 0.6rem; margin-bottom: 1.4rem; padding-bottom: 1.2rem; border-bottom: 1px solid var(--line); }

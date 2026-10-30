@@ -1,0 +1,77 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>AlgoLearn · Landing · C</title>
+  <link rel="stylesheet" href="css/tokens.css">
+  <link rel="stylesheet" href="css/base.css">
+  <link rel="stylesheet" href="css/controls.css">
+  <link rel="stylesheet" href="css/landing.css">
+  <link rel="stylesheet" href="css/radar.css">
+  <script defer src="../shared/interact.js"></script>
+  <script defer src="../shared/radar.js"></script>
+  <script defer src="../shared/motion.js"></script>
+</head>
+<body>
+  <header class="topbar">
+    <a class="wordmark" href="index.html">Algo<span>Learn</span></a>
+    <nav aria-label="Main"><a href="#how">How it works</a><a href="#features">What you get</a></nav>
+    <button class="btn btn-soft" data-theme-toggle type="button">Theme</button>
+    <a class="btn" href="auth.html">Log in</a>
+  </header>
+
+  <main>
+    <section class="spread" aria-labelledby="hero-title">
+      <div class="page-left">
+        <h1 id="hero-title">Stop solving at random. <span class="hl">Practise the topic that's actually weak.</span></h1>
+        <p class="lede">AlgoLearn reads your Codeforces submissions, scores you on 36 topics and 630 topic pairs,
+          and turns “I'm stuck” into the one concept you were missing, plus easier problems on it.</p>
+        <div class="actions">
+          <a class="btn btn-pen" href="auth.html#signup">Map my weak topics</a>
+          <a class="btn btn-soft" href="dashboard.html">Peek at a sample notebook</a>
+        </div>
+      </div>
+      <div class="page-right">
+        <svg class="radar" role="img" aria-label="Sample topic radar. Weakest: combinatorics 0.29, dp 0.38." data-radar='[["greedy",0.69],["math",0.71],["implementation",0.78],["combinatorics",0.29],["binary search",0.47],["dp",0.38]]'></svg>
+        <p class="margin-note plot-note">combinatorics is the dent ↓ start there</p>
+      </div>
+      <div class="note float-1" data-depth="-0.12" style="--tilt:-4deg" aria-hidden="true">
+        <b>Hint 1</b><p>Let dp[i] be the longest nice path ending at tile i.</p>
+      </div>
+      <div class="note note-pink float-2" data-depth="-0.22" style="--tilt:3deg" aria-hidden="true">
+        <b>Gap</b><p>combinatorics 0.29<br>4 of 14 solved</p>
+      </div>
+    </section>
+
+    <section id="how" class="band" aria-labelledby="how-title">
+      <h2 id="how-title">How it works</h2>
+      <ol class="steps" data-stagger>
+        <li><span class="step-n">1</span><h3>Link your handle</h3><p>We check it on Codeforces and copy in your submissions.</p></li>
+        <li><span class="step-n">2</span><h3>Read your notebook</h3><p>Strength per topic and per pair, e.g. <span class="tag">bitmasks+dp</span>, with the counts behind it.</p></li>
+        <li><span class="step-n">3</span><h3>Practise the gap</h3><p>Next problems sit 100–300 above your comfort rating on that topic.</p></li>
+      </ol>
+    </section>
+
+    <section id="features" class="band" aria-labelledby="features-title">
+      <h2 id="features-title">What you get</h2>
+      <div class="board" data-stagger>
+        <article class="note wide" style="--tilt:-1.2deg"><h3>Hints before answers</h3><p>One hint at a time. Think, then take the next. The full solution waits until you ask.</p></article>
+        <article class="note note-blue" style="--tilt:1.5deg"><h3>The missing concept</h3><p>“Needs dp + combinatorics. Your combinatorics: 0.29.” Then three easier problems on it.</p></article>
+        <article class="note note-pink" style="--tilt:-0.8deg"><h3>Any input</h3><p>Text, a link, a PDF or a screenshot. Matched against about 11,700 Codeforces problems.</p></article>
+        <article class="note wide note-blue" style="--tilt:0.9deg"><h3>Never a blank page</h3><p>If the AI is busy you still get likely topics, your weak spots, similar problems and the editorial.</p></article>
+      </div>
+      <aside class="rule-box">
+        <h3>Practice and upsolving only</h3>
+        <p>Not for live rated contests or placement tests. Using it there breaks their rules, and you'd learn nothing from it.</p>
+      </aside>
+    </section>
+
+    <section class="band closing" aria-label="Get started">
+      <p class="margin-note big-note">your next problem is waiting, at the right difficulty</p>
+      <a class="btn btn-pen" href="auth.html#signup">Start a free notebook</a>
+    </section>
+    <p class="band small muted">AlgoLearn is an independent tool that uses public Codeforces data. Figures shown are sample data.</p>
+  </main>
+</body>
+</html>

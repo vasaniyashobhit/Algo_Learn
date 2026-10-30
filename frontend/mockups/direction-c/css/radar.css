@@ -1,0 +1,8 @@
+/* Hand-plotted radar on graph paper (shared by landing and dashboard). */
+.radar { width: 100%; height: auto; overflow: visible; }
+.radar-ring { fill: none; stroke: none; }
+.radar-spoke { stroke: var(--grid-strong); stroke-dasharray: 4 3; }
+.radar-ray { display: none; }
+.radar-shape { fill: color-mix(in oklab, var(--hl) 55%, transparent); stroke: var(--pen); stroke-width: 2.2; stroke-linejoin: round; }
+.radar-dot { fill: var(--card); stroke: var(--pen); stroke-width: 2; r: 5; }
+.radar-label { font: 400 15px var(--font-hand); fill: var(--pen); }

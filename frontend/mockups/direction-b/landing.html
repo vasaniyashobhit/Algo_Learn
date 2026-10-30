@@ -1,0 +1,83 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>AlgoLearn · Landing · B</title>
+  <link rel="stylesheet" href="css/tokens.css">
+  <link rel="stylesheet" href="css/base.css">
+  <link rel="stylesheet" href="css/controls.css">
+  <link rel="stylesheet" href="css/landing.css">
+  <script defer src="../shared/interact.js"></script>
+  <script defer src="../shared/motion.js"></script>
+</head>
+<body>
+  <header class="bug">
+    <div class="wrap">
+      <a class="wordmark" href="index.html">Algo<span>Learn</span></a>
+      <nav aria-label="Main"><a href="#how">How it works</a><a href="#features">What you get</a></nav>
+      <div class="bug-meta"><button class="btn btn-text" data-theme-toggle type="button">Theme</button><a class="btn" href="auth.html">Log in</a></div>
+    </div>
+  </header>
+
+  <main>
+    <section class="hero" aria-labelledby="hero-title">
+      <div class="beams" data-depth="0.35" aria-hidden="true"><i></i><i></i><i></i></div>
+      <div class="board wrap" data-depth="0.12">
+        <p class="board-head"><b>ananya_k</b><span class="fig">1487</span><span>Topic card · sample</span></p>
+        <table class="board-table">
+          <thead><tr><th scope="col">Topic</th><th scope="col">Strength</th><th scope="col">Solved</th><th scope="col">Tried</th></tr></thead>
+          <tbody data-stagger>
+            <tr class="is-low"><th scope="row">Bitmasks + DP</th><td class="fig">0.21</td><td class="fig">2</td><td class="fig">8</td></tr>
+            <tr class="is-low"><th scope="row">Combinatorics</th><td class="fig">0.29</td><td class="fig">4</td><td class="fig">14</td></tr>
+            <tr><th scope="row">Dynamic programming</th><td class="fig">0.38</td><td class="fig">20</td><td class="fig">52</td></tr>
+            <tr><th scope="row">Greedy</th><td class="fig">0.69</td><td class="fig">61</td><td class="fig">80</td></tr>
+          </tbody>
+        </table>
+      </div>
+      <div class="strap wrap">
+        <div class="strap-plate">
+          <h1 id="hero-title">Your weakest topic, up on the board.</h1>
+          <p>AlgoLearn scores your Codeforces history on 36 topics and 630 topic pairs, then picks the problems that fix the lowest score.</p>
+          <div class="strap-actions">
+            <a class="btn btn-plate" href="auth.html#signup">Get my topic card</a>
+            <a class="btn" href="dashboard.html">See a sample</a>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <section id="how" class="how wrap" aria-labelledby="how-title">
+      <h2 id="how-title">How it works</h2>
+      <ol class="steps" data-stagger>
+        <li><span class="fig">1</span><h3>Link your handle</h3><p>We verify it on Codeforces and pull your submissions.</p></li>
+        <li><span class="fig">2</span><h3>Read your card</h3><p>Strength per topic and per pair, with solved and tried counts behind every number.</p></li>
+        <li><span class="fig">3</span><h3>Play the gap</h3><p>Next problems sit 100–300 above your comfort rating on that topic.</p></li>
+      </ol>
+    </section>
+
+    <section id="features" class="features wrap" aria-labelledby="features-title">
+      <h2 id="features-title">What you get</h2>
+      <dl class="feature-grid" data-stagger>
+        <div><dt>Hints, one at a time</dt><dd>Stuck after the contest? Take one hint, think, take the next. The full solution waits.</dd></div>
+        <div><dt>The missing concept</dt><dd>“Needs DP + combinatorics. Your combinatorics: 0.29.” Then easier problems on exactly that.</dd></div>
+        <div><dt>Any input</dt><dd>Text, link, PDF or screenshot, matched against about 11,700 Codeforces problems.</dd></div>
+        <div><dt>Never a blank screen</dt><dd>AI busy? You still get topics, weak areas, similar problems and the editorial.</dd></div>
+      </dl>
+    </section>
+
+    <section class="practice-band" aria-labelledby="practice-title">
+      <div class="wrap">
+        <h2 id="practice-title">Practice and upsolving only</h2>
+        <p>Not for live rated contests or placement tests. Using it there breaks their rules, and the point is to get better, not to get through.</p>
+      </div>
+    </section>
+
+    <section class="closing wrap" aria-label="Get started">
+      <p>Next problem, right difficulty, ready when you are.</p>
+      <a class="btn btn-plate" href="auth.html#signup">Create a free account</a>
+    </section>
+    <p class="footnote wrap">AlgoLearn is an independent tool that uses public Codeforces data. Figures above are sample data.</p>
+  </main>
+</body>
+</html>

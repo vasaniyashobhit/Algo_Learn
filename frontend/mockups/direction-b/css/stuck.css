@@ -1,0 +1,42 @@
+.stuck { display: grid; grid-template-columns: 0.8fr 1.2fr; gap: 3rem; align-items: start; padding-top: 3rem; }
+.stuck-head h1 { font-size: clamp(2.6rem, 5vw, var(--step-4)); line-height: 0.92; }
+
+.input-panel { background: var(--band); box-shadow: var(--shadow); }
+.input-tabs { display: grid; grid-template-columns: repeat(4, 1fr); }
+
+.input-tabs [role='tab'] {
+  padding: 0.9rem;
+  border: 0;
+  background: var(--band-2);
+  color: var(--ink-soft);
+  font: 700 1.05rem / 1 var(--font-display);
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  cursor: pointer;
+}
+
+.input-tabs [aria-selected='true'] { background: var(--band); color: var(--ink); box-shadow: inset 0 4px 0 var(--plate); }
+.input-body { padding: 1.4rem; }
+[role='tabpanel']:not([hidden]) { animation: wipe 300ms var(--ease) both; }
+.textarea { resize: vertical; line-height: 1.55; }
+
+.drop {
+  display: grid;
+  justify-items: center;
+  gap: 0.3rem;
+  padding: 3rem 1rem;
+  background: repeating-linear-gradient(-45deg, var(--band-2) 0 10px, var(--band) 10px 20px);
+  text-align: center;
+  transition: box-shadow 160ms var(--ease);
+}
+
+.drop svg { width: 34px; height: 34px; color: var(--plate-text); }
+.drop p { margin: 0; }
+.drop.is-over { box-shadow: inset 0 0 0 3px var(--plate); }
+.pick { text-decoration: underline; cursor: pointer; }
+
+.submit { display: flex; align-items: center; justify-content: space-between; margin-top: 1.2rem; }
+.quota { display: flex; align-items: baseline; gap: 0.5rem; margin: 0; }
+.quota .fig { font-size: 2.4rem; line-height: 1; }
+
+@media (max-width: 900px) { .stuck { grid-template-columns: 1fr; } }

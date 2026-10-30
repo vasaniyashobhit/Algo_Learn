@@ -1,0 +1,90 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>AlgoLearn · Dashboard · C</title>
+  <link rel="stylesheet" href="css/tokens.css">
+  <link rel="stylesheet" href="css/base.css">
+  <link rel="stylesheet" href="css/controls.css">
+  <link rel="stylesheet" href="css/radar.css">
+  <link rel="stylesheet" href="css/dashboard.css">
+  <script defer src="../shared/interact.js"></script>
+  <script defer src="../shared/radar.js"></script>
+  <script defer src="../shared/motion.js"></script>
+</head>
+<body>
+  <div class="shell">
+    <aside class="rail">
+      <a class="wordmark" href="index.html">Algo<span>Learn</span></a>
+      <nav aria-label="Main"><a class="tab" href="dashboard.html" aria-current="page">Notebook</a><a class="tab" href="stuck.html">I'm stuck</a><a class="tab" href="practice.html">Practice</a><a class="tab" href="history.html">History</a></nav>
+      <div class="rail-foot"><span>ananya_k · linked</span><button class="btn btn-soft" data-theme-toggle type="button">Theme</button></div>
+    </aside>
+
+    <main class="main">
+      <header class="dash-head" data-depth="-0.05">
+        <div>
+          <h1>ananya_k's notebook</h1>
+          <p class="muted">Rating <b class="num">1487</b> · Specialist · synced 2 hours ago</p>
+        </div>
+        <button class="btn btn-pen" type="button"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><path d="M20 11a8 8 0 0 0-14.3-4.9L4 8m0-4v4h4M4 13a8 8 0 0 0 14.3 4.9L20 16m0 4v-4h-4"/></svg>Sync now</button>
+      </header>
+
+      <dl class="stats" data-stagger>
+        <div class="note" style="--tilt:-1.5deg"><dt>solved</dt><dd class="num" data-count="412">412</dd></div>
+        <div class="note note-pink" style="--tilt:1deg"><dt>tried, not solved</dt><dd class="num" data-count="37">37</dd></div>
+        <div class="note note-blue" style="--tilt:-0.6deg"><dt>active days of 30</dt><dd class="num">19</dd></div>
+        <div class="note" style="--tilt:1.6deg"><dt>hardest solved</dt><dd class="num">1900</dd></div>
+      </dl>
+
+      <div class="two">
+        <section class="plot" aria-labelledby="plot-title">
+          <h2 id="plot-title">Topic shape</h2>
+          <svg class="radar" role="img" aria-label="Strength on your 8 most-practised topics. Weakest: dp 0.38, graphs 0.41." data-radar='[["greedy",0.69],["math",0.71],["implementation",0.78],["brute force",0.74],["constructive",0.52],["binary search",0.47],["dp",0.38],["graphs",0.41]]'></svg>
+        </section>
+        <section aria-labelledby="weak-title">
+          <h2 id="weak-title">Weakest topics</h2>
+          <ol class="weak" data-stagger>
+            <li><span class="topic">probabilities</span><span class="stroke" style="--v:0.18"></span><b class="num">0.18</b><span class="small muted num">2/6</span></li>
+            <li><span class="topic">bitmasks + dp</span><span class="stroke" style="--v:0.21"></span><b class="num">0.21</b><span class="small muted num">2/8</span></li>
+            <li><span class="topic">dsu</span><span class="stroke" style="--v:0.22"></span><b class="num">0.22</b><span class="small muted num">3/9</span></li>
+            <li><span class="topic">bitmasks</span><span class="stroke" style="--v:0.26"></span><b class="num">0.26</b><span class="small muted num">5/13</span></li>
+            <li><span class="topic">combinatorics</span><span class="stroke" style="--v:0.29"></span><b class="num">0.29</b><span class="small muted num">4/14</span></li>
+          </ol>
+          <p class="margin-note">pink stroke = strength out of 1 · solved/tried on the right</p>
+        </section>
+      </div>
+
+      <section aria-labelledby="days-title">
+        <h2 id="days-title">Last 30 days</h2>
+        <ol class="days" aria-label="Problems solved per day, oldest first. 43 in total.">
+          <li></li><li data-n="2"></li><li data-n="1"></li><li></li><li data-n="3"></li><li data-n="4"></li><li></li><li></li><li data-n="1"></li><li data-n="2"></li>
+          <li data-n="5"></li><li data-n="3"></li><li></li><li data-n="1"></li><li></li><li data-n="2"></li><li data-n="2"></li><li></li><li></li><li data-n="3"></li>
+          <li data-n="1"></li><li data-n="4"></li><li data-n="2"></li><li></li><li data-n="1"></li><li></li><li></li><li data-n="2"></li><li data-n="3"></li><li data-n="1"></li>
+        </ol>
+        <p class="small muted">43 solved over 19 active days.</p>
+      </section>
+
+      <section aria-labelledby="next-title">
+        <h2 id="next-title">Next topics</h2>
+        <ol class="next" data-stagger>
+          <li><span class="circle">1</span><div><h3><span class="hl">Dynamic programming</span></h3><p>0.38 after 52 tries, and dp is in 31% of problems at 1200–1800. Biggest gap you have.</p></div></li>
+          <li><span class="circle">2</span><div><h3>Binary search</h3><p>0.47. Fine at 1400, but 3 of your last 4 at 1600 failed.</p></div></li>
+          <li><span class="circle">3</span><div><h3>Number theory</h3><p>0.44. Needed in 4 of your last 10 unsolved problems.</p></div></li>
+        </ol>
+      </section>
+
+      <section aria-labelledby="rec-title">
+        <h2 id="rec-title">Solve next</h2>
+        <ul class="recs" data-stagger>
+          <li class="note" style="--tilt:-1.4deg"><a href="problem.html"><span class="num muted small">474/D · 1700</span><b>Flowers</b></a><span class="tag">dp</span></li>
+          <li class="note note-blue" style="--tilt:1.1deg"><a href="problem.html"><span class="num muted small">1288/C · 1600</span><b>Two Arrays</b></a><span><span class="tag">combinatorics</span> <span class="tag">dp</span></span></li>
+          <li class="note note-pink" style="--tilt:-0.7deg"><a href="problem.html"><span class="num muted small">580/D · 1800</span><b>Kefa and Dishes</b></a><span><span class="tag">bitmasks</span> <span class="tag">dp</span></span></li>
+          <li class="note" style="--tilt:1.6deg"><a href="problem.html"><span class="num muted small">1324/D · 1400</span><b>Pair of Topics</b></a><span><span class="tag">binary search</span> <span class="tag">sortings</span></span></li>
+        </ul>
+        <p class="small muted">Sample data. <a href="dashboard-states.html">Loading, empty and error states</a>.</p>
+      </section>
+    </main>
+  </div>
+</body>
+</html>

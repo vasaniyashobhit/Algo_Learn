@@ -1,0 +1,94 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>AlgoLearn · Dashboard · B</title>
+  <link rel="stylesheet" href="css/tokens.css">
+  <link rel="stylesheet" href="css/base.css">
+  <link rel="stylesheet" href="css/controls.css">
+  <link rel="stylesheet" href="css/dashboard.css">
+  <script defer src="../shared/interact.js"></script>
+  <script defer src="../shared/radar.js"></script>
+  <script defer src="../shared/motion.js"></script>
+</head>
+<body>
+  <header class="bug">
+    <div class="wrap">
+      <a class="wordmark" href="index.html">Algo<span>Learn</span></a>
+      <nav aria-label="Main"><a href="dashboard.html" aria-current="page">Card</a><a href="stuck.html">I'm stuck</a><a href="practice.html">Practice</a><a href="history.html">History</a></nav>
+      <div class="bug-meta"><span><b>ananya_k</b> · linked</span><button class="btn btn-text" data-theme-toggle type="button">Theme</button></div>
+    </div>
+  </header>
+
+  <section class="scoreboard" aria-label="Summary" data-depth="-0.04">
+    <div class="wrap">
+      <div class="who"><h1>ananya_k</h1><p class="muted">Specialist · synced 2 h ago</p></div>
+      <dl class="totals" data-stagger>
+        <div class="total-rating"><dt>Rating</dt><dd class="fig">1487</dd></div>
+        <div><dt>Solved</dt><dd class="fig" data-count="412">412</dd></div>
+        <div><dt>Not solved</dt><dd class="fig" data-count="37">37</dd></div>
+        <div><dt>Active · 30 d</dt><dd class="fig">19</dd></div>
+        <div><dt>Best solve</dt><dd class="fig">1900</dd></div>
+      </dl>
+      <button class="btn btn-plate sync" type="button"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><path d="M20 11a8 8 0 0 0-14.3-4.9L4 8m0-4v4h4M4 13a8 8 0 0 0 14.3 4.9L20 16m0 4v-4h-4"/></svg>Sync now</button>
+    </div>
+  </section>
+
+  <main class="wrap page">
+    <div class="grid">
+      <section class="panel wheel" aria-labelledby="wheel-title">
+        <h2 id="wheel-title">Topic wheel</h2>
+        <svg class="radar" role="img" aria-label="Strength on your 8 most-practised topics. Weakest: dp 0.38, graphs 0.41." data-radar='[["greedy",0.69],["math",0.71],["implementation",0.78],["brute force",0.74],["constructive",0.52],["binary search",0.47],["dp",0.38],["graphs",0.41]]'></svg>
+      </section>
+
+      <section class="panel" aria-labelledby="weak-title">
+        <h2 id="weak-title">Weakest topics</h2>
+        <table class="card-table">
+          <thead><tr><th scope="col">Topic</th><th scope="col">Str</th><th scope="col">S/T</th><th scope="col">Last 5</th></tr></thead>
+          <tbody data-stagger>
+            <tr><th scope="row">probabilities</th><td class="fig">.18</td><td class="num">2/6</td><td><i class="mark mark-miss"></i> <i class="mark mark-open"></i> <i class="mark mark-miss"></i> <i class="mark mark-solved"></i> <i class="mark mark-miss"></i></td></tr>
+            <tr><th scope="row">bitmasks+dp</th><td class="fig">.21</td><td class="num">2/8</td><td><i class="mark mark-miss"></i> <i class="mark mark-miss"></i> <i class="mark mark-solved"></i> <i class="mark mark-open"></i> <i class="mark mark-miss"></i></td></tr>
+            <tr><th scope="row">dsu</th><td class="fig">.22</td><td class="num">3/9</td><td><i class="mark mark-solved"></i> <i class="mark mark-miss"></i> <i class="mark mark-miss"></i> <i class="mark mark-open"></i> <i class="mark mark-solved"></i></td></tr>
+            <tr><th scope="row">bitmasks</th><td class="fig">.26</td><td class="num">5/13</td><td><i class="mark mark-solved"></i> <i class="mark mark-miss"></i> <i class="mark mark-solved"></i> <i class="mark mark-miss"></i> <i class="mark mark-open"></i></td></tr>
+            <tr><th scope="row">combinatorics</th><td class="fig">.29</td><td class="num">4/14</td><td><i class="mark mark-miss"></i> <i class="mark mark-solved"></i> <i class="mark mark-miss"></i> <i class="mark mark-miss"></i> <i class="mark mark-solved"></i></td></tr>
+          </tbody>
+        </table>
+        <p class="legend small muted"><i class="mark mark-solved"></i> solved <i class="mark mark-open"></i> tried <i class="mark mark-miss"></i> wrong answer</p>
+      </section>
+
+      <section class="panel next" aria-labelledby="next-title">
+        <h2 id="next-title">Next topics</h2>
+        <ol data-stagger>
+          <li class="next-lead"><h3>Dynamic programming</h3><p>0.38 after 52 tries. In 31% of problems at 1200–1800: your biggest gap.</p></li>
+          <li><h3>Binary search</h3><p>0.47. Solid at 1400, failed 3 of the last 4 at 1600.</p></li>
+          <li><h3>Number theory</h3><p>0.44. Needed in 4 of your last 10 unsolved.</p></li>
+        </ol>
+      </section>
+    </div>
+
+    <section class="balls" aria-labelledby="balls-title">
+      <h2 id="balls-title">Last 30 days · ball by ball</h2>
+      <div class="overs" aria-label="Solved per day, oldest first, six days per row. W marks a day with attempts but no solve.">
+        <ol><li class="dot"></li><li>2</li><li>1</li><li class="w">W</li><li>3</li><li>4</li></ol>
+        <ol><li class="dot"></li><li class="dot"></li><li>1</li><li>2</li><li class="big">5</li><li>3</li></ol>
+        <ol><li class="dot"></li><li>1</li><li class="dot"></li><li>2</li><li>2</li><li class="w">W</li></ol>
+        <ol><li class="dot"></li><li>3</li><li>1</li><li class="big">4</li><li>2</li><li class="dot"></li></ol>
+        <ol><li>1</li><li class="dot"></li><li class="dot"></li><li>2</li><li>3</li><li>1</li></ol>
+      </div>
+      <p class="small muted">43 solved over 19 active days. Number = problems solved that day.</p>
+    </section>
+
+    <section aria-labelledby="fix-title">
+      <h2 id="fix-title">Solve next</h2>
+      <ul class="fixtures" data-stagger>
+        <li><a href="problem.html"><span class="num muted">474/D</span><b>Flowers</b><span class="fig rate">1700</span><span><span class="tag">dp</span></span></a></li>
+        <li><a href="problem.html"><span class="num muted">1288/C</span><b>Two Arrays</b><span class="fig rate">1600</span><span><span class="tag">combinatorics</span> <span class="tag">dp</span></span></a></li>
+        <li><a href="problem.html"><span class="num muted">580/D</span><b>Kefa and Dishes</b><span class="fig rate">1800</span><span><span class="tag">bitmasks</span> <span class="tag">dp</span></span></a></li>
+        <li><a href="problem.html"><span class="num muted">1324/D</span><b>Pair of Topics</b><span class="fig rate">1400</span><span><span class="tag">binary search</span> <span class="tag">sortings</span></span></a></li>
+      </ul>
+      <p class="footnote">Sample data. <a href="dashboard-states.html">Loading, empty and error states</a>.</p>
+    </section>
+  </main>
+</body>
+</html>

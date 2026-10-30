@@ -1,0 +1,72 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>AlgoLearn · Dashboard states · C</title>
+  <link rel="stylesheet" href="css/tokens.css">
+  <link rel="stylesheet" href="css/base.css">
+  <link rel="stylesheet" href="css/controls.css">
+  <link rel="stylesheet" href="css/dashboard.css">
+  <link rel="stylesheet" href="css/states.css">
+  <script defer src="../shared/interact.js"></script>
+  <script defer src="../shared/motion.js"></script>
+</head>
+<body>
+  <div class="shell">
+    <aside class="rail">
+      <a class="wordmark" href="index.html">Algo<span>Learn</span></a>
+      <nav aria-label="Main"><a class="tab" href="dashboard.html" aria-current="page">Notebook</a><a class="tab" href="stuck.html">I'm stuck</a><a class="tab" href="practice.html">Practice</a><a class="tab" href="history.html">History</a></nav>
+      <div class="rail-foot"><button class="btn btn-soft" data-theme-toggle type="button">Theme</button></div>
+    </aside>
+
+    <main class="main">
+      <h1>Dashboard states</h1>
+      <p class="muted">One frame per state. The real page shows one at a time.</p>
+
+      <section class="frame" aria-labelledby="s1">
+        <h2 id="s1" class="frame-name">loading</h2>
+        <div aria-busy="true" aria-label="Loading your notebook">
+          <span class="skeleton" style="width: 45%; height: 2.4rem"></span>
+          <div class="sk-stats"><span class="skeleton"></span><span class="skeleton"></span><span class="skeleton"></span><span class="skeleton"></span></div>
+          <div class="two">
+            <span class="skeleton sk-plot"></span>
+            <div class="sk-rows"><span class="skeleton"></span><span class="skeleton"></span><span class="skeleton"></span><span class="skeleton"></span><span class="skeleton"></span></div>
+          </div>
+        </div>
+      </section>
+
+      <section class="frame" aria-labelledby="s2">
+        <h2 id="s2" class="frame-name">empty · no handle yet</h2>
+        <div class="empty">
+          <h3>Your notebook is blank until we know your handle</h3>
+          <p class="muted">Link your Codeforces handle and we'll fill in a page per topic from your submissions. First sync takes about a minute.</p>
+          <form class="inline-form">
+            <label class="sr-only" for="h">Codeforces handle</label>
+            <input class="input" id="h" value="ananya-k" aria-invalid="true" aria-describedby="h-e">
+            <button class="btn btn-pen" type="button">Link handle</button>
+          </form>
+          <p class="field-error" id="h-e">We couldn't find "ananya-k" on Codeforces. Check the spelling and try again.</p>
+        </div>
+      </section>
+
+      <section class="frame" aria-labelledby="s3">
+        <h2 id="s3" class="frame-name">empty · linked, first sync pending</h2>
+        <div class="empty">
+          <h3>ananya_k is linked. Let's fill the first page.</h3>
+          <p class="muted">Press Sync now to import your submissions. While you wait, two popular problems near 1500:
+            <a href="problem.html">455/A Boredom</a> and <a href="problem.html">1520/E Arranging The Sheep</a>.</p>
+          <button class="btn btn-pen" type="button">Sync now</button>
+        </div>
+      </section>
+
+      <section class="frame" aria-labelledby="s4">
+        <h2 id="s4" class="frame-name">errors</h2>
+        <div class="callout" role="status"><p><b>Codeforces isn't answering.</b> Your notebook shows the last sync, 2 hours ago. Try again in a few minutes.</p><button class="btn" type="button">Try again</button></div>
+        <div class="callout callout-quiet" role="status"><p><b>A sync is already running.</b> About a minute; the page refreshes by itself.</p></div>
+        <div class="callout callout-quiet" role="alert"><p><b>Something went wrong loading your notebook.</b> Reload the page. If it keeps happening, send us this code.</p><p class="small muted num">Request ID 7f3c2a91-0d4e</p></div>
+      </section>
+    </main>
+  </div>
+</body>
+</html>

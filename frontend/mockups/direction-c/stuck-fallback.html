@@ -1,0 +1,69 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>AlgoLearn · Stuck result, AI unavailable · C</title>
+  <link rel="stylesheet" href="css/tokens.css">
+  <link rel="stylesheet" href="css/base.css">
+  <link rel="stylesheet" href="css/controls.css">
+  <link rel="stylesheet" href="css/result.css">
+  <script defer src="../shared/interact.js"></script>
+  <script defer src="../shared/motion.js"></script>
+</head>
+<body>
+  <div class="shell">
+    <aside class="rail">
+      <a class="wordmark" href="index.html">Algo<span>Learn</span></a>
+      <nav aria-label="Main"><a class="tab" href="dashboard.html">Notebook</a><a class="tab" href="stuck.html" aria-current="page">I'm stuck</a><a class="tab" href="practice.html">Practice</a><a class="tab" href="history.html">History</a></nav>
+      <div class="rail-foot"><span>ananya_k · linked</span><button class="btn btn-soft" data-theme-toggle type="button">Theme</button></div>
+    </aside>
+
+    <main class="main">
+      <header class="res-head">
+        <p class="num muted">1811/G2 · rated 2200 · matched from your link</p>
+        <h1>Vlad and the Nice Paths (hard version)</h1>
+        <p><span class="tag is-gap">dp</span> <span class="tag is-gap">combinatorics</span> <span class="tag">math</span></p>
+      </header>
+
+      <div class="fallback" role="status">
+        <div>
+          <p><b>AI hints are busy right now. Try again in a minute.</b></p>
+          <p class="muted">Everything below works without AI: topics, your weak spots, warm-up problems and the editorial.</p>
+        </div>
+        <button class="btn btn-pen" type="button">Try AI hints again</button>
+      </div>
+
+      <div class="res-grid">
+        <section aria-labelledby="e-title">
+          <h2 id="e-title">Editorial</h2>
+          <p class="small muted">The official Codeforces editorial. Retrying AI uses one of your 10 requests this hour.</p>
+          <button class="btn" type="button" data-reveal aria-expanded="false" aria-controls="ed" data-open="Fold the editorial away" data-closed="Show the editorial">Show the editorial</button>
+          <div id="ed" class="solution" hidden>
+            <p>Let dp<sub>i</sub> be the maximum number of blocks in a nice path ending at <var>i</var>, and cnt<sub>i</sub> the number of such paths. Iterate <var>j</var> downward from <var>i</var>, counting tiles of colour <var>c<sub>i</sub></var>; once at least <var>k</var> are found, the transition from <var>j</var> − 1 adds cnt<sub>j−1</sub> · C(m − 2, k − 2)…</p>
+          </div>
+          <p class="margin-note">tip: read the editorial one paragraph at a time, like hints</p>
+        </section>
+
+        <aside aria-label="Concept gap and similar problems">
+          <section class="gap note note-pink" style="--tilt:1deg" aria-labelledby="g-title">
+            <h2 id="g-title">What you're missing</h2>
+            <p>Stored tags say <span class="hl">dp + combinatorics</span>.</p>
+            <ul class="gap-list">
+              <li><b>combinatorics</b><span class="num">0.29 · 4 of 14</span></li>
+              <li><b>dp</b><span class="num">0.38 · comfort 1500</span></li>
+            </ul>
+          </section>
+          <section aria-labelledby="s-title">
+            <h2 id="s-title">Warm up first</h2>
+            <ul class="sim" data-stagger>
+              <li><a href="problem.html"><b>Vlad and the Nice Paths (easy version)</b><span class="num muted small">1811/G1 · 1700</span></a><button class="btn btn-soft" type="button">+ practice</button></li>
+              <li><a href="problem.html"><b>Two Arrays</b><span class="num muted small">1288/C · 1600</span></a><button class="btn btn-soft" type="button">+ practice</button></li>
+            </ul>
+          </section>
+        </aside>
+      </div>
+    </main>
+  </div>
+</body>
+</html>

@@ -33,6 +33,7 @@ export default [
       '.gemini/**',
       '.impeccable/**',
       'data/**',
+      'frontend/mockups/**',
     ],
   },
   js.configs.recommended,

@@ -1,0 +1,93 @@
+/* Landing: the hero is a stack of printed module sheets. The top sheet carries
+   the offer and a personalised contents list; the sheets behind drift slower. */
+.hero {
+  position: relative;
+  width: min(860px, 100% - 3rem);
+  margin: 3.5rem auto 2rem;
+  isolation: isolate;
+}
+
+.sheet {
+  background: var(--sheet);
+  border: 1px solid var(--rule);
+  border-radius: var(--radius);
+  box-shadow: var(--shadow);
+}
+
+.sheet-back, .sheet-mid { position: absolute; inset: 0; z-index: -1; }
+.sheet-back { rotate: -2.2deg; transform-origin: 30% 80%; background: var(--sheet-2); }
+.sheet-mid { rotate: 1.1deg; transform-origin: 70% 90%; }
+
+.sheet-front { padding: clamp(2rem, 5vw, 4.5rem) clamp(1.5rem, 6vw, 5.5rem); }
+.sheet-head { border-bottom: 1px solid var(--rule); padding-bottom: 0.8rem; margin-bottom: 2.4rem; }
+
+.sheet-front h1 { font-size: clamp(2.2rem, 4.6vw, var(--step-4)); max-width: 17ch; font-weight: 600; }
+.lede { font: 400 var(--step-1) / 1.55 var(--font-text); color: var(--ink-soft); max-width: 58ch; }
+
+.contents {
+  list-style: none;
+  margin: 2.4rem 0 2rem;
+  padding: 0;
+  max-width: 560px;
+  font-family: var(--font-text);
+  counter-reset: item;
+}
+
+.contents li {
+  display: flex;
+  align-items: baseline;
+  gap: 0.6rem;
+  padding: 0.45rem 0;
+  counter-increment: item;
+}
+
+.contents li::before { content: counter(item) '.'; color: var(--ink-soft); width: 1.4rem; }
+.contents i { flex: 1; border-bottom: 1px dotted var(--ink-soft); translate: 0 -0.3em; }
+.contents b { font-weight: 600; color: var(--weak); }
+
+.hero-actions { display: flex; flex-wrap: wrap; gap: 0.8rem; margin-bottom: 1rem; }
+
+.steps {
+  list-style: none;
+  padding: 0;
+  margin: 0;
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 2.5rem;
+  counter-reset: step;
+}
+
+section.how { padding-bottom: 1rem; }
+.contents a { color: var(--ink); }
+.steps li { counter-increment: step; border-top: 2px solid var(--ink); padding-top: 1rem; }
+.steps li::before { content: counter(step); font: 600 var(--step-3) / 1 var(--font-text); color: var(--accent); }
+.steps h3 { margin-top: 0.6rem; }
+
+.feature-list { display: grid; grid-template-columns: 1fr 1fr; gap: 2rem 4rem; margin: 0; }
+.feature-list dt { font: 600 var(--step-1) / 1.3 var(--font-text); margin-bottom: 0.4rem; }
+.feature-list dd { margin: 0; color: var(--ink-soft); }
+
+.practice-note {
+  margin-top: 3.5rem;
+  padding: 1.5rem 1.8rem;
+  background: var(--accent-wash);
+  border-radius: var(--radius);
+}
+
+.practice-note p { margin: 0; }
+
+.closing {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 1rem;
+  margin-top: 4rem;
+  font: 600 var(--step-2) / 1.2 var(--font-text);
+}
+
+.closing p { margin: 0; }
+
+@media (max-width: 760px) {
+  .steps, .feature-list { grid-template-columns: 1fr; }
+  .closing { flex-direction: column; align-items: start; }
+}

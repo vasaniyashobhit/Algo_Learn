@@ -1,0 +1,66 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>AlgoLearn · Stuck result, AI unavailable · A</title>
+  <link rel="stylesheet" href="css/tokens.css">
+  <link rel="stylesheet" href="css/base.css">
+  <link rel="stylesheet" href="css/controls.css">
+  <link rel="stylesheet" href="css/result.css">
+  <script defer src="../shared/interact.js"></script>
+  <script defer src="../shared/motion.js"></script>
+</head>
+<body>
+  <header class="masthead">
+    <a class="wordmark" href="index.html">Algo<b>Learn</b></a>
+    <nav aria-label="Main"><a href="dashboard.html">Report</a><a href="stuck.html" aria-current="page">I'm stuck</a><a href="practice.html">Practice</a><a href="history.html">History</a></nav>
+    <button class="btn btn-quiet" data-theme-toggle type="button">Theme</button>
+  </header>
+
+  <main class="page result">
+    <header class="result-head">
+      <p class="num muted">1811/G2 · rated 2200 · matched from your link</p>
+      <h1>Vlad and the Nice Paths (hard version)</h1>
+      <p><span class="tag is-gap">dp</span> <span class="tag is-gap">combinatorics</span> <span class="tag">math</span></p>
+    </header>
+
+    <div class="fallback-notice" role="status">
+      <p><b>AI hints are busy right now. Try again in a minute.</b></p>
+      <p class="muted">Meanwhile, here is everything we know without AI: the topics, your weak areas, similar problems and the editorial.</p>
+    </div>
+
+    <div class="result-grid">
+      <section aria-labelledby="ed-title">
+        <h2 id="ed-title">Editorial</h2>
+        <p class="small muted">From the Codeforces editorial for this round.</p>
+        <button class="btn" type="button" data-reveal aria-expanded="false" aria-controls="editorial" data-open="Hide the editorial" data-closed="Show the editorial">Show the editorial</button>
+        <div id="editorial" class="solution editorial" hidden>
+          <p>Let dp<sub>i</sub> be the maximum number of blocks in a nice path ending at tile <var>i</var>, and cnt<sub>i</sub> the number of such paths. For a fixed <var>i</var>, iterate <var>j</var> downwards while counting tiles of colour <var>c<sub>i</sub></var>; once at least <var>k</var> are found, the transition from <var>j</var> − 1 adds cnt<sub>j−1</sub> · C(m − 2, k − 2) paths…</p>
+        </div>
+        <h2>Ask the AI again</h2>
+        <p class="muted">Your problem is saved. Retrying uses one of your 10 requests this hour.</p>
+        <button class="btn btn-primary" type="button">Try AI hints again</button>
+      </section>
+
+      <aside class="side" aria-label="Concept gap and similar problems">
+        <section class="gap" aria-labelledby="gap-title">
+          <h2 id="gap-title">Your concept gap</h2>
+          <p>Stored tags say this problem needs <b>dp</b> and <b>combinatorics</b>.</p>
+          <dl class="gap-list">
+            <div><dt>combinatorics</dt><dd><span class="num">0.29</span> · 4 of 14 solved</dd></div>
+            <div><dt>dp</dt><dd><span class="num">0.38</span> · comfort rating 1500</dd></div>
+          </dl>
+        </section>
+        <section aria-labelledby="similar-title">
+          <h2 id="similar-title">Easier problems on the gap</h2>
+          <ul class="similar" data-stagger>
+            <li><a href="problem.html"><span class="num">1811/G1</span> Vlad and the Nice Paths (easy version)</a><span class="num muted">1700</span><button class="btn btn-quiet" type="button">Add to practice</button></li>
+            <li><a href="problem.html"><span class="num">1288/C</span> Two Arrays</a><span class="num muted">1600</span><button class="btn btn-quiet" type="button">Add to practice</button></li>
+          </ul>
+        </section>
+      </aside>
+    </div>
+  </main>
+</body>
+</html>

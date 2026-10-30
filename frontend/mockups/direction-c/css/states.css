@@ -1,0 +1,29 @@
+.frame { margin-top: 2rem; padding: 1.4rem 1.6rem 1.6rem; background: var(--card); border-radius: 8px; box-shadow: var(--shadow); }
+.frame-name { margin: 0 0 1rem; font: 400 1.25rem / 1 var(--font-hand); color: var(--pen); }
+
+.sk-rows { display: grid; gap: 0.8rem; align-content: start; }
+.sk-rows .skeleton { height: 1.6rem; }
+.sk-line { height: 1rem; }
+.sk-plot { aspect-ratio: 1; width: min(300px, 100%); border-radius: 50%; }
+.sk-stats { display: grid; grid-template-columns: repeat(4, 1fr); gap: 1.2rem; margin: 1.2rem 0; }
+.sk-stats .skeleton { height: 5rem; }
+
+.empty { max-width: 60ch; }
+.empty .big { font-size: 1.6rem; margin-bottom: 0.4rem; }
+.inline-form { display: flex; gap: 0.6rem; max-width: 480px; margin: 1rem 0 0.4rem; }
+
+.callout {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 0.4rem 1.2rem;
+  padding: 0.9rem 1.1rem;
+  margin-bottom: 0.7rem;
+  background: var(--note-3);
+  border-radius: 8px;
+}
+
+.callout p { margin: 0; }
+.callout-quiet { background: var(--note-2); display: block; }
+.callout-quiet p + p { margin-top: 0.3rem; }

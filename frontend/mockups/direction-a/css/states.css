@@ -1,0 +1,45 @@
+/* State frames for the states pages, plus notices and empty states. */
+.state-frame {
+  margin-top: 2.5rem;
+  padding: 1.8rem 2rem 2rem;
+  background: var(--sheet);
+  border: 1px solid var(--rule);
+  border-radius: var(--radius);
+}
+
+.state-name {
+  margin: 0 0 1.4rem;
+  font: 600 var(--step--1) / 1.2 var(--font-ui);
+  color: var(--ink-soft);
+}
+
+.sr-only { position: absolute; width: 1px; height: 1px; overflow: hidden; clip-path: inset(50%); }
+
+.sk-figures div { padding: 1rem; }
+.sk-radar { aspect-ratio: 1; width: min(320px, 100%); border-radius: 50%; margin-top: 1rem; }
+.sk-rows { display: grid; gap: 0.9rem; padding-top: 1rem; }
+.sk-rows .skeleton { height: 1.4rem; }
+.sk-line { height: 1rem; margin-bottom: 0.7rem; }
+
+.empty { max-width: 62ch; }
+.empty h3 { font-size: var(--step-2); }
+.inline-form { display: flex; gap: 0.6rem; max-width: 460px; margin: 1.2rem 0 0.4rem; }
+
+.mini-list { padding-left: 1.1rem; margin: 1.4rem 0 0; }
+.mini-list li { margin-bottom: 0.35rem; }
+
+.notice {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 1.5rem;
+  padding: 1rem 1.3rem;
+  margin-bottom: 0.8rem;
+  background: var(--weak-wash);
+  border-radius: var(--radius);
+}
+
+.notice p { margin: 0; }
+.notice-quiet { background: var(--accent-wash); }
+.notice-error { display: block; background: var(--sheet-2); }
+.notice-error p + p { margin-top: 0.4rem; }

@@ -1,0 +1,76 @@
+/* Landing: a floodlit board. Beams, board and the lower-third strap sit on
+   separate planes and travel at different speeds while you scroll. */
+.hero { position: relative; overflow: hidden; padding: 3rem 0 0; isolation: isolate; }
+
+.beams { position: absolute; inset: -20% 0 0; z-index: -1; }
+.beams i { position: absolute; top: 0; width: 22%; height: 140%; background: var(--band); transform-origin: top; }
+.beams i:nth-child(1) { left: 6%; rotate: 18deg; opacity: 0.9; }
+.beams i:nth-child(2) { left: 44%; rotate: -8deg; background: var(--band-2); opacity: 0.55; }
+.beams i:nth-child(3) { right: 4%; rotate: -22deg; opacity: 0.8; }
+
+.board { padding: 1.4rem 1.8rem 4.5rem; background: var(--chalk); color: var(--chalk-ink); box-shadow: var(--shadow); }
+
+.board-head {
+  display: flex;
+  align-items: baseline;
+  gap: 1.2rem;
+  max-width: none;
+  margin: 0 0 1rem;
+  padding-bottom: 0.8rem;
+  border-bottom: 3px solid currentColor;
+  font: 600 1rem var(--font-display);
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+}
+
+.board-head b { font-size: 1.6rem; letter-spacing: 0.02em; }
+.board-head .fig { font-size: 1.6rem; }
+.board-head span:last-child { margin-left: auto; opacity: 0.7; }
+
+.board-table { width: 100%; border-collapse: collapse; font-family: var(--font-display); text-transform: uppercase; }
+.board-table thead th { font-size: 0.9rem; letter-spacing: 0.1em; text-align: right; opacity: 0.7; padding-bottom: 0.4rem; }
+.board-table thead th:first-child { text-align: left; }
+.board-table tbody th { text-align: left; font: 700 clamp(1.6rem, 3.4vw, 3rem) / 1.1 var(--font-display); }
+.board-table td { text-align: right; font-size: clamp(1.6rem, 3.4vw, 3rem); padding-left: 1.5rem; }
+.board-table tbody tr { border-top: 1px solid color-mix(in oklab, currentColor 25%, transparent); }
+.board-table .is-low td:nth-child(2) { color: var(--miss); }
+
+.strap { position: relative; margin-top: -3rem; }
+
+.strap-plate {
+  max-width: 760px;
+  padding: 1.6rem 2rem 1.8rem;
+  background: var(--band);
+  border-left: 0;
+  box-shadow: var(--shadow), inset 0 6px 0 var(--plate);
+}
+
+.strap-plate h1 { font-size: clamp(2.6rem, 5.4vw, var(--step-4)); line-height: 0.92; }
+.strap-plate p { color: var(--ink-soft); font-size: 1.08rem; }
+.strap-actions { display: flex; flex-wrap: wrap; gap: 0.7rem; }
+
+.how, .features { padding-top: 4.5rem; }
+.how h2, .features h2 { color: var(--ink-soft); }
+
+.steps { list-style: none; margin: 0.8rem 0 0; padding: 0; display: grid; grid-template-columns: repeat(3, 1fr); border-top: 3px solid var(--ink); }
+.steps li { padding: 1.2rem 1.5rem 0 0; }
+.steps li + li { padding-left: 1.5rem; border-left: 1px solid var(--line); }
+.steps .fig { display: block; font-size: var(--step-3); line-height: 1; color: var(--plate-text); }
+.steps p { color: var(--ink-soft); }
+
+.feature-grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 1px; margin: 0.8rem 0 0; background: var(--line); border: 1px solid var(--line); }
+.feature-grid div { padding: 1.2rem 1.3rem 1.4rem; background: var(--ground); }
+.feature-grid dt { font: 700 1.25rem / 1.1 var(--font-display); text-transform: uppercase; margin-bottom: 0.5rem; }
+.feature-grid dd { margin: 0; color: var(--ink-soft); }
+
+.practice-band { margin-top: 4.5rem; padding: 2rem 0; background: var(--chalk); color: var(--chalk-ink); }
+.practice-band p { margin: 0; font-size: 1.08rem; }
+
+.closing { display: flex; justify-content: space-between; align-items: center; gap: 1rem; padding-top: 4rem; }
+.closing p { margin: 0; font: 700 var(--step-2) / 1 var(--font-display); text-transform: uppercase; }
+
+@media (max-width: 860px) {
+  .steps, .feature-grid { grid-template-columns: 1fr; }
+  .steps li + li { padding-left: 0; border-left: 0; border-top: 1px solid var(--line); }
+  .closing { flex-direction: column; align-items: start; }
+}

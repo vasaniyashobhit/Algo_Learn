@@ -1,0 +1,83 @@
+*, *::before, *::after { box-sizing: border-box; }
+[hidden] { display: none !important; }
+
+html { background: var(--paper); scrollbar-color: var(--grid-strong) var(--paper); }
+
+body {
+  margin: 0;
+  color: var(--ink-body);
+  font: 400 1rem / 1.6 var(--font-ui);
+  background:
+    linear-gradient(var(--grid) 1px, transparent 1px) 0 0 / 24px 24px,
+    linear-gradient(90deg, var(--grid) 1px, transparent 1px) 0 0 / 24px 24px,
+    var(--paper);
+  -webkit-font-smoothing: antialiased;
+}
+
+h1, h2, h3 { margin: 0 0 0.5em; color: var(--ink); line-height: 1.15; letter-spacing: -0.015em; text-wrap: balance; }
+h1 { font-size: clamp(2rem, 3.2vw, 2.7rem); font-weight: 800; }
+h2 { font-size: 1.3rem; font-weight: 800; margin-top: 2.2rem; }
+h3 { font-size: 1.08rem; font-weight: 700; }
+p { margin: 0 0 1em; max-width: 68ch; }
+
+a { color: var(--pen); text-underline-offset: 0.2em; text-decoration-thickness: 1.5px; }
+::selection { background: var(--hl); color: var(--ink); }
+:focus-visible { outline: 2.5px solid var(--focus); outline-offset: 3px; border-radius: 4px; }
+
+.num { font-variant-numeric: tabular-nums; }
+.muted { color: var(--pencil); }
+.small { font-size: 0.86rem; }
+.hand { font-family: var(--font-hand); color: var(--pen); }
+.sr-only { position: absolute; width: 1px; height: 1px; overflow: hidden; clip-path: inset(50%); }
+
+/* Highlighter swipe: the stroke draws across when the page is ready. */
+.hl {
+  background: linear-gradient(100deg, transparent 0.2em, var(--hl) 0.3em calc(100% - 0.3em), transparent calc(100% - 0.2em)) no-repeat 0 62% / 0% 0.75em;
+  transition: background-size 700ms var(--ease) 300ms;
+}
+
+.is-ready .hl { background-size: 100% 0.75em; }
+.hl-pink { --hl: var(--hl-pink); }
+
+/* App shell: an index-tab rail on the notebook's pink margin line. */
+.shell { display: grid; grid-template-columns: 210px 1fr; min-height: 100vh; }
+
+.rail {
+  position: sticky;
+  top: 0;
+  height: 100vh;
+  display: flex;
+  flex-direction: column;
+  gap: 0.3rem;
+  padding: 1.4rem 0 1.4rem 1rem;
+  border-right: 2px solid var(--margin);
+  background: color-mix(in oklab, var(--paper) 88%, transparent);
+}
+
+.wordmark { margin: 0 1rem 1.6rem 0.4rem; color: var(--ink); font: 800 1.45rem / 1 var(--font-ui); text-decoration: none; letter-spacing: -0.03em; }
+.wordmark span { font: 700 1.55rem / 1 var(--font-hand); color: var(--pen); margin-left: 1px; }
+
+.rail nav { display: grid; gap: 0.3rem; }
+
+.rail a.tab {
+  padding: 0.55rem 0.9rem;
+  border-radius: 8px 0 0 8px;
+  color: var(--pencil);
+  font-weight: 600;
+  text-decoration: none;
+  transition: background 200ms var(--ease), color 200ms var(--ease), translate 300ms var(--spring);
+}
+
+.rail a.tab:hover { color: var(--ink); translate: 4px 0; }
+.rail a.tab[aria-current='page'] { background: var(--note); color: var(--ink); translate: 6px 0; box-shadow: var(--shadow); }
+.rail-foot { margin-top: auto; padding-right: 1rem; display: grid; gap: 0.6rem; font-size: 0.86rem; color: var(--pencil); }
+
+.main { padding: 2rem clamp(1.5rem, 4vw, 3.5rem) 4rem; min-width: 0; }
+.main-narrow { max-width: 900px; }
+.margin-note { font: 400 1.05rem / 1.3 var(--font-hand); color: var(--pen); rotate: -2deg; }
+
+@media (max-width: 860px) {
+  .shell { grid-template-columns: 1fr; }
+  .rail { position: static; height: auto; flex-direction: row; flex-wrap: wrap; border-right: 0; border-bottom: 2px solid var(--margin); padding: 0.8rem; }
+  .rail-foot { margin: 0; }
+}

@@ -1,0 +1,55 @@
+/* Direction B · Scorecard — a floodlit cricket scoreboard and broadcast graphics.
+   Rank is carried by weight, case and one reversed yellow plate per screen. */
+@import url('https://fonts.googleapis.com/css2?family=Barlow+Condensed:wght@500;600;700;800&family=Barlow:wght@400;500;600&display=swap');
+
+:root {
+  color-scheme: dark;
+  --font-display: 'Barlow Condensed', 'Arial Narrow', sans-serif;
+  --font-ui: 'Barlow', system-ui, sans-serif;
+
+  --ground: #0a1322;
+  --band: #111d33;
+  --band-2: #19284a;
+  --line: #2a3b5e;
+  --ink: #edf1f8;
+  --ink-soft: #9fb0cc;
+  --plate: #ffc629;
+  --plate-ink: #10151f;
+  --plate-text: #ffc629;
+  --chalk: #f3efe4;
+  --chalk-ink: #0a1322;
+  --miss: #ff7a59;
+  --focus: #ffc629;
+
+  --cut: 2px;
+  --shadow: 0 2px 4px rgb(0 0 0 / 0.35), 0 14px 32px rgb(0 0 0 / 0.35);
+
+  --step--1: 0.82rem;
+  --step-0: 0.96rem;
+  --step-1: 1.25rem;
+  --step-2: 1.9rem;
+  --step-3: 3rem;
+  --step-4: 5.6rem;
+
+  --ease: cubic-bezier(0.7, 0, 0.2, 1);
+  --dur-enter: 380ms;
+  --dur-press: 90ms;
+  --stagger: 45ms;
+}
+
+/* Dark is the default whatever the OS says; light is an explicit choice. */
+:root[data-theme='light'] {
+  color-scheme: light;
+  --ground: #e9e5d9;
+  --band: #f6f3ea;
+  --band-2: #dcd6c5;
+  --line: #c2bba6;
+  --ink: #0b1424;
+  --ink-soft: #4b5670;
+  --chalk: #0b1424;
+  --chalk-ink: #f3efe4;
+  --miss: #b23a17;
+  --plate-text: #7a5800;
+  --focus: #0b1424;
+  --shadow: 0 2px 4px rgb(11 20 36 / 0.1), 0 12px 28px rgb(11 20 36 / 0.12);
+}

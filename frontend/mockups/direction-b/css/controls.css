@@ -1,0 +1,93 @@
+/* Buttons, tags, fields, state marks and the broadcast motion grammar:
+   things wipe on from the left like a graphics package, fast and clean. */
+.btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.5rem;
+  padding: 0.6rem 1.1rem;
+  border: 1.5px solid var(--ink);
+  border-radius: var(--cut);
+  background: transparent;
+  color: var(--ink);
+  font: 700 1rem / 1 var(--font-display);
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  text-decoration: none;
+  cursor: pointer;
+  transition: transform var(--dur-press) var(--ease), background 160ms var(--ease), color 160ms var(--ease);
+}
+
+.btn:hover { background: var(--ink); color: var(--ground); }
+.btn:active { transform: scale(0.96); }
+.btn[disabled] { opacity: 0.5; cursor: not-allowed; transform: none; }
+.btn-plate { background: var(--plate); border-color: var(--plate); color: var(--plate-ink); }
+.btn-plate:hover { background: var(--ink); border-color: var(--ink); color: var(--ground); }
+.btn-text { border-color: transparent; padding-inline: 0.2rem; color: var(--ink-soft); }
+.btn-text:hover { background: transparent; color: var(--ink); }
+.btn svg { width: 16px; height: 16px; }
+
+.tag {
+  display: inline-block;
+  padding: 0.15rem 0.45rem;
+  background: var(--band-2);
+  color: var(--ink);
+  font: 600 0.8rem / 1.2 var(--font-display);
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  white-space: nowrap;
+}
+
+.tag.is-gap { background: transparent; box-shadow: inset 0 0 0 1.5px var(--miss); color: var(--miss); }
+
+/* State marks carry meaning by shape, never colour alone. */
+.mark { display: inline-block; width: 12px; height: 12px; vertical-align: -1px; }
+.mark-solved { background: var(--ink); }
+.mark-open { box-shadow: inset 0 0 0 2px var(--ink); }
+.mark-miss { background: linear-gradient(45deg, transparent 43%, var(--miss) 43% 57%, transparent 57%), linear-gradient(-45deg, transparent 43%, var(--miss) 43% 57%, transparent 57%); }
+
+.field { display: grid; gap: 0.35rem; margin-bottom: 1rem; }
+.field label { font: 600 0.9rem var(--font-display); text-transform: uppercase; letter-spacing: 0.06em; color: var(--ink-soft); }
+
+.input, .textarea {
+  width: 100%;
+  padding: 0.7rem 0.85rem;
+  border: 0;
+  border-bottom: 2px solid var(--line);
+  border-radius: 0;
+  background: var(--band-2);
+  color: var(--ink);
+  font: inherit;
+}
+
+.input:focus-visible, .textarea:focus-visible { outline: 0; border-bottom-color: var(--plate); }
+.input[aria-invalid='true'] { border-bottom-color: var(--miss); }
+.field-error { color: var(--miss); font-size: var(--step--1); margin: 0; }
+
+.skeleton {
+  display: block;
+  background: repeating-linear-gradient(110deg, var(--band-2) 0 30%, var(--line) 40%, var(--band-2) 50% 100%) 0 0 / 250% 100%;
+  animation: sweep 1.1s linear infinite;
+}
+
+@keyframes sweep { to { background-position: -250% 0; } }
+
+@keyframes wipe {
+  from { clip-path: inset(0 100% 0 0); }
+  to { clip-path: inset(0 0 0 0); }
+}
+
+.is-ready [data-stagger] > * {
+  animation: wipe var(--dur-enter) var(--ease) both;
+  animation-delay: calc(var(--i, 0) * var(--stagger));
+}
+
+.is-revealed { animation: wipe 340ms var(--ease) both; }
+
+@media (prefers-reduced-motion: reduce) {
+  *, *::before, *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+  }
+  .skeleton { animation: none; background: var(--band-2); }
+}

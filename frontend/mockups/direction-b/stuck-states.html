@@ -1,0 +1,60 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>AlgoLearn · Stuck states · B</title>
+  <link rel="stylesheet" href="css/tokens.css">
+  <link rel="stylesheet" href="css/base.css">
+  <link rel="stylesheet" href="css/controls.css">
+  <link rel="stylesheet" href="css/result.css">
+  <link rel="stylesheet" href="css/states.css">
+  <script defer src="../shared/interact.js"></script>
+  <script defer src="../shared/motion.js"></script>
+</head>
+<body>
+  <header class="bug">
+    <div class="wrap">
+      <a class="wordmark" href="index.html">Algo<span>Learn</span></a>
+      <nav aria-label="Main"><a href="dashboard.html">Card</a><a href="stuck.html" aria-current="page">I'm stuck</a><a href="practice.html">Practice</a><a href="history.html">History</a></nav>
+      <div class="bug-meta"><button class="btn btn-text" data-theme-toggle type="button">Theme</button></div>
+    </div>
+  </header>
+
+  <main class="wrap page">
+    <h1>Stuck result states</h1>
+    <p class="muted">One frame per state.</p>
+
+    <section class="frame" aria-labelledby="s1">
+      <h2 id="s1" class="frame-name">Loading</h2>
+      <div aria-busy="true">
+        <p role="status"><b>Reading your problem.</b> Hints usually land in 15–30 seconds.</p>
+        <span class="skeleton" style="height: 4.5rem; margin-bottom: 1rem"></span>
+        <div class="result">
+          <div class="sk-rows"><span class="skeleton" style="height: 4rem"></span><span class="skeleton" style="height: 4rem"></span><span class="skeleton" style="height: 4rem"></span></div>
+          <div class="sk-rows"><span class="skeleton" style="height: 8rem"></span><span class="skeleton sk-line"></span><span class="skeleton sk-line"></span></div>
+        </div>
+      </div>
+    </section>
+
+    <section class="frame" aria-labelledby="s2">
+      <h2 id="s2" class="frame-name">Empty · unreadable input</h2>
+      <div class="empty-board">
+        <p class="fig empty-num">?</p>
+        <div>
+          <h3>Couldn't read a problem from that image</h3>
+          <p class="muted">The screenshot is blurry or too small. Paste the statement as text, or try a sharper crop.</p>
+          <a class="btn btn-plate" href="stuck.html">Paste text instead</a>
+        </div>
+      </div>
+    </section>
+
+    <section class="frame" aria-labelledby="s3">
+      <h2 id="s3" class="frame-name">Errors</h2>
+      <div class="alert" role="alert"><p><b>10 of 10 used this hour.</b> Next request in <span class="num">18 min</span>. Past answers stay in your history.</p><a class="btn" href="history.html">History</a></div>
+      <div class="alert" role="alert"><p><b>That link didn't load.</b> The site blocked us or timed out. Paste the statement as text instead.</p></div>
+      <div class="alert" role="alert"><p><b>Something broke on our side.</b> Your input is kept. Try again in a moment. Code: <span class="num">b21e94c0-77aa</span></p></div>
+    </section>
+  </main>
+</body>
+</html>

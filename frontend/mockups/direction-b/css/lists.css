@@ -1,0 +1,44 @@
+.list-head { display: flex; align-items: end; gap: 2.5rem; margin-bottom: 1.4rem; padding-bottom: 1rem; border-bottom: 3px solid var(--ink); }
+.list-head h1 { margin: 0 auto 0 0; }
+
+.mini-totals { display: flex; gap: 1.8rem; margin: 0; }
+.mini-totals dt { font: 600 0.8rem var(--font-display); text-transform: uppercase; letter-spacing: 0.1em; color: var(--ink-soft); }
+.mini-totals dd { margin: 0; font-size: var(--step-2); line-height: 1; }
+
+.seg { display: flex; }
+
+.seg button {
+  padding: 0.55rem 0.9rem;
+  border: 0;
+  background: var(--band-2);
+  color: var(--ink-soft);
+  font: 700 0.95rem var(--font-display);
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  cursor: pointer;
+  transition: transform var(--dur-press) var(--ease);
+}
+
+.seg button:active { transform: scale(0.95); }
+.seg [aria-pressed='true'] { background: var(--ink); color: var(--ground); }
+
+.alert-line { padding: 0.8rem 1rem; margin-bottom: 1rem; background: var(--band); box-shadow: inset 0 3px 0 var(--miss); }
+
+.rows { width: 100%; border-collapse: collapse; }
+.rows th, .rows td { padding: 0.65rem 0.5rem; border-bottom: 1px solid var(--line); text-align: left; vertical-align: middle; }
+.rows thead th { font: 600 0.8rem var(--font-display); text-transform: uppercase; letter-spacing: 0.1em; color: var(--ink-soft); }
+.rows a { text-decoration: none; }
+.rows a b { font: 700 1.15rem var(--font-display); text-transform: uppercase; }
+.rows a:hover b { text-decoration: underline; }
+.rows .rate { font-size: 1.6rem; color: var(--plate-text); }
+.rows tr.done { opacity: 0.6; }
+.rows .btn { padding: 0.4rem 0.7rem; font-size: 0.9rem; }
+
+.legend { margin-top: 0.8rem; }
+.empty-line { margin-top: 2.5rem; padding: 1.2rem; background: var(--band); }
+.empty-line h2 { color: var(--ink-soft); }
+.empty-line p { margin: 0; }
+
+.pager { display: flex; justify-content: center; align-items: center; gap: 1.4rem; margin-top: 1.8rem; }
+.pager .fig { font-size: 1.4rem; }
+.pager [aria-disabled='true'] { opacity: 0.4; pointer-events: none; }

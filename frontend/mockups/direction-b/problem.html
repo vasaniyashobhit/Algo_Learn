@@ -1,0 +1,65 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>AlgoLearn · 1811/G2 · B</title>
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/katex@0.16.11/dist/katex.min.css">
+  <link rel="stylesheet" href="css/tokens.css">
+  <link rel="stylesheet" href="css/base.css">
+  <link rel="stylesheet" href="css/controls.css">
+  <link rel="stylesheet" href="css/result.css">
+  <link rel="stylesheet" href="css/problem.css">
+  <script defer src="https://cdn.jsdelivr.net/npm/katex@0.16.11/dist/katex.min.js"></script>
+  <script defer src="https://cdn.jsdelivr.net/npm/katex@0.16.11/dist/contrib/auto-render.min.js"></script>
+  <script defer src="../shared/latex.js"></script>
+  <script defer src="../shared/interact.js"></script>
+  <script defer src="../shared/motion.js"></script>
+</head>
+<body>
+  <header class="bug">
+    <div class="wrap">
+      <a class="wordmark" href="index.html">Algo<span>Learn</span></a>
+      <nav aria-label="Main"><a href="dashboard.html">Card</a><a href="stuck.html">I'm stuck</a><a href="practice.html">Practice</a><a href="history.html">History</a></nav>
+      <div class="bug-meta"><button class="btn btn-text" data-theme-toggle type="button">Theme</button></div>
+    </div>
+  </header>
+
+  <section class="strap-head">
+    <div class="wrap">
+      <p class="num">1811/G2 · 2 s · 256 MB · combinatorics · dp · math</p>
+      <h1>Vlad and the Nice Paths (hard version)</h1>
+      <p class="fig strap-rating">2200</p>
+    </div>
+  </section>
+
+  <main class="wrap page result">
+    <article class="statement" data-latex>
+      <div class="problem-actions">
+        <button class="btn btn-plate" type="button">Add to practice</button>
+        <a class="btn" href="stuck-result.html">I'm stuck on this</a>
+      </div>
+      <p>There are $n$ tiles in a row; tile $i$ has colour $c_i$. Vlad starts on any tile and may only jump to tiles to the right.</p>
+      <p>A path of length $p$ visits tiles $j_1 &lt; j_2 &lt; \dots &lt; j_p$. It is <em>nice</em> if $p$ is divisible by $k$ and each block of $k$ consecutive visited tiles has one colour:
+        $$c_{j_1} = \dots = c_{j_k},\quad c_{j_{k+1}} = \dots = c_{j_{2k}},\ \dots$$</p>
+      <p>Count the nice paths of <b>maximum</b> length, modulo $10^9 + 7$.</p>
+      <h2>Input</h2>
+      <p>$t$ tests ($1 \le t \le 10^4$). Each has $n, k$ ($1 \le k \le n \le 5000$) and colours $c_1, \dots, c_n$. The sum of $n^2$ is at most $2.5 \cdot 10^7$.</p>
+      <h2>Output</h2>
+      <p>For each test, the number of nice paths of maximum length modulo $10^9 + 7$.</p>
+      <p class="small muted">Paraphrased for the mockup. Codeforces Round 863 (Div. 3).</p>
+    </article>
+
+    <aside aria-labelledby="sim-title">
+      <h2 id="sim-title">Similar problems</h2>
+      <p class="small muted">Shared tags first, then rating closeness.</p>
+      <ul class="sim" data-stagger>
+        <li><a href="problem.html"><span class="fig">1700</span><span><b>Vlad and the Nice Paths (easy)</b><span class="num muted small">1811/G1</span></span></a></li>
+        <li><a href="problem.html"><span class="fig">1600</span><span><b>Two Arrays</b><span class="num muted small">1288/C</span></span></a></li>
+        <li><a href="problem.html"><span class="fig">2000</span><span><b>Chip Move</b><span class="num muted small">1716/D</span></span></a></li>
+        <li><a href="problem.html"><span class="fig">1700</span><span><b>Flowers</b><span class="num muted small">474/D</span></span></a></li>
+      </ul>
+    </aside>
+  </main>
+</body>
+</html>

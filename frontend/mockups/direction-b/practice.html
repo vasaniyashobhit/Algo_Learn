@@ -1,0 +1,53 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>AlgoLearn · Practice list · B</title>
+  <link rel="stylesheet" href="css/tokens.css">
+  <link rel="stylesheet" href="css/base.css">
+  <link rel="stylesheet" href="css/controls.css">
+  <link rel="stylesheet" href="css/lists.css">
+  <script defer src="../shared/interact.js"></script>
+  <script defer src="../shared/motion.js"></script>
+</head>
+<body>
+  <header class="bug">
+    <div class="wrap">
+      <a class="wordmark" href="index.html">Algo<span>Learn</span></a>
+      <nav aria-label="Main"><a href="dashboard.html">Card</a><a href="stuck.html">I'm stuck</a><a href="practice.html" aria-current="page">Practice</a><a href="history.html">History</a></nav>
+      <div class="bug-meta"><button class="btn btn-text" data-theme-toggle type="button">Theme</button></div>
+    </div>
+  </header>
+
+  <main class="wrap page">
+    <header class="list-head">
+      <h1>Practice list</h1>
+      <dl class="mini-totals"><div><dt>Queued</dt><dd class="fig">4</dd></div><div><dt>Solved</dt><dd class="fig">2</dd></div></dl>
+      <div class="seg" role="group" aria-label="Filter">
+        <button aria-pressed="true" type="button">All</button><button aria-pressed="false" type="button">To do</button><button aria-pressed="false" type="button">Solved</button>
+      </div>
+    </header>
+
+    <div class="alert-line" role="status"><b>Not solved yet.</b> No accepted submission for 1288/C on Codeforces. Submit there, then press "Solved it" again.</div>
+
+    <table class="rows">
+      <thead><tr><th scope="col"><span class="sr-only">Status</span></th><th scope="col">Rating</th><th scope="col">Problem</th><th scope="col">Topics</th><th scope="col">From</th><th scope="col"><span class="sr-only">Actions</span></th></tr></thead>
+      <tbody data-stagger>
+        <tr><td><i class="mark mark-open" title="To do"></i></td><td class="fig rate">1700</td><td><a href="problem.html"><b>Vlad and the Nice Paths (easy)</b> <span class="num muted">1811/G1</span></a></td><td><span class="tag">dp</span> <span class="tag">combinatorics</span></td><td class="muted">Stuck</td><td><button class="btn" type="button">Solved it</button></td></tr>
+        <tr><td><i class="mark mark-open" title="To do"></i></td><td class="fig rate">1600</td><td><a href="problem.html"><b>Two Arrays</b> <span class="num muted">1288/C</span></a></td><td><span class="tag">combinatorics</span> <span class="tag">dp</span></td><td class="muted">Stuck</td><td><button class="btn" type="button">Solved it</button></td></tr>
+        <tr><td><i class="mark mark-open" title="To do"></i></td><td class="fig rate">1700</td><td><a href="problem.html"><b>Flowers</b> <span class="num muted">474/D</span></a></td><td><span class="tag">dp</span></td><td class="muted">Card</td><td><button class="btn" type="button">Solved it</button></td></tr>
+        <tr><td><i class="mark mark-open" title="To do"></i></td><td class="fig rate">1800</td><td><a href="problem.html"><b>Kefa and Dishes</b> <span class="num muted">580/D</span></a></td><td><span class="tag">bitmasks</span> <span class="tag">dp</span></td><td class="muted">Card</td><td><button class="btn" type="button">Solved it</button></td></tr>
+        <tr class="done"><td><i class="mark mark-solved" title="Solved"></i></td><td class="fig rate">1500</td><td><a href="problem.html"><b>Boredom</b> <span class="num muted">455/A</span></a></td><td><span class="tag">dp</span></td><td class="muted">Card</td><td><button class="btn btn-text" type="button">Remove</button></td></tr>
+        <tr class="done"><td><i class="mark mark-solved" title="Solved"></i></td><td class="fig rate">1300</td><td><a href="problem.html"><b>Cut Ribbon</b> <span class="num muted">189/A</span></a></td><td><span class="tag">brute force</span> <span class="tag">dp</span></td><td class="muted">Manual</td><td><button class="btn btn-text" type="button">Remove</button></td></tr>
+      </tbody>
+    </table>
+    <p class="legend small muted"><i class="mark mark-open"></i> to do &nbsp; <i class="mark mark-solved"></i> solved</p>
+
+    <section class="empty-line" aria-labelledby="e-title">
+      <h2 id="e-title">Empty list</h2>
+      <p class="muted">Nothing queued. Add problems from <a href="dashboard.html">your card</a> or a <a href="stuck.html">stuck result</a>.</p>
+    </section>
+  </main>
+</body>
+</html>

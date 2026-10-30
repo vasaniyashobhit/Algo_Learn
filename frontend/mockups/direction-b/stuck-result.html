@@ -1,0 +1,76 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>AlgoLearn · Stuck result · B</title>
+  <link rel="stylesheet" href="css/tokens.css">
+  <link rel="stylesheet" href="css/base.css">
+  <link rel="stylesheet" href="css/controls.css">
+  <link rel="stylesheet" href="css/result.css">
+  <script defer src="../shared/interact.js"></script>
+  <script defer src="../shared/motion.js"></script>
+</head>
+<body>
+  <header class="bug">
+    <div class="wrap">
+      <a class="wordmark" href="index.html">Algo<span>Learn</span></a>
+      <nav aria-label="Main"><a href="dashboard.html">Card</a><a href="stuck.html" aria-current="page">I'm stuck</a><a href="practice.html">Practice</a><a href="history.html">History</a></nav>
+      <div class="bug-meta"><button class="btn btn-text" data-theme-toggle type="button">Theme</button></div>
+    </div>
+  </header>
+
+  <section class="strap-head">
+    <div class="wrap">
+      <p class="num">1811/G2 · from your link</p>
+      <h1>Vlad and the Nice Paths (hard version)</h1>
+      <p class="fig strap-rating">2200</p>
+    </div>
+  </section>
+
+  <main class="wrap page result">
+    <section class="hints-col" aria-labelledby="h-title">
+      <h2 id="h-title">Hints</h2>
+      <p class="small muted">AI hints (Gemini). They can be wrong: check each step.</p>
+      <ol class="hints" id="hint-list" aria-live="polite">
+        <li data-hint><span class="fig">1</span><p>Let <code>dp[i]</code> be the longest nice path ending exactly at tile <var>i</var>, plus how many paths reach that length.</p></li>
+        <li data-hint hidden><span class="fig">2</span><p>To close a block at <var>i</var>, walk left counting tiles of colour <var>c<sub>i</sub></var>. After <var>k</var> − 1 of them, every earlier start works; the middle tiles are a binomial choice.</p></li>
+        <li data-hint hidden><span class="fig">3</span><p>Extend only from maximum-length states. Precompute binomials to 5000 mod 10<sup>9</sup>+7: O(n²) total.</p></li>
+      </ol>
+      <div class="hint-actions">
+        <button class="btn btn-plate" type="button" data-next-hint="hint-list">Next hint <span class="num">(<span data-left>2</span> left)</span></button>
+        <button class="btn" type="button" data-reveal aria-expanded="false" aria-controls="sol" data-open="Hide solution" data-closed="Show full solution">Show full solution</button>
+      </div>
+      <div id="sol" class="solution" hidden>
+        <p>For each <var>i</var>, scan <var>j</var> from <var>i</var> down, counting colour <var>c<sub>i</sub></var>. When the count reaches <var>k</var>, start <var>j</var> adds <code>ways[j−1] · C(cnt−2, k−2)</code> at length <code>len[j−1] + 1</code>. Keep the best length per <var>i</var>.</p>
+        <pre><code>for i in 1..n:
+  cnt = 0
+  for j in i down to 1:
+    if c[j] == c[i]: cnt += 1
+    if cnt >= k: relax(i, j, cnt)</code></pre>
+      </div>
+    </section>
+
+    <aside class="gap-col" aria-label="Concept gap and similar problems">
+      <section class="gap" aria-labelledby="g-title">
+        <h2 id="g-title">Concept gap</h2>
+        <p>Needs <b>dp</b> + <b>combinatorics</b>. You're 700 above your dp comfort rating.</p>
+        <dl class="gap-stats" data-stagger>
+          <div><dt>combinatorics</dt><dd class="fig">.29</dd><dd class="small muted">4 of 14</dd></div>
+          <div><dt>comb + dp</dt><dd class="fig">.24</dd><dd class="small muted">2 of 7</dd></div>
+          <div><dt>dp</dt><dd class="fig">.38</dd><dd class="small muted">comfort 1500</dd></div>
+        </dl>
+      </section>
+      <section aria-labelledby="s-title">
+        <h2 id="s-title">Warm up on the gap</h2>
+        <ul class="sim" data-stagger>
+          <li><a href="problem.html"><span class="fig">1700</span><span><b>Vlad and the Nice Paths (easy)</b><span class="num muted small">1811/G1</span></span></a><button class="btn btn-text" type="button">+ Practice</button></li>
+          <li><a href="problem.html"><span class="fig">1600</span><span><b>Two Arrays</b><span class="num muted small">1288/C</span></span></a><button class="btn btn-text" type="button">+ Practice</button></li>
+          <li><a href="problem.html"><span class="fig">1700</span><span><b>Flowers</b><span class="num muted small">474/D</span></span></a><button class="btn btn-text" type="button">+ Practice</button></li>
+        </ul>
+      </section>
+    </aside>
+    <p class="footnote full">Sample data. Variants: <a href="stuck-fallback.html">AI unavailable</a> · <a href="stuck-states.html">loading and errors</a>.</p>
+  </main>
+</body>
+</html>

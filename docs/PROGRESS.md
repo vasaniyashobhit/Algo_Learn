@@ -292,7 +292,31 @@ Read this first, update it last, every session.
   `GET /stuck/:id/solution` for 71A: `kind ai` in 282 ms. Note: the model's C++ had
   `#iostream>` instead of `#include <iostream>` (verbatim from the model; our code only trims).
 
+### Session 11 (2026-10-30) — Three design directions as static mockups (Impeccable shape)
+
+- `/impeccable init` had not produced a PRODUCT.md, so it was written this session (root `PRODUCT.md`)
+  from the brief and the user's answers: name **AlgoLearn** (never "CP Coach" in UI), users are
+  Indian college students rated 800–2000 practising late at night on laptops, dark mode matters,
+  1024px+ first, no Codeforces branding, no purple-gradient AI look, voice direct/honest/technical.
+- Shape brief (IA, screens, states) and the direction round are in `frontend/mockups/README.md`.
+- `frontend/mockups/`: `index.html` (comparison page, `compare.css`), `shared/` (motion, interact,
+  radar, latex scripts), and `direction-a/`, `direction-b/`, `direction-c/`, each with 12 pages:
+  index, landing, auth, dashboard, dashboard-states, stuck, stuck-result, stuck-fallback,
+  stuck-states, problem (KaTeX), practice, history. 77 files, all ≤ 100 lines.
+  - **A · Module:** calm editorial study module. Stone paper, Source Serif 4 + Public Sans, examiner green.
+  - **B · Scorecard:** bold dark cricket scoreboard. Barlow Condensed, night navy + chalk, one yellow
+    plate per screen, wagon-wheel radar, ball-by-ball activity. Dark by default.
+  - **C · Graph notebook:** playful but precise. Graph paper, ballpoint blue, highlighter, sticky notes,
+    Figtree + Kalam for margin notes, index-tab sidebar.
+  - All three have press animation, staggered entrances, a parallax hero, skeleton shimmer and
+    count-ups, all switched off by `prefers-reduced-motion`, plus a light/dark Theme toggle.
+- `eslint.config.js` ignores `frontend/mockups/**` (reference only). No React was built.
+
 ## Decisions
+
+- **Design direction (Session 11):** **Waiting for the user to choose a direction** (A, B or C, or
+  a mix stated explicitly). After the choice: write the direction contract to the surface brief, build
+  React from the chosen mockup, then write DESIGN.md from the built result.
 
 - **Stuck flow (Session 10):**
   - ~~Image reading and the coach each get their own 40 s deadline~~ (Fix-up 10.5: one shared 50 s
@@ -559,6 +583,9 @@ contestId/index`, title, known tags) because `bulkWrite` skips schema validators
 - Groq key added, model openai/gpt-oss-120b (configured, not yet needed in live test).
 
 ## Next
+
+- **Choose a design direction** from `frontend/mockups/` (`npx serve frontend/mockups`), then the
+  React sessions follow the chosen one. Product name in the UI is AlgoLearn.
 
 - ~~Live stuck check~~ done in Fix-up 10.5 (`npm run check:stuck`, table above). Groq was not reached
   (the first Gemini model answered every time); its order is covered by tests only.

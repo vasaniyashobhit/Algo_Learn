@@ -1,0 +1,83 @@
+/* Buttons, tags, fields, skeletons and the motion grammar for Module:
+   slow, settled, paper-like. Things arrive by rising a few pixels and fading in. */
+.btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.5rem;
+  padding: 0.62rem 1.1rem;
+  border: 1px solid var(--ink);
+  border-radius: var(--radius);
+  background: var(--sheet);
+  color: var(--ink);
+  font: 600 var(--step--1) / 1.2 var(--font-ui);
+  text-decoration: none;
+  cursor: pointer;
+  transition: transform var(--dur-press) var(--ease), background 200ms var(--ease);
+}
+
+.btn:hover { background: var(--sheet-2); }
+.btn:active { transform: scale(0.98) translateY(1px); }
+.btn[disabled] { opacity: 0.55; cursor: not-allowed; transform: none; }
+.btn-primary { background: var(--accent); border-color: var(--accent); color: var(--accent-ink); }
+.btn-primary:hover { background: color-mix(in oklab, var(--accent) 88%, var(--ink)); }
+.btn-quiet { border-color: transparent; background: transparent; color: var(--accent); }
+.btn svg { width: 16px; height: 16px; }
+
+.tag {
+  display: inline-block;
+  padding: 0.1rem 0.5rem;
+  border: 1px solid var(--rule);
+  border-radius: 99px;
+  font-size: 0.78rem;
+  color: var(--ink-soft);
+  white-space: nowrap;
+}
+
+.tag.is-gap { border-color: var(--weak); color: var(--weak); background: var(--weak-wash); }
+
+.field { display: grid; gap: 0.35rem; margin-bottom: 1rem; }
+.field label { font-weight: 600; font-size: var(--step--1); }
+
+.input, .textarea {
+  width: 100%;
+  padding: 0.65rem 0.8rem;
+  border: 1px solid var(--rule);
+  border-radius: var(--radius);
+  background: var(--sheet);
+  color: var(--ink);
+  font: inherit;
+}
+
+.input:focus-visible, .textarea:focus-visible { outline-offset: 0; border-color: var(--focus); }
+.input[aria-invalid='true'] { border-color: var(--weak); }
+.field-error { color: var(--weak); font-size: var(--step--1); }
+
+.skeleton {
+  display: block;
+  border-radius: var(--radius);
+  background: linear-gradient(90deg, var(--sheet-2) 0 40%, var(--sheet) 50%, var(--sheet-2) 60% 100%) 0 0 / 300% 100%;
+  animation: shimmer 1.8s linear infinite;
+}
+
+@keyframes shimmer { to { background-position: -150% 0; } }
+
+@keyframes rise {
+  from { opacity: 0; translate: 0 10px; }
+  to { opacity: 1; translate: 0 0; }
+}
+
+.is-ready [data-stagger] > * {
+  animation: rise var(--dur-enter) var(--ease) both;
+  animation-delay: calc(var(--i, 0) * var(--stagger));
+}
+
+.is-revealed { animation: rise 520ms var(--ease) both; }
+
+@media (prefers-reduced-motion: reduce) {
+  *, *::before, *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+  }
+  .skeleton { animation: none; background: var(--sheet-2); }
+}

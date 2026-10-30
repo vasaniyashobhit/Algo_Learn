@@ -1,0 +1,63 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>AlgoLearn · Stuck states · A</title>
+  <link rel="stylesheet" href="css/tokens.css">
+  <link rel="stylesheet" href="css/base.css">
+  <link rel="stylesheet" href="css/controls.css">
+  <link rel="stylesheet" href="css/result.css">
+  <link rel="stylesheet" href="css/states.css">
+  <script defer src="../shared/interact.js"></script>
+  <script defer src="../shared/motion.js"></script>
+</head>
+<body>
+  <header class="masthead">
+    <a class="wordmark" href="index.html">Algo<b>Learn</b></a>
+    <nav aria-label="Main"><a href="dashboard.html">Report</a><a href="stuck.html" aria-current="page">I'm stuck</a><a href="practice.html">Practice</a><a href="history.html">History</a></nav>
+    <button class="btn btn-quiet" data-theme-toggle type="button">Theme</button>
+  </header>
+
+  <main class="page">
+    <h1>Stuck result states</h1>
+    <p class="muted">Each frame is the result page in one state.</p>
+
+    <section class="state-frame" aria-labelledby="s-loading">
+      <h2 id="s-loading" class="state-name">Loading</h2>
+      <div aria-busy="true">
+        <p role="status">Reading your problem and writing hints. This usually takes 15–30 seconds.</p>
+        <span class="skeleton" style="width: 60%; height: 2.2rem; margin-bottom: 1rem"></span>
+        <div class="result-grid">
+          <div class="sk-rows"><span class="skeleton" style="height: 4.5rem"></span><span class="skeleton" style="height: 4.5rem"></span></div>
+          <div class="sk-rows"><span class="skeleton" style="height: 9rem"></span><span class="skeleton sk-line"></span><span class="skeleton sk-line"></span></div>
+        </div>
+      </div>
+    </section>
+
+    <section class="state-frame" aria-labelledby="s-empty">
+      <h2 id="s-empty" class="state-name">Empty · nothing usable in the input</h2>
+      <div class="empty">
+        <h3>We couldn't read a problem from that image</h3>
+        <p class="muted">The screenshot looks blurry or too small. Paste the statement as text, or try a sharper crop.</p>
+        <a class="btn btn-primary" href="stuck.html">Paste the text instead</a>
+      </div>
+    </section>
+
+    <section class="state-frame" aria-labelledby="s-error">
+      <h2 id="s-error" class="state-name">Errors</h2>
+      <div class="notice" role="alert">
+        <p><b>You've used all 10 stuck requests for this hour.</b> The next one opens in <span class="num">18 min</span>. Your history keeps every past answer.</p>
+        <a class="btn" href="history.html">Open history</a>
+      </div>
+      <div class="notice" role="alert">
+        <p><b>That link didn't load.</b> The site blocked us or took too long. Paste the statement as text instead.</p>
+      </div>
+      <div class="notice notice-error" role="alert">
+        <p><b>Something went wrong on our side.</b> Your input is kept; try again in a moment.</p>
+        <p class="small muted num">Request ID b21e94c0-77aa</p>
+      </div>
+    </section>
+  </main>
+</body>
+</html>

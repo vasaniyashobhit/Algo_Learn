@@ -1,0 +1,78 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>AlgoLearn · Dashboard states · B</title>
+  <link rel="stylesheet" href="css/tokens.css">
+  <link rel="stylesheet" href="css/base.css">
+  <link rel="stylesheet" href="css/controls.css">
+  <link rel="stylesheet" href="css/dashboard.css">
+  <link rel="stylesheet" href="css/states.css">
+  <script defer src="../shared/interact.js"></script>
+  <script defer src="../shared/motion.js"></script>
+</head>
+<body>
+  <header class="bug">
+    <div class="wrap">
+      <a class="wordmark" href="index.html">Algo<span>Learn</span></a>
+      <nav aria-label="Main"><a href="dashboard.html" aria-current="page">Card</a><a href="stuck.html">I'm stuck</a><a href="practice.html">Practice</a><a href="history.html">History</a></nav>
+      <div class="bug-meta"><button class="btn btn-text" data-theme-toggle type="button">Theme</button></div>
+    </div>
+  </header>
+
+  <main class="wrap page">
+    <h1>Dashboard states</h1>
+    <p class="muted">One frame per state. The real page shows one at a time.</p>
+
+    <section class="frame" aria-labelledby="s1">
+      <h2 id="s1" class="frame-name">Loading</h2>
+      <div aria-busy="true" aria-label="Loading your topic card">
+        <span class="skeleton" style="height: 5.5rem"></span>
+        <div class="grid sk-grid">
+          <div class="panel"><span class="skeleton sk-wheel"></span></div>
+          <div class="panel sk-rows"><span class="skeleton"></span><span class="skeleton"></span><span class="skeleton"></span><span class="skeleton"></span><span class="skeleton"></span></div>
+          <div class="panel sk-rows"><span class="skeleton" style="height: 5rem"></span><span class="skeleton" style="height: 3.5rem"></span><span class="skeleton" style="height: 3.5rem"></span></div>
+        </div>
+      </div>
+    </section>
+
+    <section class="frame" aria-labelledby="s2">
+      <h2 id="s2" class="frame-name">Empty · no handle</h2>
+      <div class="empty-board">
+        <p class="fig empty-num">—</p>
+        <div>
+          <h3>No handle, no card</h3>
+          <p class="muted">Link your Codeforces handle and we'll score your submissions on every topic. The first sync takes about a minute.</p>
+          <form class="inline-form">
+            <label class="sr-only" for="h">Codeforces handle</label>
+            <input class="input" id="h" value="ananya-k" aria-invalid="true" aria-describedby="h-err">
+            <button class="btn btn-plate" type="button">Link handle</button>
+          </form>
+          <p class="field-error" id="h-err">We couldn't find "ananya-k" on Codeforces. Check the spelling and try again.</p>
+        </div>
+      </div>
+    </section>
+
+    <section class="frame" aria-labelledby="s3">
+      <h2 id="s3" class="frame-name">Empty · linked, not synced</h2>
+      <div class="empty-board">
+        <p class="fig empty-num">0</p>
+        <div>
+          <h3>ananya_k is linked. First sync pending.</h3>
+          <p class="muted">Press Sync now to import your submissions. Popular problems near 1500 while you wait: <a href="problem.html">455/A Boredom</a>, <a href="problem.html">1520/E Arranging The Sheep</a>.</p>
+          <button class="btn btn-plate" type="button">Sync now</button>
+        </div>
+      </div>
+    </section>
+
+    <section class="frame" aria-labelledby="s4">
+      <h2 id="s4" class="frame-name">Errors</h2>
+      <div class="alert" role="status"><p><b>Codeforces isn't answering.</b> Showing your card from the last sync, 2 hours ago.</p><button class="btn" type="button">Try again</button></div>
+      <div class="alert alert-info" role="status"><p><b>Sync already running.</b> About a minute to go; the card refreshes by itself.</p></div>
+      <div class="alert alert-info" role="status"><p><b>Just synced.</b> You can sync again in <span class="num">20</span> seconds.</p><button class="btn" type="button" disabled>Sync now</button></div>
+      <div class="alert" role="alert"><p><b>Something broke on our side.</b> Reload the page. If it keeps happening, send us this code: <span class="num">7f3c2a91-0d4e</span></p></div>
+    </section>
+  </main>
+</body>
+</html>

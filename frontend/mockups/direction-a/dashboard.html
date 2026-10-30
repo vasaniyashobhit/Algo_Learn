@@ -1,0 +1,90 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>AlgoLearn · Dashboard · A</title>
+  <link rel="stylesheet" href="css/tokens.css">
+  <link rel="stylesheet" href="css/base.css">
+  <link rel="stylesheet" href="css/controls.css">
+  <link rel="stylesheet" href="css/dashboard.css">
+  <script defer src="../shared/interact.js"></script>
+  <script defer src="../shared/radar.js"></script>
+  <script defer src="../shared/motion.js"></script>
+</head>
+<body>
+  <header class="masthead">
+    <a class="wordmark" href="index.html">Algo<b>Learn</b></a>
+    <nav aria-label="Main"><a href="dashboard.html" aria-current="page">Report</a><a href="stuck.html">I'm stuck</a><a href="practice.html">Practice</a><a href="history.html">History</a></nav>
+    <span class="handle-chip"><span class="dot"></span>ananya_k · linked</span>
+    <button class="btn btn-quiet" data-theme-toggle type="button">Theme</button>
+  </header>
+
+  <main class="page">
+    <header class="report-head">
+      <div>
+        <h1>Your topic report</h1>
+        <p class="muted">Rating <span class="num">1487</span> · Specialist · last synced 2 hours ago</p>
+      </div>
+      <button class="btn" type="button"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" aria-hidden="true"><path d="M20 11a8 8 0 0 0-14.3-4.9L4 8m0-4v4h4M4 13a8 8 0 0 0 14.3 4.9L20 16m0 4v-4h-4"/></svg>Sync now</button>
+    </header>
+
+    <dl class="figures" data-stagger>
+      <div><dt>Problems solved</dt><dd class="num" data-count="412">412</dd></div>
+      <div><dt>Tried, not solved</dt><dd class="num" data-count="37">37</dd></div>
+      <div><dt>Active days, last 30</dt><dd class="num" data-count="19">19</dd></div>
+      <div><dt>Hardest solved</dt><dd class="num">1900</dd></div>
+    </dl>
+
+    <section class="strength" aria-labelledby="strength-title">
+      <figure>
+        <svg class="radar" role="img" aria-label="Strength on your 8 most-practised topics. Weakest: dp 0.38, graphs 0.41." data-radar='[["greedy",0.69],["math",0.71],["implementation",0.78],["brute force",0.74],["constructive",0.52],["binary search",0.47],["dp",0.38],["graphs",0.41]]'></svg>
+        <figcaption class="small muted">Strength from 0 to 1 on your eight most-practised topics.</figcaption>
+      </figure>
+      <div>
+        <h2 id="strength-title">Weakest topics</h2>
+        <table class="weak-table">
+          <thead><tr><th scope="col">Topic</th><th scope="col">Strength</th><th scope="col">Solved / tried</th></tr></thead>
+          <tbody data-stagger>
+            <tr><th scope="row">probabilities</th><td><span class="meter" style="--v:0.18"></span><span class="num">0.18</span></td><td class="num">2 / 6</td></tr>
+            <tr><th scope="row">bitmasks + dp</th><td><span class="meter" style="--v:0.21"></span><span class="num">0.21</span></td><td class="num">2 / 8</td></tr>
+            <tr><th scope="row">dsu</th><td><span class="meter" style="--v:0.22"></span><span class="num">0.22</span></td><td class="num">3 / 9</td></tr>
+            <tr><th scope="row">bitmasks</th><td><span class="meter" style="--v:0.26"></span><span class="num">0.26</span></td><td class="num">5 / 13</td></tr>
+            <tr><th scope="row">combinatorics</th><td><span class="meter" style="--v:0.29"></span><span class="num">0.29</span></td><td class="num">4 / 14</td></tr>
+          </tbody>
+        </table>
+      </div>
+    </section>
+
+    <section aria-labelledby="activity-title">
+      <h2 id="activity-title">Last 30 days</h2>
+      <ol class="activity" aria-label="Problems solved per day, oldest first. 43 in total.">
+        <li style="--n:0"></li><li style="--n:2"></li><li style="--n:1"></li><li style="--n:0"></li><li style="--n:3"></li><li style="--n:4"></li><li style="--n:0"></li><li style="--n:0"></li><li style="--n:1"></li><li style="--n:2"></li>
+        <li style="--n:5"></li><li style="--n:3"></li><li style="--n:0"></li><li style="--n:1"></li><li style="--n:0"></li><li style="--n:2"></li><li style="--n:2"></li><li style="--n:0"></li><li style="--n:0"></li><li style="--n:3"></li>
+        <li style="--n:1"></li><li style="--n:4"></li><li style="--n:2"></li><li style="--n:0"></li><li style="--n:1"></li><li style="--n:0"></li><li style="--n:0"></li><li style="--n:2"></li><li style="--n:3"></li><li style="--n:1"></li>
+      </ol>
+      <p class="small muted">43 solved over 19 active days. Busiest day: 5, on 11 October.</p>
+    </section>
+
+    <section class="next" aria-labelledby="next-title">
+      <h2 id="next-title">Next topics</h2>
+      <ol class="next-list" data-stagger>
+        <li><h3>Dynamic programming</h3><p>Strength 0.38 after 52 tries. DP appears in 31% of problems rated 1200–1800, so it is your biggest gap.</p></li>
+        <li><h3>Binary search</h3><p>Strength 0.47. You solved 1400s on it but failed 3 of your last 4 at 1600.</p></li>
+        <li><h3>Number theory</h3><p>Strength 0.44. Four of your last ten unsolved problems needed it.</p></li>
+      </ol>
+    </section>
+
+    <section aria-labelledby="rec-title">
+      <h2 id="rec-title">Solve next</h2>
+      <ul class="problem-cards" data-stagger>
+        <li><a href="problem.html"><span class="num pid">474/D</span><b>Flowers</b><span class="num rating">1700</span><span class="tag">dp</span></a></li>
+        <li><a href="problem.html"><span class="num pid">1288/C</span><b>Two Arrays</b><span class="num rating">1600</span><span class="tag">combinatorics</span> <span class="tag">dp</span></a></li>
+        <li><a href="problem.html"><span class="num pid">580/D</span><b>Kefa and Dishes</b><span class="num rating">1800</span><span class="tag">bitmasks</span> <span class="tag">dp</span></a></li>
+        <li><a href="problem.html"><span class="num pid">1324/D</span><b>Pair of Topics</b><span class="num rating">1400</span><span class="tag">binary search</span> <span class="tag">sortings</span></a></li>
+      </ul>
+      <p class="sample-flag">Sample data. <a href="dashboard-states.html">See loading, empty and error states</a>.</p>
+    </section>
+  </main>
+</body>
+</html>
