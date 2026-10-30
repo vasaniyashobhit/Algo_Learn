@@ -15,7 +15,7 @@ export const SimilarRows = ({ items, addedFrom = 'similar', label }) => (
             {!Number.isFinite(problem.rating) && <span className="sr-only">Unrated</span>}
           </span>
           <span className="min-w-0">
-            <b className="block font-display text-[1.1rem] leading-[1.1] uppercase group-hover:underline">{problem.title}</b>
+            <b className="block font-display text-step-lead leading-[1.1] uppercase group-hover:underline">{problem.title}</b>
             <span className="num text-step--1 text-ink-soft">{problem.id}</span>
           </span>
         </Link>

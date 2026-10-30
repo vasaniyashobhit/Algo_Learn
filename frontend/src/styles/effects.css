@@ -1,5 +1,5 @@
 /* Motion and texture effects that CSS does better than JS: the skeleton sweep, the button
-   spinner and the floodlight beams. All of them stop under prefers-reduced-motion. */
+   spinner and the floodlight beams, plus the reduced-motion stand-ins (fades instead of wipes). */
 .skeleton {
   display: block;
   background: repeating-linear-gradient(110deg, var(--band-2) 0 30%, var(--line) 40%, var(--band-2) 50% 100%) 0 0 / 250% 100%;
@@ -49,11 +49,14 @@
 [data-sonner-toaster] [data-sonner-toast][data-type='success'] { box-shadow: var(--shadow), inset 0 3px 0 var(--plate); }
 [data-sonner-toaster] [data-sonner-toast] [data-description] { color: var(--ink-soft); }
 
+/* Reduced motion: nothing travels, but state changes still register through opacity and colour.
+   No global 0.01ms kill: it would also erase hover fills, theme fades and the cues below. */
 @media (prefers-reduced-motion: reduce) {
-  *, *::before, *::after {
-    animation-duration: 0.01ms !important;
-    animation-iteration-count: 1 !important;
-    transition-duration: 0.01ms !important;
-  }
   .skeleton { animation: none; background: var(--band-2); }
+  .spinner { animation-duration: 1.6s; }
+  .reduced-enter { animation: reduced-enter 160ms ease-out both; }
+  button[data-motion='off']:active:not(:disabled),
+  a[data-motion='off']:active { opacity: 0.78; }
 }
+
+@keyframes reduced-enter { from { opacity: 0; } }

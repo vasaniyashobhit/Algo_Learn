@@ -21,7 +21,7 @@ const NothingStored = ({ notice, similar }) => (
         <ul className="m-0 grid list-none gap-1 p-0">
           {similar.map((problem) => (
             <li key={problem.id}>
-              <Link to={problemPath(problem.id)} className="font-display text-[1.1rem] font-bold uppercase">
+              <Link to={problemPath(problem.id)} className="font-display text-step-lead font-bold uppercase">
                 {problem.title}
               </Link>{' '}
               <span className="num text-step--1 text-ink-soft">{problem.id}</span>

@@ -27,7 +27,7 @@ export const LandingHero = () => (
         <h1 id="hero-title" className="text-[clamp(2.6rem,5.4vw,var(--step-4))] leading-[0.92]">
           Your weakest topic, up on the board.
         </h1>
-        <p className="text-[1.08rem] text-ink-soft">
+        <p className="text-step-lead text-ink-soft">
           AlgoLearn scores your Codeforces history on 36 topics and 630 topic pairs, then picks the problems that
           fix the lowest score.
         </p>

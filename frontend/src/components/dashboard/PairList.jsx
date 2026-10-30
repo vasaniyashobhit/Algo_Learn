@@ -13,8 +13,8 @@ export const PairList = ({ id, title, pairs, weak = false }) => {
       <StaggerList as="ul" aria-labelledby={id} className="m-0 grid list-none gap-px p-0">
         {pairs.map((pair) => (
           <StaggerItem key={pair.topicKey} className="flex items-baseline gap-3 bg-band px-3 py-2">
-            <span className="min-w-0 flex-1 font-display text-[1.05rem] font-bold uppercase">{topicLabel(pair.topicKey)}</span>
-            <span className={`fig text-[1.2rem] ${weak ? 'text-miss' : ''}`}>{formatStrength(pair.strength)}</span>
+            <span className="min-w-0 flex-1 font-display text-step-lead font-bold uppercase">{topicLabel(pair.topicKey)}</span>
+            <span className={`fig text-step-1 ${weak ? 'text-miss' : ''}`}>{formatStrength(pair.strength)}</span>
             <span className="text-step--1 whitespace-nowrap text-ink-soft">{solvedText(pair)}</span>
           </StaggerItem>
         ))}

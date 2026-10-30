@@ -201,7 +201,11 @@ humanist sans for anything you have to read.
 - **Title** (700, 1.25rem, 1.1, 0.04em): section headings, uppercase.
 - **Body** (400, 0.96rem, 1.5): paragraphs, max 68ch.
 - **Label** (600, 0.82–0.9rem, 0.06em, uppercase): field labels, nav, tags, captions.
-- Step scale: -1 0.82rem · 0 0.96rem · 1 1.25rem · 2 1.9rem · 3 3rem · 4 5.6rem.
+- Step scale: -1 0.82rem · 0 0.96rem · lead 1.08rem · 1 1.25rem · 2 1.9rem · 3 3rem · 4 5.6rem.
+  **Lead** (`--step-lead`, Session 15) is for hint text, tab labels, statements and the hero lede.
+  -1 is the floor: no text is set smaller (badges and "Rating" captions included).
+- In-row figures (ratings in lists, hint numbers, gap figures, pager) use Display figures between
+  1.4rem and 2.6rem sized to their row; they are numbers, not body steps.
 
 ### Named Rules
 **The Tabular Figures Rule.** Every number that can change (ratings, strengths, counts) uses

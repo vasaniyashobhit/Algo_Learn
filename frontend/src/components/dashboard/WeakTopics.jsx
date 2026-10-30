@@ -20,46 +20,48 @@ const Legend = () => (
 );
 
 const WeakTable = ({ rows }) => (
-  <table aria-labelledby="weak-title" className="w-full border-collapse">
-    <thead>
-      <tr>
-        <th scope="col" className={`${HEAD} text-left`}>
-          Topic
-        </th>
-        <th scope="col" className={HEAD}>
-          Strength (0–1)
-        </th>
-        <th scope="col" className={HEAD}>
-          Solved / tried
-        </th>
-        <th scope="col" className={HEAD}>
-          Last 5
-        </th>
-      </tr>
-    </thead>
-    <StaggerList as="tbody">
-      {rows.map((row) => {
-        const weak = strengthLevel(row.strength) === 'weak';
-        return (
-          <StaggerItem as="tr" key={row.topicKey}>
-            <th scope="row" className="border-b border-line py-[0.55rem] text-left font-display text-[1.15rem] font-bold uppercase">
-              {row.topicKey}
-            </th>
-            <td className={CELL}>
-              <span className={`fig text-[1.3rem] ${weak ? 'text-miss' : ''}`}>{formatStrength(row.strength)}</span>{' '}
-              <span className="text-step--1 text-ink-soft">{LEVEL_LABELS[strengthLevel(row.strength)]}</span>
-            </td>
-            <td className={`${CELL} num`}>
-              {row.solved}/{row.attempted}
-            </td>
-            <td className={CELL}>
-              <LastResults results={row.lastResults} />
-            </td>
-          </StaggerItem>
-        );
-      })}
-    </StaggerList>
-  </table>
+  <div className="scroll-x">
+    <table aria-labelledby="weak-title" className="w-full border-collapse">
+      <thead>
+        <tr>
+          <th scope="col" className={`${HEAD} text-left`}>
+            Topic
+          </th>
+          <th scope="col" className={HEAD}>
+            Strength (0–1)
+          </th>
+          <th scope="col" className={HEAD}>
+            Solved / tried
+          </th>
+          <th scope="col" className={HEAD}>
+            Last 5
+          </th>
+        </tr>
+      </thead>
+      <StaggerList as="tbody">
+        {rows.map((row) => {
+          const weak = strengthLevel(row.strength) === 'weak';
+          return (
+            <StaggerItem as="tr" key={row.topicKey}>
+              <th scope="row" className="border-b border-line py-[0.55rem] text-left font-display text-step-1 font-bold uppercase">
+                {row.topicKey}
+              </th>
+              <td className={CELL}>
+                <span className={`fig text-[1.3rem] ${weak ? 'text-miss' : ''}`}>{formatStrength(row.strength)}</span>{' '}
+                <span className="text-step--1 text-ink-soft">{LEVEL_LABELS[strengthLevel(row.strength)]}</span>
+              </td>
+              <td className={`${CELL} num`}>
+                {row.solved}/{row.attempted}
+              </td>
+              <td className={CELL}>
+                <LastResults results={row.lastResults} />
+              </td>
+            </StaggerItem>
+          );
+        })}
+      </StaggerList>
+    </table>
+  </div>
 );
 
 /** The five weakest single topics with at least 3 attempted problems ("Batting card"). */

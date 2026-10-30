@@ -19,36 +19,38 @@ export const SampleBoard = () => (
         <span className="fig">{SAMPLE_PLAYER.rating}</span>
       </span>
     </div>
-    <table className="w-full border-collapse font-display uppercase" aria-labelledby="board-title">
-      <thead>
-        <tr>
-          <th scope="col" className={`${HEAD_BASE} text-left`}>
-            Topic
-          </th>
-          <th scope="col" className={HEAD}>
-            Strength (0–1)
-          </th>
-          <th scope="col" className={HEAD}>
-            Solved
-          </th>
-          <th scope="col" className={HEAD}>
-            Tried
-          </th>
-        </tr>
-      </thead>
-      <StaggerList as="tbody">
-        {SAMPLE_TOPICS.map(({ topic, strength, solved, tried, weak }) => (
-          <StaggerItem as="tr" key={topic} className="border-t border-current/25">
-            <th scope="row" className="text-left text-[clamp(1.6rem,3.4vw,3rem)] leading-[1.1] font-bold">
-              {topic}
-              {weak && <span className="ml-3 align-middle text-[0.9rem] tracking-[0.1em] text-chalk-miss">Weak</span>}
+    <div className="scroll-x">
+      <table className="w-full border-collapse font-display uppercase" aria-labelledby="board-title">
+        <thead>
+          <tr>
+            <th scope="col" className={`${HEAD_BASE} text-left`}>
+              Topic
             </th>
-            <td className={`${FIGURE} ${weak ? 'text-chalk-miss' : ''}`}>{formatStrength(strength)}</td>
-            <td className={FIGURE}>{solved}</td>
-            <td className={FIGURE}>{tried}</td>
-          </StaggerItem>
-        ))}
-      </StaggerList>
-    </table>
+            <th scope="col" className={HEAD}>
+              Strength (0–1)
+            </th>
+            <th scope="col" className={HEAD}>
+              Solved
+            </th>
+            <th scope="col" className={HEAD}>
+              Tried
+            </th>
+          </tr>
+        </thead>
+        <StaggerList as="tbody">
+          {SAMPLE_TOPICS.map(({ topic, strength, solved, tried, weak }) => (
+            <StaggerItem as="tr" key={topic} className="border-t border-current/25">
+              <th scope="row" className="text-left text-[clamp(1.6rem,3.4vw,3rem)] leading-[1.1] font-bold">
+                {topic}
+                {weak && <span className="ml-3 align-middle text-[0.9rem] tracking-[0.1em] text-chalk-miss">Weak</span>}
+              </th>
+              <td className={`${FIGURE} ${weak ? 'text-chalk-miss' : ''}`}>{formatStrength(strength)}</td>
+              <td className={FIGURE}>{solved}</td>
+              <td className={FIGURE}>{tried}</td>
+            </StaggerItem>
+          ))}
+        </StaggerList>
+      </table>
+    </div>
   </div>
 );

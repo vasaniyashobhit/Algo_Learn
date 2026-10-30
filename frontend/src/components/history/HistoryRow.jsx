@@ -19,7 +19,9 @@ export const HistoryRow = ({ item, onDelete }) => {
       </td>
       <td className={CELL}>
         <Link to={`/stuck/${item.id}`} className="group no-underline">
-          <b className="font-display text-[1.15rem] uppercase group-hover:underline">{stuckTitle(item.problem)}</b>
+          <b className="line-clamp-2 max-w-[38ch] font-display text-step-1 uppercase [overflow-wrap:anywhere] group-hover:underline" title={stuckTitle(item.problem)}>
+            {stuckTitle(item.problem)}
+          </b>
           {id && (
             <>
               {' '}

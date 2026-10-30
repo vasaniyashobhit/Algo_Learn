@@ -22,7 +22,7 @@ const Actions = ({ problem }) => (
 
 /** The statement (description, input, output, note) with LaTeX, plus the practice actions. */
 export const ProblemStatement = ({ problem }) => (
-  <article aria-label="Statement" className="min-w-0 bg-band px-[1.6rem] py-[1.4rem] text-[1.06rem]">
+  <article aria-label="Statement" className="min-w-0 bg-band px-[1.6rem] py-[1.4rem] text-step-lead">
     <Actions problem={problem} />
     {problem.hasStatement ? (
       <>

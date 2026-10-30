@@ -10,7 +10,7 @@ export const STUCK_TABS = [
 
 const KEYS = { ArrowRight: 1, ArrowLeft: -1 };
 
-const BASE = 'border-0 p-[0.9rem] font-display text-[1.05rem] leading-none font-bold uppercase tracking-[0.08em]';
+const BASE = 'border-0 p-[0.9rem] font-display text-step-lead leading-none font-bold uppercase tracking-[0.08em]';
 const IDLE = 'bg-band-2 text-ink-soft hover:text-ink';
 const ACTIVE = 'bg-band text-ink shadow-[inset_0_4px_0_var(--plate)]';
 

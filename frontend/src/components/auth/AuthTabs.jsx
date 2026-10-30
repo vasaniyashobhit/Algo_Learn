@@ -1,7 +1,7 @@
 import { NavLink } from 'react-router';
 
 const BASE =
-  'flex justify-center p-4 font-display text-[1.15rem] leading-none font-bold uppercase ' +
+  'flex justify-center p-4 font-display text-step-1 leading-none font-bold uppercase ' +
   'tracking-[0.06em] no-underline transition-colors duration-[160ms]';
 // Colour classes live in exactly one of these so they never compete in the stylesheet.
 const IDLE = 'bg-band-2 text-ink-soft hover:text-ink';

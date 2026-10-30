@@ -22,7 +22,7 @@ const Hint = ({ number, text, reveal }) => {
       </span>
       <div>
         <span className="sr-only">Hint {number}: </span>
-        <Markdown className="text-[1.05rem]">{text}</Markdown>
+        <Markdown className="text-step-lead">{text}</Markdown>
       </div>
     </>
   );

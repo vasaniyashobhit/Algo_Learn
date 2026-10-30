@@ -13,7 +13,7 @@ const ProblemCell = ({ item }) => {
   if (!item.problem) return <span className="text-ink-soft">{item.problemId} (no longer in our problem set)</span>;
   return (
     <a href={codeforcesUrl(item.problem)} target="_blank" rel="noopener noreferrer" className="group no-underline">
-      <b className="font-display text-[1.15rem] uppercase group-hover:underline">{item.problem.title}</b>{' '}
+      <b className="font-display text-step-1 uppercase group-hover:underline">{item.problem.title}</b>{' '}
       <span className="num text-ink-soft">{item.problemId}</span>
       <span className="sr-only"> (opens on Codeforces in a new tab)</span>
     </a>

@@ -7,7 +7,7 @@ import { cn } from '../../lib/cn.js';
 export const EmptyState = ({ figure, title, action, className, children }) => (
   <section className={cn('grid items-center gap-8 bg-band p-[1.6rem] sm:grid-cols-[auto_1fr]', className)}>
     {figure !== undefined && (
-      <p className="fig m-0 text-[7rem] leading-none text-line" aria-hidden="true">
+      <p className="fig m-0 text-step-4 leading-none text-ink-soft" aria-hidden="true">
         {figure}
       </p>
     )}

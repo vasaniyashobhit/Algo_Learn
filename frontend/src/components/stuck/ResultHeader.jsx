@@ -16,7 +16,7 @@ const DetectedTags = ({ tags, source }) => {
         ))}
       </ul>
       {badge && (
-        <span title={badge.hint} className="label border-[1.5px] border-chalk-ink px-[0.45rem] py-[0.1rem] text-[0.75rem]">
+        <span title={badge.hint} className="label border-[1.5px] border-chalk-ink px-[0.45rem] py-[0.1rem] text-step--1">
           {badge.label}
           <span className="sr-only">: {badge.hint}</span>
         </span>
@@ -37,11 +37,13 @@ export const ResultHeader = ({ result }) => {
             {id ? `${id} · ` : ''}
             {INPUT_FROM[inputType] ?? 'from your input'}
           </p>
-          <h1 className="m-0 mt-1 text-[clamp(2rem,4vw,3rem)]">{stuckTitle(problem)}</h1>
+          <h1 className="m-0 mt-1 line-clamp-3 text-[clamp(2rem,4vw,3rem)] [overflow-wrap:anywhere]" title={stuckTitle(problem)}>
+            {stuckTitle(problem)}
+          </h1>
         </div>
         <p className="m-0 row-span-2 text-right">
           <span className="fig block text-[clamp(3rem,6vw,5.6rem)] leading-[0.85]">{ratingFigure(problem?.rating)}</span>
-          <span className="label text-[0.75rem]">{Number.isFinite(problem?.rating) ? 'Rating' : 'Unrated'}</span>
+          <span className="label text-step--1">{Number.isFinite(problem?.rating) ? 'Rating' : 'Unrated'}</span>
         </p>
         <div className="flex flex-wrap items-center gap-x-6 gap-y-2">
           <DetectedTags tags={problem?.tags ?? []} source={problem?.tagsSource} />

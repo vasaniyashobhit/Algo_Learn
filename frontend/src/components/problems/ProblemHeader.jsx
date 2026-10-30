@@ -12,7 +12,7 @@ export const ProblemHeader = ({ problem }) => (
       </div>
       <p className="m-0 row-span-2 text-right">
         <span className="fig block text-[clamp(3rem,6vw,5.6rem)] leading-[0.85]">{ratingFigure(problem.rating)}</span>
-        <span className="label text-[0.75rem]">{Number.isFinite(problem.rating) ? 'Rating' : 'Unrated'}</span>
+        <span className="label text-step--1">{Number.isFinite(problem.rating) ? 'Rating' : 'Unrated'}</span>
       </p>
       <div className="flex flex-wrap items-center gap-x-6 gap-y-2">
         {problem.tags.length > 0 ? (

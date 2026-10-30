@@ -26,11 +26,11 @@ export const TopicTable = ({ id, rows, hidden }) => (
     <tbody>
       {rows.map((row) => (
         <tr key={row.topic}>
-          <th scope="row" className="border-b border-line py-2 text-left font-display text-[1.05rem] font-bold uppercase">
+          <th scope="row" className="border-b border-line py-2 text-left font-display text-step-lead font-bold uppercase">
             {row.topic}
           </th>
           <td className={CELL}>
-            <span className="fig text-[1.15rem]">{formatStrength(row.strength)}</span>{' '}
+            <span className="fig text-step-1">{formatStrength(row.strength)}</span>{' '}
             <span className="text-step--1 text-ink-soft">{LEVEL_LABELS[strengthLevel(row.strength)]}</span>
           </td>
           <td className={`${CELL} num`}>{row.solved}</td>

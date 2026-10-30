@@ -14,7 +14,7 @@ export const AccountMenu = () => {
   if (status === 'authenticated') {
     return (
       <div className="flex items-center gap-4">
-        <span className="max-w-[16ch] truncate font-display text-base font-bold tracking-[0.04em] text-ink">
+        <span className="max-w-[16ch] truncate font-display max-[520px]:hidden text-base font-bold tracking-[0.04em] text-ink">
           {user.name}
         </span>
         <Button variant="text" onClick={logout}>

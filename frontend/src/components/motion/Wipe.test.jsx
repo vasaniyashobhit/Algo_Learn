@@ -23,6 +23,14 @@ describe('Wipe', () => {
     expect(element.tagName).toBe('SECTION');
     expect(element).toHaveAttribute('data-motion', 'off');
     expect(element.style.clipPath).toBe('');
+    // No travel, but a short CSS fade keeps new content noticeable.
+    expect(element).toHaveClass('reduced-enter');
+  });
+
+  it('keeps the caller classes and adds no fade when motion is on', () => {
+    render(<Wipe data-testid="w" className="strap">Board</Wipe>);
+    expect(screen.getByTestId('w')).toHaveClass('strap');
+    expect(screen.getByTestId('w')).not.toHaveClass('reduced-enter');
   });
 });
 

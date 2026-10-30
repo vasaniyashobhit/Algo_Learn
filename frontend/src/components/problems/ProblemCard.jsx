@@ -28,7 +28,7 @@ export const ProblemCard = ({ problem, note, addedFrom, verify = false }) => (
       </div>
       <p className="m-0 text-right">
         <span className="fig block text-[2rem] leading-none text-plate-text">{ratingText(problem.rating)}</span>
-        <span className="label text-[0.7rem] text-ink-soft">Rating</span>
+        <span className="label text-step--1 text-ink-soft">Rating</span>
       </p>
     </div>
     {problem.tags?.length > 0 && (

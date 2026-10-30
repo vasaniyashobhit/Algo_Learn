@@ -1,7 +1,7 @@
 import { cn } from '../../lib/cn.js';
 import { ballText, formatDay } from '../../lib/overs.js';
 
-const BALL = 'grid size-8 place-items-center rounded-full font-display text-[1.1rem] font-bold';
+const BALL = 'grid size-8 place-items-center rounded-full font-display text-step-lead font-bold';
 const KINDS = {
   dot: 'bg-band-2',
   wicket: 'bg-transparent text-miss shadow-[inset_0_0_0_2px_var(--miss)]',

@@ -27,6 +27,7 @@
 
   --step--1: 0.82rem;
   --step-0: 0.96rem;
+  --step-lead: 1.08rem; /* lead paragraphs, hint and tab text */
   --step-1: 1.25rem;
   --step-2: 1.9rem;
   --step-3: 3rem;

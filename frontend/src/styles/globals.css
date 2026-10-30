@@ -19,6 +19,7 @@
     font: 400 var(--step-0) / 1.5 var(--font-ui);
     -webkit-font-smoothing: antialiased;
     caret-color: var(--plate-text);
+    overflow-x: clip; /* a safety net: wide content scrolls inside its own .scroll-x box */
     transition: background-color var(--dur-state) var(--ease), color var(--dur-state) var(--ease);
   }
 
@@ -48,6 +49,12 @@
   .wrap { width: min(1280px, 100% - 2.5rem); margin-inline: auto; }
   .fig { font-family: var(--font-display); font-weight: 700; font-variant-numeric: tabular-nums; }
   .num { font-variant-numeric: tabular-nums; }
+  .scroll-x { position: relative; overflow-x: auto; scrollbar-width: thin; }
+  .nav-strip { scrollbar-width: none; }
+  @media (width <= 860px) {
+    /* The links scroll sideways on phones; the fade at the right edge says there are more. */
+    .nav-strip { mask-image: linear-gradient(to right, #000 calc(100% - 3rem), transparent); }
+  }
   .label {
     font: 600 0.9rem / 1.2 var(--font-display);
     text-transform: uppercase;
