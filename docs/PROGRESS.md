@@ -41,6 +41,51 @@ PostgreSQL (`backend/`). Everything below "MERN log" is the history of the finis
   98% lines / 94% branches. `ErrorCodeTest` checks the enum against docs/API.md and the frontend copy.
 - Smoke test: db `up`, 36 topic tags, ready 200, unknown route → JSON 404.
 
+### Spring Session 2 (2026-11-09) — Schema, entities, dataset import, Codeforces client
+
+- Flyway: `V1__init.sql` (problems, users, submissions) and `V2__user_data.sql` (topic_stats,
+  stuck_queries, llm_cache, practice_items). Checks for every legacy enum/pattern/range, named unique
+  constraints (`uk_users_email`, `uk_users_cf_handle` = unique index on `lower(cf_handle)`,
+  `uk_practice_user_problem`, `uk_submissions_cf_submission_id`, `uk_topic_stats_user_topic`,
+  `uk_llm_cache_key`), generated `problems.search` tsvector (title A, description B), GIN on tags and
+  search, btree on rating, `(user_id, submitted_at desc)`, `(user_id, created_at desc)`.
+- JPA entities + repositories for all 7 tables (Lombok on entities only; `text[]` via
+  `@JdbcTypeCode(ARRAY)`, jsonb via `@JdbcTypeCode(JSON)` with records `LastResult`, `GapItem`).
+- `common/http/RateLimitQueue` (FIFO via fair lock, start-to-start spacing, injectable clock/sleep).
+- `codeforces/`: `CodeforcesClient` + `RestCodeforcesClient` (RestClient via `TimedHttpClient`, 20 s
+  timeout, one shared 2.1 s queue bean, 2 retries on timeout/network/5xx/429/"Call limit exceeded",
+  every attempt queued), `CfRequest` (URL + parsing, FAILED checked before HTTP status), `CfErrors`,
+  `CfCalls` (legacy callCf), DTO records.
+- `importer/`: `CleanProblem`, `ProblemValidator`, `PrepareImport`, `FromCfProblem`,
+  `DuckDbDatasetReader` (`read_parquet(?)`), `ProblemWriter` (multi-row upsert, 500/batch),
+  `CfApiUpdater`, tasks `ImportDatasetTask`, `SyncProblemsetTask`. `tasks/`: `Task`, `TaskRunner`,
+  `TaskLauncher` (`--task=<name>` → no web server, print summary, exit 0/1).
+- Root scripts `import:dataset`, `sync:problemset` (they run `spring-boot:run` with `--task`; DB and
+  port come from `backend/.env`).
+- Tests: 233 backend (all legacy cases for cleanProblem, derivedFields, fromCfProblem, validateProblemDoc,
+  prepareImport, readParquet, bulkUpsert, importDataset, syncNewProblems(+update), updateCfApiRows,
+  rateLimitQueue, cfErrors, cfRequest, callCf, CF client success/errors on WireMock, runScript, model
+  constraint/index tests on Testcontainers). Coverage 98% instructions / 94% branches. Lint green.
+- **Local Docker Postgres (port 5433), `npm run import:dataset`:**
+
+  ```
+  read 10024 · skippedEmptyDescription 43 · rejected 0 (rejectedByReason {}) · rejectedIds []
+  toUpsert 9981 · upserted 9981 · updated 0 · unchanged 0 · batches 20
+  withRating 9745 · withTags 9827 · withEditorial 6080 · withSpecialTag 485 · totalInCollection 9981
+  ```
+
+  Identical to the legacy Atlas import. A re-run (scratch DB) gave upserted 0 / updated 0 / unchanged 9981.
+- **`npm run sync:problemset` right after:**
+
+  ```
+  fetched 11511 · rejected 0 (rejectedByReason {}) · rejectedIds [] · inserted 1751 · alreadyPresent 9760 · updated 0
+  ```
+
+  The table now holds 9981 `hf` + 1751 `cf_api` rows.
+- Library versions for Boot 4.1.2: DuckDB JDBC **1.5.6.0** (2.0.x was days old), Lombok 1.18.48 (Boot-managed,
+  set as annotation processor), WireMock standalone 3.13.2 and Testcontainers 2.0.5 (Boot-managed) work
+  unchanged. Boot 4 needs **`spring-boot-starter-restclient`** for the `RestClient.Builder` bean.
+
 ## Decisions
 
 - Env validation runs in an `ApplicationContextInitializer` (after every property source including
@@ -54,7 +99,19 @@ PostgreSQL (`backend/`). Everything below "MERN log" is the history of the finis
 - Unknown method on a known path → 404 ROUTE_NOT_FOUND (legacy had no 405).
 - Tests: `*Test` and `*IT` both run in Surefire; constructor injection via
   `spring.test.constructor.autowire.mode=all`; tests never read `backend/.env`.
-- Flyway baseline `V1__init.sql` is a no-op; tables start in Session 2.
+- Session 2 replaced the no-op `V1__init.sql` with the real schema (it was never deployed; the one local
+  history row was deleted so V1 re-ran). The schema is split into V1 + V2 only to respect the 100-line rule.
+- No `(tags, rating)` composite index: GIN (tags) + btree (rating) cover it; a mixed index would need btree_gin.
+- No foreign keys from `submissions/practice_items/stuck_queries.problem_id` to `problems` (legacy refs were
+  not enforced and submissions may name problems not imported yet). `user_id` columns do reference `users`.
+- Problem writes use JdbcTemplate with multi-row `INSERT ... ON CONFLICT` (placeholders only):
+  OVERWRITE updates only `WHERE (...) IS DISTINCT FROM EXCLUDED`, `RETURNING (xmax = 0)` gives inserted vs
+  modified, so counts match Mongo's upserted/modified/matched. INSERT_ONLY is `ON CONFLICT DO NOTHING`.
+- Tasks run in the normal app context with `WebApplicationType.NONE`; `SecurityConfig` is
+  `@ConditionalOnWebApplication`. The summary uses logger `algolearn.task.summary` (always INFO) instead of
+  `console.log` (System.out is banned).
+- Integration tests that write data extend `support/DatabaseTest` (truncates all tables before each test,
+  same cached context as `IntegrationTest`). The parquet fixture is written by DuckDB itself.
 - `frontend/src/errors/codes.test.js` now reads the Java `ErrorCode` enum instead of the deleted
   `backend/src/errors/codes.js` (test-only change; no app code changed).
 
@@ -70,16 +127,32 @@ PostgreSQL (`backend/`). Everything below "MERN log" is the history of the finis
 - Rate limiting keys on `getRemoteAddr()`; in `prod`, `server.forward-headers-strategy=native`
   replaces Express `trust proxy 1` (check the host's proxy in Session 8).
 
+- Tasks need the full environment (JWT_SECRET, GEMINI_*, ...) because they start the app context; legacy
+  scripts only needed MONGODB_URI. Real users never run them; `backend/.env` already has every value.
+- `toIntOrNull` (legacy `toNumberOrNull`) keeps only whole numbers: a fractional rating like `1.5` becomes
+  null instead of 1.5, and booleans become null (JS `Number(true)` = 1). The dataset and CF API have neither.
+- Re-importing (OVERWRITE) never moves `updated_at`, exactly like legacy bulkUpsert; cf_api rating/tag
+  updates do set it.
+- Duplicate-key `details.fields` now names SQL columns (`id`, `user_id`, `topic_key`, `cf_submission_id`,
+  `key`) instead of Mongo paths (`_id`, `userId`, ...). Those details only appear for DUPLICATE_RESOURCE.
+- cf_api rows store `''` for text fields; legacy bulkWrite stubs had no text fields at all (read as '').
+- Unknown `--task` names fail with exit code 1 and list the known tasks.
+
 ## Blockers
 
 - E2E: `e2e/server/start.js` imports the legacy Express backend (`../../backend/src`), so `npm run e2e`
   does not run; the CI e2e job is disabled (`if: false`) until its server setup is adapted.
 - On this machine a native PostgreSQL 17 service uses port 5432, so the root `.env` (git-ignored) sets
   `POSTGRES_PORT=5433` and `backend/.env` uses `localhost:5433`.
+- Frontend Vitest under full parallel load: 4–5 dashboard tests (`DashboardPage`, `HandleForm`,
+  `HandleOnboarding`, `SyncButton`, `UnlinkHandle`) time out in `findBy*` (1 s). They fail in a plain
+  `npm test -w frontend` re-run too, but all 553 pass in isolation and with `--maxWorkers=2`. Not changed
+  this session (frontend is frozen); needs a decision (e.g. a test-only worker cap in the Vitest config).
 
 ## Next
 
-- Spring Session 2: Flyway schema for all tables and JPA entities/repositories (backend/CLAUDE.md).
+- Spring Session 3 (scope comes with its prompt; schema, entities, CF client and tasks are ready to use).
+- Decide how to stabilise the frontend Vitest run under load (see Blockers).
 - Adapt the e2e server to the Spring backend and re-enable the CI e2e job.
 
 # MERN log

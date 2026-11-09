@@ -46,6 +46,8 @@ logging:
   level:
     root: ${LOG_LEVEL:info}
     org.hibernate.engine.jdbc.spi.SqlExceptionHelper: off
+    # Task summaries (--task=...) always print, whatever LOG_LEVEL is.
+    algolearn.task.summary: info
 
 algolearn:
   rate-limit:

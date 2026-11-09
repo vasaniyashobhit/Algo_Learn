@@ -1,5 +1,6 @@
 package com.algolearn.security;
 
+import org.springframework.boot.autoconfigure.condition.ConditionalOnWebApplication;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.http.HttpMethod;
@@ -14,9 +15,10 @@ import org.springframework.security.web.SecurityFilterChain;
  * Stateless API security. CORS and security headers are servlet filters that run before this
  * chain (so preflights and errors get them too). Health and meta are public; protected feature
  * routes are added here in later sessions. Every other path stays open so that unknown routes
- * answer 404 ROUTE_NOT_FOUND like the legacy API, not 401.
+ * answer 404 ROUTE_NOT_FOUND like the legacy API, not 401. Skipped for --task runs (no web server).
  */
 @Configuration(proxyBeanMethods = false)
+@ConditionalOnWebApplication
 public class SecurityConfig {
 
     @Bean

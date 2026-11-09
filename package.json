@@ -16,6 +16,8 @@
     "lint": "node scripts/mvnw.mjs -q checkstyle:check && eslint .",
     "db:up": "docker compose up -d --wait postgres",
     "db:down": "docker compose down",
+    "import:dataset": "node scripts/mvnw.mjs -q spring-boot:run -Dspring-boot.run.arguments=--task=import-dataset",
+    "sync:problemset": "node scripts/mvnw.mjs -q spring-boot:run -Dspring-boot.run.arguments=--task=sync-problemset",
     "e2e": "npm run e2e -w e2e",
     "build": "npm run build -w frontend"
   },
