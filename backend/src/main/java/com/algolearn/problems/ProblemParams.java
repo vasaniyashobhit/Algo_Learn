@@ -41,7 +41,7 @@ public final class ProblemParams {
         return new SimilarParams(id.orElseThrow(), k.orElseThrow(), window.orElseThrow());
     }
 
-    static Optional<String> id(String contestId, String index, Issues issues) {
+    public static Optional<String> id(String contestId, String index, Issues issues) {
         var validContest = ProblemIds.CONTEST_ID_PATTERN.matcher(contestId).matches();
         if (!validContest) {
             issues.add("params.contestId", "contestId must be a positive integer");

@@ -169,6 +169,32 @@ PostgreSQL (`backend/`). Everything below "MERN log" is the history of the finis
   lastResults, routes, jobs, scheduler, cron-secret and internal case) + 553 frontend. Coverage 99.1% lines /
   94.5% branches. Root `npm run lint` and `npm test` green.
 
+### Spring Session 5 (2026-11-10) — Recommendations and practice list
+
+- `recommendations/`: `RecommendationConstants` (legacy RECOMMENDATIONS, COPY_CONTEST_GAP, TOPIC_BASES, PICKED_BY,
+  `round4`), pure helpers in `recommendations/calc/` (`History` = summarizeHistory, `TopicFrequency` = toTagCounts +
+  topicFrequencyAtRating, `TopicReason`, `PickNextTopics` (learning zone, priority, fill, cold start), `RankByFailed`,
+  `SolvedCopies` (normalizeTitle, isSameOrCopy, matcher), `TargetRange`), `TagCountsQueries` (rated problems per
+  rating and per rating+tag via `unnest`), `TagCountsCache` (1 h, injected Clock, one load in flight, failures not
+  cached, `clear()`), `RecommendationQueries` (solved refs, topic candidates in range), `ContextLoader` +
+  `RecommendationContext`, `RecommendationService` (target range → ranked by failures → similar-search fill with
+  k = min(30, missing + 5), window = half the range), `RecommendationController`, DTOs in legacy key order.
+- `practice/`: `PracticeConstants`, `PracticeRequests` + `PracticeFields` (zod rules and messages, strict bodies, params
+  issues before body issues), `PracticeQueries` (JDBC; every write `RETURNING` the full row; times from the Clock;
+  verify upsert `ON CONFLICT ON CONSTRAINT uk_practice_user_problem`), `PracticeService` (DuplicateKey →
+  409 PRACTICE_ITEM_EXISTS `details: { problemId }`, cause kept), `VerifyService` + `VerifyQueries` + `VerifyOutcome`
+  + `CopyContests` + `VerifyResult`, `PracticeController` (GET/POST /practice, PATCH/DELETE /practice/{c}/{i},
+  POST /practice/{c}/{i}/verify). `common/validation/StrictKeys` (zod "Unrecognized key(s)").
+  `ProblemParams.id(contestId, index, issues)` is now public (PATCH combines params and body issues).
+- Tests: 763 backend (114 new: every legacy history, pickNextTopics zone/cold start, rankByFailed, solvedCopies,
+  targetRange, topicFrequency, topicReason, constants, practice helpers and schema, tag-count cache, context,
+  exclusions, ranking, routes, practice add/list/update/delete/service, verify service/not-solved/cooldown/errors/routes
+  case) + 111 frontend files. Coverage 99.2% lines / 94.9% branches. Root `npm run lint` and `npm test` green.
+  Test helper `support/UserData` (synced user, submissions, single stats, practice rows).
+- **Smoke check not run against the demo account:** the local database (port 5433) has no users at all
+  (`problems` 11,732 rows; `users`, `submissions`, `topic_stats`, `practice_items` empty), so
+  `demo@cpcoach.dev` cannot log in (401). Nothing was created. The backend started fine against that database.
+
 ## Decisions
 
 - Env validation runs in an `ApplicationContextInitializer` (after every property source including
@@ -223,6 +249,12 @@ PostgreSQL (`backend/`). Everything below "MERN log" is the history of the finis
   security permits that prefix for every method.
 - Topic stat ratings stay `double precision` columns; reads round them to integers for the JSON.
 
+- Session 5: practice rows are written with JDBC (not the JPA entity) so `created_at`/`updated_at` come from the
+  injected Clock and every write returns the full row in one statement. Recommendation and verify reads are native SQL.
+- The tag-count cache serialises loads with a lock (callers wait for the one load in flight, as the shared legacy
+  promise did). Recommendation ITs call `TagCountsCache.clear()` before each test, as legacy built a fresh cache.
+- Controller-delegation tests (legacy controllers.test.js) are covered by the route ITs (Session 3 decision).
+
 ## Parity notes
 
 - `LOG_LEVEL` accepts Spring's levels (`trace|debug|info|warn|error|fatal|off`); legacy `silent` is `off`.
@@ -264,6 +296,13 @@ PostgreSQL (`backend/`). Everything below "MERN log" is the history of the finis
 - `strength` is written by Jackson as a double (`0.5`; `0.0` for a never-computed row) where JS wrote `0`.
 - With the right secret, an unknown method/path under `/internal` answers 404 ROUTE_NOT_FOUND (as legacy).
 
+- Session 5: practice ids are UUIDs (legacy 24-hex ObjectIds); the list is ordered `created_at DESC, id DESC`, so
+  items added in the same microsecond can come back in a different order than Mongo's `_id` order.
+- `frequency`, `similarityToFailed` and `strength` are written as doubles (`1.0`, `0.0`) where JS wrote `1` / `0`.
+- Tie-breaks use `String.compareTo` where legacy used `localeCompare`. Both give the same order for the 36 tags and
+  for `<contestId>/<index>` ids.
+- The tag counts count each tag of a problem once per array entry (`unnest`), as `$unwind` did.
+
 ## Blockers
 
 - E2E: `e2e/server/start.js` imports the legacy Express backend (`../../backend/src`), so `npm run e2e`
@@ -273,9 +312,9 @@ PostgreSQL (`backend/`). Everything below "MERN log" is the history of the finis
 
 ## Next
 
-- Spring Session 5 (scope comes with its prompt). Ready to use: `SyncService.syncUser(id)` (practice verify),
-  `StatsQueries.all(userId)` / `TopicStatDoc` for recommendations and the stuck gap, `SimilarSearch.find(...)`,
-  `UsersService.accountGone()`, `JsonBody` + `Issues`, `MutableClock` / `FakeCodeforcesClient` in ITs.
+- Spring Session 6 (scope comes with its prompt). Ready to use for the stuck flow: `StatsQueries.all(userId)` (gap),
+  `SimilarSearch.find(...)`, `PracticeQueries`, `StrictKeys`, `UserData` / `MutableClock` / `FakeCodeforcesClient` in ITs.
+- Smoke-check recommendations and practice on the demo account once it exists in the local database.
 - When the LLM cache is ported: legacy reads relied on the TTL index, so decide whether reads should also skip
   rows older than 30 days between the daily cleanups (record it under Parity notes).
 - Adapt the e2e server to the Spring backend and re-enable the CI e2e job.
