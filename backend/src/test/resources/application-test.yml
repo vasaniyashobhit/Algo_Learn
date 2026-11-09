@@ -1,0 +1,18 @@
+# Test profile: fixed, valid values for every variable. The database comes from Testcontainers
+# (@ServiceConnection overrides DATABASE_URL). Generous rate limit, like the legacy test app.
+DATABASE_URL: jdbc:postgresql://localhost:5432/unused
+DATABASE_USERNAME: test
+DATABASE_PASSWORD: test
+JWT_SECRET: tttttttttttttttttttttttttttttttt
+JWT_EXPIRES_IN: 1h
+CLIENT_URL: http://localhost:5173
+GEMINI_API_KEY: test-gemini-key
+GEMINI_MODELS: gemini-a, gemini-b
+CRON_SECRET: cron-secret-for-tests
+LOG_LEVEL: warn
+
+algolearn:
+  rate-limit:
+    global:
+      limit: 1000
+      window: 1m

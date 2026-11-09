@@ -1,0 +1,4 @@
+# Production profile (SPRING_PROFILES_ACTIVE=prod): no stack traces in error responses
+# (see ErrorResponseWriter) and client IPs from the host's proxy headers for rate limits.
+server:
+  forward-headers-strategy: native

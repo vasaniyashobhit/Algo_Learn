@@ -1,0 +1,25 @@
+# Local development stack. Session 1: PostgreSQL only (backend and frontend services come later).
+# Start with `npm run db:up`, stop with `npm run db:down` (data stays in the named volume).
+services:
+  postgres:
+    image: pgvector/pgvector:pg16
+    container_name: algolearn-postgres
+    environment:
+      POSTGRES_DB: algolearn
+      POSTGRES_USER: ${POSTGRES_USER:-algolearn}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-algolearn}
+    # Host port 5432 by default; set POSTGRES_PORT in a root .env if a local Postgres already uses it.
+    ports:
+      - "${POSTGRES_PORT:-5432}:5432"
+    volumes:
+      - postgres-data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U $${POSTGRES_USER} -d $${POSTGRES_DB}"]
+      interval: 5s
+      timeout: 5s
+      retries: 10
+      start_period: 10s
+    restart: unless-stopped
+
+volumes:
+  postgres-data:

@@ -1,11 +1,14 @@
 import { readFileSync } from 'node:fs';
 import { resolve } from 'node:path';
 import { describe, expect, it } from 'vitest';
-import { codes as backendCodes } from '../../../backend/src/errors/codes.js';
 import { CODE_LIST, codes, SESSION_ENDING_CODES } from './codes.js';
 import { messages } from './messages/index.js';
 
 const apiDoc = readFileSync(resolve(process.cwd(), '../docs/API.md'), 'utf8');
+// The Spring backend's enum is the backend source of truth (one constant per line).
+const enumFile = 'common/error/ErrorCode.java';
+const javaEnum = readFileSync(resolve(process.cwd(), '../backend/src/main/java/com/algolearn', enumFile), 'utf8');
+const backendCodes = Object.fromEntries([...javaEnum.matchAll(/^ {4}([A-Z_]+),?$/gm)].map((m) => [m[1], m[1]]));
 const documentedCodes = [...apiDoc.matchAll(/^\| `([A-Z_]+)` \| \d/gm)].map((match) => match[1]);
 
 describe('error codes', () => {

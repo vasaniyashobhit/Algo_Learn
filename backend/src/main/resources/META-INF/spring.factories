@@ -1,0 +1,5 @@
+org.springframework.context.ApplicationContextInitializer=\
+com.algolearn.config.env.EnvCheckInitializer
+
+org.springframework.boot.diagnostics.FailureAnalyzer=\
+com.algolearn.config.env.EnvFailureAnalyzer

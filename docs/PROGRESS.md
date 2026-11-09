@@ -16,6 +16,72 @@ PostgreSQL (`backend/`). Everything below "MERN log" is the history of the finis
 - Tools found: OpenJDK 21.0.10 (Microsoft build, JAVA_HOME set), Docker 28.4.0, Node 23.11.1,
   Git 2.51.0.
 
+## Done
+
+### Spring Session 1 (2026-11-09) — Skeleton, error foundation, tooling, Docker
+
+- Root: workspaces `frontend`, `e2e`. Scripts `dev` (`scripts/dev.mjs`: compose Postgres, then
+  mvnw + Vite with prefixed logs), `test` (mvnw verify + frontend), `lint` (Checkstyle + ESLint),
+  `db:up`, `db:down`. `scripts/mvnw.mjs` picks `mvnw.cmd`/`./mvnw`. ESLint ignores `legacy/`, `backend/`.
+- `docker-compose.yml`: `postgres` (pgvector/pgvector:pg16, volume `postgres-data`, healthcheck, db
+  `algolearn`, host port `${POSTGRES_PORT:-5432}`).
+- `backend/`: Spring Boot 4.1.2, Java 21, Maven wrapper (Maven 3.10.0). `build/pom.xml` is the build
+  parent (versions, Checkstyle 14.4 with FileLength 100 on main+test, JaCoCo 0.8.16 lines 80 / branches
+  75, all bound to `verify`); `pom.xml` holds the dependencies.
+- Ported: env validation (fail fast listing all issues, before any bean), tags (37/36/630, `pairKey`),
+  problem id patterns, `ErrorCode` (27), `AppException` + 9 subclasses, `ExceptionMapper` with route,
+  body, parameter and data mappers, `ErrorResponseWriter` (single writer for advice, filters and
+  security), `GlobalExceptionHandler`, `RequestIdFilter`, request logging, helmet-equivalent headers,
+  CORS limited to CLIENT_URL, 1 MB JSON body guard, global rate limit (Bucket4j, 300/15 min/IP, draft-7
+  headers), JSON 404 for unknown routes/methods, `Retry` (injectable sleep/random), `TimedHttpClient`
+  (RestClient timeouts → 503 timeout / 502 network).
+- Security baseline: stateless, JSON 401/403 through the shared writer, no default user.
+- Endpoints: `GET /api/v1/health`, `/health/ready`, `/meta/tags` (same JSON as legacy).
+- Tests: 121 backend (unit + MockMvc/Testcontainers integration; one shared container), coverage
+  98% lines / 94% branches. `ErrorCodeTest` checks the enum against docs/API.md and the frontend copy.
+- Smoke test: db `up`, 36 topic tags, ready 200, unknown route → JSON 404.
+
+## Decisions
+
+- Env validation runs in an `ApplicationContextInitializer` (after every property source including
+  `.env`, before beans) instead of `@ConfigurationProperties` binding; `AppProperties` is the
+  validated record (its `toString` hides secrets). `isProduction` = `prod` profile active.
+- CORS, security headers, request id, body guard and the global rate limit are servlet filters
+  ordered before Spring Security (Security's own CORS/headers are disabled), so preflights and
+  errors get the same headers as legacy. `FilterErrorGuard` sends filter errors to the writer.
+- Security permits every path for now (health/meta explicitly); later sessions add protected routes.
+  This keeps unknown routes at 404 ROUTE_NOT_FOUND instead of 401.
+- Unknown method on a known path → 404 ROUTE_NOT_FOUND (legacy had no 405).
+- Tests: `*Test` and `*IT` both run in Surefire; constructor injection via
+  `spring.test.constructor.autowire.mode=all`; tests never read `backend/.env`.
+- Flyway baseline `V1__init.sql` is a no-op; tables start in Session 2.
+- `frontend/src/errors/codes.test.js` now reads the Java `ErrorCode` enum instead of the deleted
+  `backend/src/errors/codes.js` (test-only change; no app code changed).
+
+## Parity notes
+
+- `LOG_LEVEL` accepts Spring's levels (`trace|debug|info|warn|error|fatal|off`); legacy `silent` is `off`.
+- `DATABASE_URL` must be `jdbc:postgresql://...` (replaces `MONGODB_URI`); `NODE_ENV` is replaced by
+  `SPRING_PROFILES_ACTIVE=prod`. Port errors say "Must be an integer between 1 and 65535" (zod wording differed).
+- Express matched routes case-insensitively and with a trailing slash; Spring does not
+  (`/api/v1/health/` → 404). The frontend never sends such paths.
+- The 1 MB limit applies to `application/json` bodies; legacy also limited urlencoded bodies (unused).
+- Error responses use `Content-Type: application/json` (legacy added `; charset=utf-8`).
+- Rate limiting keys on `getRemoteAddr()`; in `prod`, `server.forward-headers-strategy=native`
+  replaces Express `trust proxy 1` (check the host's proxy in Session 8).
+
+## Blockers
+
+- E2E: `e2e/server/start.js` imports the legacy Express backend (`../../backend/src`), so `npm run e2e`
+  does not run; the CI e2e job is disabled (`if: false`) until its server setup is adapted.
+- On this machine a native PostgreSQL 17 service uses port 5432, so the root `.env` (git-ignored) sets
+  `POSTGRES_PORT=5433` and `backend/.env` uses `localhost:5433`.
+
+## Next
+
+- Spring Session 2: Flyway schema for all tables and JPA entities/repositories (backend/CLAUDE.md).
+- Adapt the e2e server to the Spring backend and re-enable the CI e2e job.
+
 # MERN log
 
 ## Done
