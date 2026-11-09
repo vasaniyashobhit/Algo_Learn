@@ -39,4 +39,14 @@ afterEach(() => {
   document.documentElement.style.colorScheme = '';
 });
 
-afterAll(() => server.close());
+// sonner removes a dismissed toast after a 200 ms timer that unmounting does not clear. If that timer
+// fires after the file's jsdom is torn down, React throws "window is not defined" as an unhandled
+// error and the run fails. Files that showed a toast wait it out before teardown.
+const SONNER_UNMOUNT_MS = 250;
+
+afterAll(async () => {
+  if (toast.getHistory?.().length) {
+    await new Promise((resolve) => { setTimeout(resolve, SONNER_UNMOUNT_MS); });
+  }
+  server.close();
+});

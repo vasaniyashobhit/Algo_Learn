@@ -86,6 +86,47 @@ PostgreSQL (`backend/`). Everything below "MERN log" is the history of the finis
   set as annotation processor), WireMock standalone 3.13.2 and Testcontainers 2.0.5 (Boot-managed) work
   unchanged. Boot 4 needs **`spring-boot-starter-restclient`** for the `RestClient.Builder` bean.
 
+### Spring Session 3 (2026-11-10) — Auth, users, problems, similar search
+
+- Frontend test stability (test config only, no app or test-case changes): `frontend/vitest.config.js` caps
+  Vitest at `maxWorkers: 2` (`minWorkers: 1`); that fixed the `findBy*` timeouts. Two of the first three runs
+  then failed on a second flake: all 553 tests passed but Vitest reported an unhandled "window is not defined"
+  from sonner's 200 ms post-dismiss timer firing after `HistoryPage.test.jsx`'s jsdom was torn down. The shared
+  `src/test/setup.js` now waits 250 ms in `afterAll` in files that showed a toast. After that, root `npm test`
+  passed three times in a row (exit 0 each: 453 backend + 553 frontend).
+- `security/`: deny-by-default `SecurityConfig` with an explicit public list (health, health/ready,
+  meta/tags, POST auth/signup + auth/login, GET problems, problems/{c}/{i}, problems/{c}/{i}/similar,
+  POST internal/sync-all). The legacy guarded prefixes (`/users`, `/recommendations`, `/practice`, `/stuck`
+  — `router.use(requireAuth)`) need a token for every path below them; any other path no controller handles
+  (`KnownRoutes` asks the MVC handler mapping) is let through, so it still answers 404 ROUTE_NOT_FOUND.
+  `JwtService` (jjwt 0.13, HS256 only, `sub` = UUID + `email`, JWT_EXPIRES_IN via `JwtLifetime` = `ms` rules,
+  injected `Clock`), `JwtJson` (jjwt on the app's Jackson 3 mapper; jjwt-jackson is Jackson 2),
+  `BearerToken` (legacy readBearerToken), `JwtAuthFilter` (a bad token is stored on the request; public
+  routes ignore it, protected routes answer exactly that error), `JsonAuthEntryPoint`.
+- `auth/`: `AuthFields`/`AuthRequests` reproduce the zod rules and messages in the same order (zod 4 email
+  regex, JS trim/lowercase, 72-byte limit), `PasswordHasher` (bcrypt `$2b$`, cost 12, tests 4 via
+  `algolearn.auth.hash-rounds`, first 72 bytes count like node bcrypt), `AuthService` (lazy dummy hash so an
+  unknown email still runs one compare), `AuthController`. `ratelimit/AuthRateLimitFilter`: one shared
+  per-IP counter for POST signup + login (20 / 15 min), not GET /auth/me.
+- `users/`: `PublicUser` (legacy key order, ISO dates with ms), `UsersService` (account gone →
+  AUTH_INVALID_TOKEN "This account no longer exists"), `UpdateMeRequest` (strict: `Unrecognized key: "email"`),
+  `UsersController` (GET/PATCH /users/me). GET /auth/me reuses the same service.
+- `common/validation/`: `JsText` (JS trim), `JsNumber` (JS `Number()`), `Issues`, `QueryValues` (blank =
+  absent, repeated scalar = array, zod messages), `JsonBody` + resolver (raw body, only for application/json).
+- `problems/`: `ListQuery` (tags comma/repeat, max 10, `query.tags.<i>` "Unknown tag", stringbool, ints,
+  q 1–100, minRating ≤ maxRating), `ProblemParams` (contestId/index, upper-cased; k, ratingWindow; params issues
+  first), `ProblemListQueries` (fixed SQL fragments + bind params, tsvector search, `idx COLLATE "C"`),
+  `ProblemService`, `ProblemController`, DTOs `ProblemSummary`/`ProblemDetail`.
+- `problems/similar/`: `SimilarityMath` (pure helpers), `FallbackPlan` + `Strategy`, `SimilarityQueries` (ONE
+  native query per attempt: `tags &&` filter, rating window, exclusions, float8 0.75·Jaccard(*special ignored) +
+  0.25·closeness, ORDER BY score, closeness, distance (unrated last), `id COLLATE "C"`, LIMIT k), `SimilarSearch`
+  (full cascade with fill-up, meta.strategy / strategies / ratingWindow / targetRating / count), `SimilarMeta`.
+- Error details: duplicate keys name the legacy API fields (`DuplicateFields`), see Parity notes.
+- Smoke test on the local dataset (11,732 problems): GET /problems/1/A/similar 24 ms warm (k=30 with fallback
+  attempts 150 ms), `q=theatre square` ranks 1/A, 1359/B first (510 matches), unknown route 404, /users/me 401.
+- Tests: 453 backend (every legacy auth, users, problems, similarity, fallback, fill-up, cf_api, route and
+  middleware case; SecurityIT for deny-by-default / 404 / guarded prefixes), coverage 98.8% lines / 95.1% branches.
+
 ## Decisions
 
 - Env validation runs in an `ApplicationContextInitializer` (after every property source including
@@ -115,6 +156,17 @@ PostgreSQL (`backend/`). Everything below "MERN log" is the history of the finis
 - `frontend/src/errors/codes.test.js` now reads the Java `ErrorCode` enum instead of the deleted
   `backend/src/errors/codes.js` (test-only change; no app code changed).
 
+- Session 3: request validation is hand-written (`AuthRequests`, `ListQuery`, `ProblemParams`, `UpdateMeRequest`)
+  instead of Bean Validation, because Bean Validation neither keeps issue order nor matches the zod messages
+  (`Invalid input: expected object, received undefined`, `Unrecognized key: "email"`, `query.tags.1`).
+- Security: `/api/v1/__test/**` (test-only routes) is skipped through a test-only `WebSecurityCustomizer`.
+- Signup duplicates are not pre-checked: the unique constraint `uk_users_email` fails and the global handler maps
+  it to AUTH_EMAIL_TAKEN (same message as legacy).
+- Controllers are tested through full MockMvc integration tests (real security chain and DB) rather than
+  `@WebMvcTest` slices; the legacy controller tests only checked delegation, which the ITs cover end to end.
+- Text search `q`: words are OR-ed (`websearch_to_tsquery('english', 'w1 or w2')`, never a syntax error), ranked
+  with `ts_rank` weights title:description = 3:1 like the Mongo text index.
+
 ## Parity notes
 
 - `LOG_LEVEL` accepts Spring's levels (`trace|debug|info|warn|error|fatal|off`); legacy `silent` is `off`.
@@ -133,8 +185,18 @@ PostgreSQL (`backend/`). Everything below "MERN log" is the history of the finis
   null instead of 1.5, and booleans become null (JS `Number(true)` = 1). The dataset and CF API have neither.
 - Re-importing (OVERWRITE) never moves `updated_at`, exactly like legacy bulkUpsert; cf_api rating/tag
   updates do set it.
-- Duplicate-key `details.fields` now names SQL columns (`id`, `user_id`, `topic_key`, `cf_submission_id`,
-  `key`) instead of Mongo paths (`_id`, `userId`, ...). Those details only appear for DUPLICATE_RESOURCE.
+- Duplicate-key `details.fields` use the legacy API names exactly as Mongo's keyPattern gave them (`email`,
+  `cfHandle`, `cfSubmissionId`, `userId`+`topicKey`, `key`, `userId`+`problemId`, `_id` for a primary key),
+  never SQL columns (Session 3 replaced the Session 2 column names).
+- User ids (JWT `sub`, `user.id`) are UUIDs instead of 24-hex ObjectIds; tokens with any other `sub` are
+  AUTH_INVALID_TOKEN. The frontend treats ids as opaque strings.
+- An invalid JWT_EXPIRES_IN now fails at startup (legacy failed on the first signup/login with a 500).
+- Text search follows Postgres English stemming; Mongo's `"phrase"` and `-negation` syntax is not supported
+  (quotes and leading `-` are dropped, words stay OR-ed). Ranking among matches can differ slightly from Mongo's
+  textScore; the filter (any word) is the same.
+- Similarity numbers are equal but Jackson writes doubles as `1.0` / `0.0` where JS wrote `1` / `0`.
+- `tags[]=dp` (qs bracket syntax) is not parsed as `tags`; the frontend sends `tags=a,b`.
+- If both element errors and "more than 10 tags" apply, both are reported (zod may report only the first kind).
 - cf_api rows store `''` for text fields; legacy bulkWrite stubs had no text fields at all (read as '').
 - Unknown `--task` names fail with exit code 1 and list the known tasks.
 
@@ -144,16 +206,16 @@ PostgreSQL (`backend/`). Everything below "MERN log" is the history of the finis
   does not run; the CI e2e job is disabled (`if: false`) until its server setup is adapted.
 - On this machine a native PostgreSQL 17 service uses port 5432, so the root `.env` (git-ignored) sets
   `POSTGRES_PORT=5433` and `backend/.env` uses `localhost:5433`.
-- Frontend Vitest under full parallel load: 4–5 dashboard tests (`DashboardPage`, `HandleForm`,
-  `HandleOnboarding`, `SyncButton`, `UnlinkHandle`) time out in `findBy*` (1 s). They fail in a plain
-  `npm test -w frontend` re-run too, but all 553 pass in isolation and with `--maxWorkers=2`. Not changed
-  this session (frontend is frozen); needs a decision (e.g. a test-only worker cap in the Vitest config).
+- `backend/pom.xml` (112 lines) and `backend/build/pom.xml` (111) are over the 100-line rule (they were
+  101/110 before Session 3; Checkstyle only checks Java). Needs a split, e.g. a BOM/parent for test deps.
 
 ## Next
 
-- Spring Session 3 (scope comes with its prompt; schema, entities, CF client and tasks are ready to use).
-- Decide how to stabilise the frontend Vitest run under load (see Blockers).
+- Spring Session 4 (scope comes with its prompt). Ready to use: `AuthUser` via `@AuthenticationPrincipal`,
+  `UsersService.accountGone()`, `JsonBody` + `Issues` for zod-style bodies, `SimilarSearch.find(SimilarRequest)`
+  (takes `userRating`, exclusions) for recommendations/stuck.
 - Adapt the e2e server to the Spring backend and re-enable the CI e2e job.
+- Split the two pom files under 100 lines.
 
 # MERN log
 

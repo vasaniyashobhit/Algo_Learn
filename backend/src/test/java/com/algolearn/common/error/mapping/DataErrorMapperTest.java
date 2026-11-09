@@ -40,7 +40,7 @@ class DataErrorMapperTest {
         var mapped = mapper.map(unique("uk_other", "user_id, topic_key"), request).orElseThrow();
         assertThat(mapped.code()).isEqualTo(ErrorCode.DUPLICATE_RESOURCE);
         assertThat(mapped.getMessage()).isEqualTo("This resource already exists");
-        assertThat(mapped.details()).isEqualTo(Map.of("fields", List.of("user_id", "topic_key")));
+        assertThat(mapped.details()).isEqualTo(Map.of("fields", List.of("userId", "topicKey")));
         assertThat(mapped.details().toString()).doesNotContain("secret");
     }
 

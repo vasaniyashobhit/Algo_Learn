@@ -36,6 +36,25 @@ class SecurityHandlersTest {
     }
 
     @Test
+    void entryPointWritesTheTokenErrorTheFilterFound() throws Exception {
+        var request = request();
+        request.setAttribute(JwtAuthFilter.ERROR_ATTRIBUTE, new com.algolearn.common.error.AuthException(
+                com.algolearn.common.error.ErrorCode.AUTH_TOKEN_EXPIRED, "Your session has expired"));
+        var response = new MockHttpServletResponse();
+        new JsonAuthEntryPoint(writer).commence(request, response, new InsufficientAuthenticationException("no"));
+        assertThat(response.getStatus()).isEqualTo(401);
+        assertThat(response.getContentAsString()).contains("\"code\":\"AUTH_TOKEN_EXPIRED\"");
+    }
+
+    @Test
+    void knownRoutesTreatAFailedLookupAfterAPathMatchAsARealRoute() {
+        var routes = new KnownRoutes(() -> {
+            throw new IllegalStateException("media type");
+        });
+        assertThat(routes.matches(request())).isTrue();
+    }
+
+    @Test
     void accessDeniedHandlerWritesForbidden() throws Exception {
         var response = new MockHttpServletResponse();
         new JsonAccessDeniedHandler(writer).handle(request(), response, new AccessDeniedException("no"));

@@ -11,6 +11,10 @@ export default defineConfig({
     restoreMocks: true,
     // Multi-step flows (sync, stuck) plus a lazy page import can pass 5 s under full parallel load.
     testTimeout: 10_000,
+    // Root `npm test` runs right after the Maven build; unbounded workers starve jsdom and make
+    // findBy* waits time out. Two workers keep the run reliably green.
+    maxWorkers: 2,
+    minWorkers: 1,
     coverage: {
       provider: 'v8',
       include: ['src/**/*.{js,jsx}'],

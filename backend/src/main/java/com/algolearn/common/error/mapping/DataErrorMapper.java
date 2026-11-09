@@ -41,7 +41,7 @@ public class DataErrorMapper implements ErrorMapper {
             return new ConflictException(known.code(), known.message(), null, cause);
         }
         return new ConflictException(ErrorCode.DUPLICATE_RESOURCE, "This resource already exists",
-                Map.of("fields", violation.fields()), cause);
+                Map.of("fields", DuplicateFields.of(violation)), cause);
     }
 
     private record Conflict(ErrorCode code, String message) {

@@ -12,7 +12,7 @@ import org.testcontainers.postgresql.PostgreSQLContainer;
 @SpringBootTest
 @AutoConfigureMockMvc
 @ActiveProfiles("test")
-@Import(TestRoutes.class)
+@Import({TestRoutes.class, TestSecurity.class})
 public abstract class IntegrationTest {
 
     @ServiceConnection

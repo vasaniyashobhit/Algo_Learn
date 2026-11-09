@@ -19,6 +19,7 @@
     <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
     <spring-dotenv.version>5.1.0</spring-dotenv.version>
     <bucket4j.version>8.22.0</bucket4j.version>
+    <jjwt.version>0.13.0</jjwt.version>
     <wiremock.version>3.13.2</wiremock.version>
     <duckdb.version>1.5.6.0</duckdb.version>
     <checkstyle.version>14.4.0</checkstyle.version>
