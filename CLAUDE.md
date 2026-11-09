@@ -1,99 +1,103 @@
-# CP Coach — Root Instructions
+# AlgoLearn — Root Instructions (Spring Boot edition)
 
-A personal competitive-programming coach built on Codeforces data. It finds similar
-problems, tracks each user's strength per topic and per topic pair, helps when the
-user is stuck (practice/upsolving only), and recommends the next topic and problems.
+The product name is **AlgoLearn** (fixed). "CP Coach" was the working name; internal names may keep it.
 
-**Product source of truth:** `docs/PROJECT_BRIEF.md`. Read it at the start of every session.
-**Progress log:** `docs/PROGRESS.md`. Read it first, update it last, every session.
-**API contract:** `docs/API.md`. Backend sessions keep it current; frontend sessions follow it.
-**Deployment:** `docs/DEPLOY.md` (Render, Vercel, Atlas, external cron).
+AlgoLearn is a competitive-programming coach built on Codeforces data: similar-problem search,
+per-topic strength from the user's Codeforces submissions, "I'm stuck" help (hints first), and
+recommendations of the next topics and problems.
 
-## Stack override (this file wins over the brief)
+## What this repository is doing right now
 
-The brief was written for Python + PostgreSQL. This project is **MERN**. Map as follows:
+This repo is a **backend migration** of a finished MERN project:
 
-| Brief says | Use instead |
+- The old Express + MongoDB backend lives in `legacy/backend-node/` as a **read-only reference**.
+- The new backend is **Spring Boot + PostgreSQL** in `backend/`.
+- **Goal: identical functionality.** Same endpoints, same request/response JSON, same status codes,
+  same 27 error codes, same limits, same algorithms and constants. Users must not notice the change.
+- `frontend/` must keep working **without code changes**. Only dev tooling around it may change
+  (root scripts, Docker, CI). If the frontend seems to need a change, the backend is wrong.
+
+## Sources of truth (read at the start of every session)
+
+1. `docs/API.md` — the **frozen API contract**. Do not change it, except to fix a mistake proven by
+   the legacy code (record that under "Parity notes" in PROGRESS.md).
+2. `legacy/backend-node/src` and `legacy/backend-node/tests` — the behaviour to reproduce. Port
+   test cases, not just code: every legacy test case should have an equivalent Java test.
+3. `docs/PROGRESS.md` — read first, update last, every session (section "Spring migration").
+4. `docs/PROJECT_BRIEF.md`, `PRODUCT.md`, `frontend/DESIGN.md` — product context (unchanged).
+
+If legacy behaviour looks like a bug, **keep the behaviour** and add a line under "Parity notes"
+in PROGRESS.md. Never silently "improve" behaviour during the migration.
+
+## Stack
+
+| Part | Technology |
 |---|---|
-| FastAPI | Express 5 (Node.js 22+, ESM) |
-| PostgreSQL + pgvector | MongoDB Atlas + Mongoose 8 |
-| SQL Jaccard on `TEXT[]` | Aggregation pipeline (`$setIntersection` / `$setUnion`) |
-| Text search fallback | MongoDB text index (`$text`) on title + description |
-| APScheduler | `node-cron` + a protected HTTP trigger for hosted cron |
-| `google-genai` (Python) | `@google/genai` (npm) |
-| pypdf / BeautifulSoup | `unpdf` / `cheerio` |
-| pandas / DuckDB loading | `hyparquet` (pure JS Parquet reader) |
-| Streamlit or React | React (Vite) designed with the Impeccable skill |
-| SQL tables | Mongo collections (see `backend/CLAUDE.md`) |
+| Frontend | React 19 + Vite (unchanged, see `frontend/CLAUDE.md`) |
+| Backend | Java 21, Spring Boot (current stable), Maven wrapper |
+| Database | PostgreSQL 16 in Docker (image `pgvector/pgvector:pg16` so embeddings can be added later) |
+| Migrations | Flyway |
+| Containers | Docker Compose: `postgres`, `backend`, `frontend` |
+| Tests | JUnit 5, Mockito, AssertJ, Testcontainers, WireMock; frontend Vitest; Playwright E2E |
 
-Do **not** create Spring Boot, Python or PostgreSQL code.
+Do **not** create MongoDB, Mongoose, Express or Python code in `backend/`.
 
 ## Repository layout
 
 ```
-/                    npm workspaces root (package.json, eslint config, CLAUDE.md)
-├─ docs/             PROJECT_BRIEF.md, PROGRESS.md, API.md
-├─ backend/          Express API  → see backend/CLAUDE.md
-├─ frontend/         React app    → see frontend/CLAUDE.md (+ PRODUCT.md, DESIGN.md from Impeccable)
-└─ e2e/              Playwright specs + test backend (fakes, behind E2E=1); see README.md
+/                  root package.json (frontend + e2e workspaces, dev/test/lint scripts), CLAUDE.md
+├─ docs/           PROJECT_BRIEF.md, PROGRESS.md, API.md (frozen), DEPLOY.md
+├─ backend/        Spring Boot app → see backend/CLAUDE.md
+├─ frontend/       React app → see frontend/CLAUDE.md (unchanged)
+├─ e2e/            Playwright tests (unchanged tests; server setup adapted)
+├─ legacy/         backend-node/ (reference only; removed in the last session)
+└─ docker-compose.yml
 ```
 
-## Hard rules (apply everywhere, no exceptions)
+## Hard rules (everywhere)
 
-1. **Max 100 lines per file**, including tests, configs and components. ESLint enforces
-   `max-lines: 100`. If a file grows, split it (helpers, sub-components, hooks, test files
-   per behavior). Never compress code onto fewer lines to pass the limit.
-2. **Modern JavaScript only (ES2022+), ES modules.** `import`/`export`, `const`/`let`,
-   arrow functions, destructuring, spread, optional chaining `?.`, nullish `??`,
-   template literals, `Array.prototype.at`, `Object.groupBy`/`structuredClone` where useful,
-   top-level `await` in scripts.
-   **Forbidden:** `var`, `require`, `module.exports`, callbacks for async work,
-   `.then()` chains, `function` hoisting tricks, prototype manipulation, jQuery-style code.
-3. **async/await everywhere with try/catch.** Every caught error is either forwarded to the
-   Express error middleware with `next(err)` or re-thrown as a typed `AppError`. Never
-   swallow an error silently. (Only exceptions: the LLM fallback chain and background jobs,
-   documented in `backend/CLAUDE.md`.)
-4. **Modular by feature.** Small single-purpose modules, dependency injection for external
-   clients (Codeforces, Gemini, HTTP) so they can be mocked.
-5. **Tests for everything.** Every source file gets a matching test file. Vitest on both
-   sides. A session is not done until `npm run lint` and `npm test` pass.
-6. **No secrets in git.** Use `.env` (git-ignored) and keep `.env.example` updated.
-7. **Never blank.** Every user-facing result screen must show something useful, even when
-   Gemini or Codeforces fail (fallback data plus a clear notice).
-8. **Positioning:** practice and upsolving only. UI copy must never encourage use during
-   live rated contests or assessments.
+1. **Max 100 lines per file**, including tests and config. Enforced by Checkstyle (`FileLength`,
+   max 100) for Java and ESLint `max-lines` for JS. Split files; never cram code onto fewer lines.
+2. **Modern Java 21:** records for DTOs, `var` where it helps, switch expressions, text blocks,
+   `Optional` for absent values, constructor injection only (no field `@Autowired`), no raw types,
+   no `System.out`, no checked-exception swallowing. Frontend stays modern ES2022+ JavaScript.
+3. **One error path:** code throws typed exceptions; all of them end in ONE global handler
+   (`@RestControllerAdvice` plus the security entry point) that writes the standard error JSON.
+   No controller builds an error response itself. Never swallow an exception silently.
+4. **Modular by feature** with small single-purpose classes; external clients behind interfaces so
+   tests inject fakes.
+5. **Tests for everything.** Every main class has a test. A session is done only when root
+   `npm test` and `npm run lint` pass.
+6. **No secrets in git.** `backend/.env` is git-ignored; keep `backend/.env.example` current.
+7. **Never blank:** every result screen must still get useful data when Gemini or Codeforces fail.
+8. **Positioning:** practice and upsolving only.
 
-## Shared contracts
+## Shared contracts (unchanged from the MERN version)
 
-- Success response: `{ "success": true, "data": ..., "meta": { ... } }` (`meta` is optional).
-- Error response: `{ "success": false, "error": { "code", "message", "details", "requestId" } }`.
-- Error codes live in `backend/src/errors/codes.js`, and user-facing messages for every code
-  live in `frontend/src/errors/messages/`. **When you add a code on one side, add it on the
-  other in the same session**, and list it in `docs/API.md`.
-- API base path: `/api/v1`. Dev ports: backend `4000`, frontend `5173` (Vite proxies `/api`).
+- Success: `{ "success": true, "data": ..., "meta": { ... } }` (`meta` optional).
+- Error: `{ "success": false, "error": { "code", "message", "details", "requestId" } }`.
+- Base path `/api/v1`. Dev ports: backend **4000**, frontend 5173 (Vite proxies `/api`).
+- JSON field names are camelCase exactly as in `docs/API.md`; dates are ISO-8601 UTC strings.
+- Error codes: `backend/src/main/java/.../common/error/ErrorCode.java` must list exactly the codes in
+  `docs/API.md`; the frontend copy in `frontend/src/errors/codes.js` must not change.
 
 ## Domain constants
 
-- 37 Codeforces tags exist; `*special` is **not** a topic. That leaves 36 topic tags and
-  630 sorted pairs. Pair key format: alphabetical, joined by `+`, e.g. `bitmasks+dp`.
-- The tag list lives in `backend/src/config/tags.js` (single source; the frontend gets it from
-  `GET /api/v1/meta/tags`).
-- Problem id format: `"<contestId>/<index>"`, e.g. `"1/A"`.
+37 Codeforces tags; `*special` is not a topic (36 topic tags, 630 sorted pairs, key `a+b`).
+Problem id `"<contestId>/<index>"`, index pattern `[A-Z0-9]{1,3}` (ids like `1723/GP1`, `921/01` exist).
 
 ## Session workflow
 
-1. Read `docs/PROGRESS.md`, this file, the relevant sub-folder `CLAUDE.md`, and the brief.
-2. Do **only** the scope of the current session prompt. If something blocks you, write it
-   in PROGRESS.md under "Blockers" instead of improvising a different architecture.
-3. Run `npm run lint` and `npm test` from the root. Fix everything until green.
-4. Update `docs/PROGRESS.md` (done, decisions, next) and `docs/API.md` if endpoints changed.
-5. Commit with Conventional Commits (`feat(backend): ...`, `test(frontend): ...`).
-6. End with a short list of anything the **human** must do next (keys, accounts, checks).
+1. Read PROGRESS.md, this file, `backend/CLAUDE.md`, `docs/API.md`, and the legacy module(s) you port.
+2. Do only the current session's scope. Blockers go to PROGRESS.md, not into a different design.
+3. Run root `npm run lint` and `npm test`; fix until green.
+4. Update PROGRESS.md (Done, Decisions, Parity notes, Blockers, Next). Conventional Commits.
+5. `git push origin main` (remote is the NEW repository). Never add or push to any other remote.
+6. End with a short list of what the human must do next.
 
-## Commands (root)
+## Root commands (after Session 1)
 
-- `npm run dev` — backend and frontend together (concurrently)
-- `npm test` — all workspace tests
-- `npm run lint` — ESLint on all workspaces
-- `npm run build` — frontend production build
-- `npm run e2e` — Playwright end-to-end tests (`npx -w e2e playwright install chromium` once)
+- `npm run dev` — starts Postgres (Docker), the Spring Boot backend and the Vite frontend
+- `npm test` — backend `mvnw verify` (tests, coverage, Checkstyle) + frontend tests
+- `npm run lint` — Checkstyle + ESLint
+- `npm run db:up` / `npm run db:down` — Postgres container only

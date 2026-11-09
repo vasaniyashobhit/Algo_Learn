@@ -2,6 +2,22 @@
 
 Read this first, update it last, every session.
 
+# Spring migration
+
+The backend moves from Express + MongoDB (`legacy/backend-node/`, read-only) to Spring Boot +
+PostgreSQL (`backend/`). Everything below "MERN log" is the history of the finished MERN version.
+
+## Setup (2026-11-09)
+
+- Old repository (MERN, frozen, never push again): https://github.com/vasaniyashobhit/AlgoLearn.git
+- New repository (origin): https://github.com/vasaniyashobhit/Algo_Learn.git
+- Old backend moved to `legacy/backend-node/` (no node_modules/coverage, no CLAUDE.md; its `.env`
+  stays there git-ignored as a key reference). `cf_problems.parquet` moved to `backend/data/`.
+- Tools found: OpenJDK 21.0.10 (Microsoft build, JAVA_HOME set), Docker 28.4.0, Node 23.11.1,
+  Git 2.51.0.
+
+# MERN log
+
 ## Done
 
 ### Session 1 (2026-10-28) — Monorepo skeleton + Express foundation

@@ -1,113 +1,106 @@
-# Backend — Express 5 + MongoDB Atlas
+# Backend — Spring Boot + PostgreSQL
 
-Read the root `CLAUDE.md` first. Everything here adds to it.
+Read the root `CLAUDE.md` first. This file adds backend rules. The behaviour to reproduce is in
+`legacy/backend-node/` and `docs/API.md`.
 
 ## Stack
 
-Node.js 22+ (ESM, `"type": "module"`), Express 5, Mongoose 8, zod (validation and env),
-jsonwebtoken + bcrypt, helmet, cors, express-rate-limit, multer (memory storage),
-pino + pino-http (logging), node-cron, `@google/genai`, cheerio, unpdf, tesseract.js
-(OCR fallback), hyparquet (dataset import).
-Tests: Vitest, supertest, mongodb-memory-server, `@vitest/coverage-v8`.
+Java 21, Spring Boot (current stable) with: web, validation, data-jpa, security, actuator.
+PostgreSQL driver, Flyway, jjwt (JWT), Bucket4j (rate limits), spring-dotenv (loads
+`backend/.env` in dev), Apache PDFBox (PDF text), Tess4J (OCR), jsoup (HTML text),
+DuckDB JDBC (reads the parquet dataset), Jackson. HTTP calls use Spring `RestClient`.
+Lombok is allowed **only** on JPA entities; DTOs are records.
+Tests: JUnit 5, AssertJ, Mockito, Spring Boot Test + MockMvc, Testcontainers (PostgreSQL),
+WireMock, JaCoCo, Checkstyle. Maven wrapper (`mvnw`, `mvnw.cmd`) — never require a global Maven.
 
-## Folder structure (feature modules)
+## Package structure (by feature) — base package `com.algolearn`
 
 ```
-backend/
-├─ src/
-│  ├─ app.js                  builds the Express app (no listen) — imported by tests
-│  ├─ server.js               connects DB, starts HTTP + scheduler, graceful shutdown
-│  ├─ config/                 env.js (zod-validated), tags.js, constants.js
-│  ├─ db/                     connect.js
-│  ├─ errors/                 AppError.js, httpErrors.js (subclasses), codes.js, mappers/
-│  ├─ middlewares/            requestId, auth, validate, upload, rateLimit, notFound, errorHandler
-│  ├─ lib/                    logger, fetchWithTimeout, retry, rateLimitQueue, hash, sigmoid...
-│  ├─ modules/
-│  │  └─ <feature>/           <feature>.routes.js · .controller.js · .service.js
-│  │                          .model.js · .schema.js (zod) · helpers/ (pure functions)
-│  ├─ jobs/                   scheduler.js, syncAllUsers.job.js
-│  └─ scripts/                importDataset.js, syncProblemset.js
-├─ tests/                     mirrors src/ (unit/ and integration/), helpers/ (db, factories)
-└─ data/                      cf_problems.parquet (git-ignored)
+config/          AppProperties (typed @ConfigurationProperties), Jackson, CORS, clock, scheduling
+common/error/    ErrorCode (enum), AppException + subclasses, GlobalExceptionHandler, ErrorResponse
+common/web/      ApiResponse<T> (success envelope), RequestIdFilter, logging
+security/        SecurityConfig, JwtService, JwtAuthFilter, JsonAuthEntryPoint, CurrentUser
+ratelimit/       Bucket4j filters/interceptors (global, auth, stuck, sync cooldown helpers)
+problems/        ProblemController, ProblemService, ProblemRepository, SimilarityQueries, dto/
+auth/ users/ codeforces/ sync/ stats/ recommendations/ practice/ llm/ stuck/ jobs/ importer/
 ```
 
-Feature modules: `auth`, `users`, `meta`, `problems`, `codeforces` (client only), `sync`,
-`stats`, `recommendations`, `practice`, `llm` (no routes), `stuck`.
+Each feature: `XController` → `XService` → `XRepository` (JPA) and/or `XQueries` (native SQL via
+`NamedParameterJdbcTemplate`), with `dto/` records and pure helper classes for maths/parsing
+(most unit tests target these helpers).
 
 ## Layering rules
 
-- **routes** → wire middlewares and controllers only. No logic.
-- **controllers** → read `req`, call one service, send the response. Always this shape:
-
-```js
-export const getSimilar = async (req, res, next) => {
-  try {
-    const data = await problemService.findSimilar(req.params, req.query);
-    res.json({ success: true, data });
-  } catch (err) {
-    next(err);
-  }
-};
-```
-
-- **services** → business logic. Never touch `req`/`res`. Throw typed errors
-  (`throw new NotFoundError(codes.PROBLEM_NOT_FOUND, ...)`). When calling external code,
-  wrap it in try/catch and re-throw as an `AppError` with the original error as `cause`.
-- **helpers/** → pure functions (scoring, similarity math, parsing). Most unit tests target these.
-- **models** → Mongoose schemas plus indexes. Use `.lean()` for reads and projections to
-  skip large fields (`description`, `editorial`) in list endpoints.
-- External clients (Codeforces, Gemini, Groq, generic HTTP) are created by factories that
-  take their dependencies (`fetch`, keys, limiter) so tests inject fakes.
+- **Controller:** maps HTTP to a service call and wraps the result in `ApiResponse`. Validation
+  with `@Valid` on request records and `@Validated` path/query params. No try/catch, no logic.
+- **Service:** business logic, `@Transactional` where it writes. Throws `AppException` subclasses
+  with an `ErrorCode`. Wrap external failures: `throw new ExternalServiceException(CF_UNAVAILABLE,
+  msg, cause)`.
+- **Entities never leave the service layer.** Map to response records that match `docs/API.md`
+  exactly (field names, nesting, nulls vs missing). Check the legacy tests for exact shapes.
+- External clients (Codeforces, Gemini, Groq, URL fetcher, OCR) are interfaces with one real
+  implementation; tests inject fakes or point the real client at WireMock.
 
 ## Error handling (strict)
 
-- `AppError(statusCode, code, message, details?, { cause })`, plus subclasses:
-  `ValidationError 400`, `AuthError 401`, `ForbiddenError 403`, `NotFoundError 404`,
-  `ConflictError 409`, `PayloadError 413/415`, `RateLimitError 429`,
-  `ExternalServiceError 502/503`.
-- Middleware order in `app.js`: requestId → pino-http → helmet → cors → json/urlencoded →
-  rate limit → routes → `notFound` → **`errorHandler` last**.
-- `errorHandler` normalizes everything through mappers in `errors/mappers/`:
-  zod error → `VALIDATION_FAILED` (details = `[{ field, message }]`),
-  Mongoose `ValidationError`/`CastError` → 400, Mongo duplicate key `11000` → 409
-  `DUPLICATE_RESOURCE` (or a specific code), JWT errors → `AUTH_INVALID_TOKEN` /
-  `AUTH_TOKEN_EXPIRED`, multer errors → `FILE_TOO_LARGE` / `FILE_TYPE_UNSUPPORTED`,
-  malformed JSON → `VALIDATION_FAILED`, anything unknown → 500 `INTERNAL_ERROR`.
-- Never leak stack traces or internal messages when `NODE_ENV=production`. Log the full error
-  with the `requestId`.
-- **Allowed exceptions to "forward every error":**
-  1. LLM fallback chain: catching a provider failure to try the next provider. Log it at
-     `warn`. When all providers fail, return the database fallback result (not an error).
-  2. Background jobs: no `next` exists, so errors go to `jobErrorHandler` (logs and
-     continues with the next user). Never crash the process.
+- `AppException(HttpStatus status, ErrorCode code, String message, Object details, Throwable cause)`
+  with subclasses: Validation 400, Auth 401, Forbidden 403, NotFound 404, Conflict 409,
+  Payload 413/415, RateLimit 429, ExternalService 502/503.
+- `GlobalExceptionHandler` (`@RestControllerAdvice`) maps:
+  `MethodArgumentNotValidException`, `ConstraintViolationException`, `HttpMessageNotReadableException`,
+  type mismatches → `VALIDATION_FAILED` with `details: [{ field, message }]`;
+  `DataIntegrityViolationException` unique violation → code by constraint name
+  (e.g. `uk_users_email` → `AUTH_EMAIL_TAKEN`, `uk_users_cf_handle` → `CF_HANDLE_TAKEN`,
+  `uk_practice_user_problem` → `PRACTICE_ITEM_EXISTS`, else `DUPLICATE_RESOURCE`);
+  `MaxUploadSizeExceededException` → `FILE_TOO_LARGE`; `NoResourceFoundException` →
+  `ROUTE_NOT_FOUND`; database connection failures → `DB_UNAVAILABLE` 503; anything else →
+  `INTERNAL_ERROR` 500.
+- Errors raised inside the Spring Security filter chain do not reach the advice: `JsonAuthEntryPoint`
+  and the JWT filter must write the same JSON (`AUTH_REQUIRED`, `AUTH_INVALID_TOKEN`,
+  `AUTH_TOKEN_EXPIRED`) through one shared `ErrorResponseWriter`.
+- Every error response includes the `requestId` (from `RequestIdFilter`, header `X-Request-Id`).
+  No stack traces or internal messages when the `prod` profile is active; always log the full error.
+- Allowed catch-and-continue (documented, logged at `warn`): the LLM fallback chain, and background
+  jobs (one user failing must not stop the job).
 
-## MongoDB collections
+## Database (Flyway, `src/main/resources/db/migration`)
 
-`problems` (`_id: "1/A"`, contestId, index, title, description, inputFormat, outputFormat,
-note, editorial, rating, tags[], source `hf|cf_api`; indexes on tags, rating, and a text
-index on title + description), `users`, `submissions` (unique cfSubmissionId; stores the
-problem's tags and rating), `topicstats` (unique userId + topicKey), `stuckqueries`,
-`llmcaches` (TTL 30 days), `practiceitems` (unique userId + problemId).
-Call `mongoose.set('sanitizeFilter', true)` and validate all input with zod.
+Tables (snake_case columns; names may follow the legacy collections):
+`problems` (id text PK "1/A", contest_id, idx, title, description, input_format, output_format,
+note, editorial, rating int null, tags text[], tag_count, has_editorial, source, search tsvector
+generated from title weight A + description weight B), `users` (uuid id, email unique, password_hash,
+name, cf_handle unique case-insensitive via `lower(cf_handle)` index, cf_rating, cf_max_rating,
+last_synced_at, last_submission_id, sync_locked_until, timestamps), `submissions`
+(cf_submission_id unique), `topic_stats` (unique user_id+topic_key, last_results jsonb),
+`stuck_queries` (gap jsonb, result jsonb), `llm_cache` (key unique, response jsonb, created_at;
+a daily `@Scheduled` job deletes rows older than 30 days), `practice_items`
+(unique user_id+problem_id). Indexes: GIN on `problems.tags`, GIN on `problems.search`,
+btree on rating and (tags, rating) where useful, (user_id, submitted_at desc), (user_id, created_at desc).
+Use `text[]` and `jsonb` via Hibernate `@JdbcTypeCode`. Always use bind parameters, never string-built SQL.
+The sync lock is one atomic `UPDATE ... WHERE sync_locked_until IS NULL OR sync_locked_until < now()`.
 
-## Environment variables (`backend/.env`, mirrored in `.env.example`)
+## Configuration
 
-`NODE_ENV, PORT=4000, MONGODB_URI, JWT_SECRET, JWT_EXPIRES_IN=7d, CLIENT_URL,
-GEMINI_API_KEY, GEMINI_MODELS=<comma list, primary first>, GROQ_API_KEY (optional),
-GROQ_MODEL (optional), CRON_SECRET, SYNC_CRON="0 */6 * * *", LOG_LEVEL=info`
+`application.yml` reads environment variables; `backend/.env` is loaded in dev. Variables:
+`SPRING_PROFILES_ACTIVE, PORT=4000, DATABASE_URL, DATABASE_USERNAME, DATABASE_PASSWORD,
+JWT_SECRET, JWT_EXPIRES_IN=7d, CLIENT_URL, GEMINI_API_KEY, GEMINI_MODELS, GROQ_API_KEY,
+GROQ_MODEL, CRON_SECRET, SYNC_CRON, LOG_LEVEL`. Fail fast at startup with a clear message listing
+missing or invalid variables (as the legacy env check did). Never log secrets or the DB password.
+Enable virtual threads. Time-based logic uses an injected `Clock` so tests can control time.
 
 ## Testing rules
 
-- Every `src` file gets a test file. Unit-test helpers and services; integration-test routes
-  with supertest against `createApp()` and mongodb-memory-server.
-- Never call real Codeforces, Gemini or Groq in tests. Inject fakes or use `vi.mock`.
-- Each route has tests for success, validation failure, auth failure (if protected), and the
-  error-response shape.
-- Coverage thresholds (vitest config): lines 80, functions 80, branches 75.
-- Tests follow the 100-line rule too. Split by behavior (`similar.success.test.js`,
-  `similar.errors.test.js`) and use factories in `tests/helpers/`.
+- Every main class has a test. Pure helpers: plain JUnit. Controllers: `@WebMvcTest` with mocked
+  services, checking JSON shape and error codes. Repositories/queries: Testcontainers PostgreSQL
+  with Flyway applied (one shared container for the whole run). Full flows: `@SpringBootTest` +
+  MockMvc + Testcontainers. HTTP clients: WireMock. Never call real Codeforces, Gemini or Groq.
+- Port every legacy test case (same inputs, same expected outputs, same error codes).
+- Each endpoint: success, validation failure, auth failure (if protected), error JSON shape.
+- JaCoCo thresholds: lines 80%, branches 75%. Checkstyle `FileLength` 100 applies to tests too.
+- Docker must be running for tests (Testcontainers). If it is not, say so instead of skipping tests.
 
-## Commands
+## Commands (from `backend/`; root npm scripts wrap them)
 
-`npm run dev` (node --watch), `npm start`, `npm test`, `npm run test:cov`, `npm run lint`,
-`npm run import:dataset`, `npm run sync:problemset`.
+`mvnw verify` (tests + coverage + Checkstyle), `mvnw spring-boot:run`,
+`mvnw spring-boot:run -Dspring-boot.run.arguments=--task=import-dataset`,
+`... --task=sync-problemset`. On Windows use `mvnw.cmd`.
