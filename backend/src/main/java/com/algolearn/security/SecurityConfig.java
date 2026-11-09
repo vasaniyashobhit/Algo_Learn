@@ -53,8 +53,8 @@ public class SecurityConfig {
                         .requestMatchers(HttpMethod.POST, "/api/v1/auth/signup", "/api/v1/auth/login").permitAll()
                         .requestMatchers(HttpMethod.GET, "/api/v1/problems", "/api/v1/problems/*/*",
                                 "/api/v1/problems/*/*/similar").permitAll()
-                        // Guarded by its own cron secret header instead of a user token.
-                        .requestMatchers(HttpMethod.POST, "/api/v1/internal/sync-all").permitAll()
+                        // Guarded by CronSecretFilter (x-cron-secret) instead of a user token.
+                        .requestMatchers("/api/v1/internal", "/api/v1/internal/**").permitAll()
                         .requestMatchers(PROTECTED_PREFIXES).authenticated()
                         .requestMatchers(new NegatedRequestMatcher(knownRoutes)).permitAll()
                         .anyRequest().authenticated())

@@ -58,6 +58,7 @@ Do **not** create MongoDB, Mongoose, Express or Python code in `backend/`.
 
 1. **Max 100 lines per file**, including tests and config. Enforced by Checkstyle (`FileLength`,
    max 100) for Java and ESLint `max-lines` for JS. Split files; never cram code onto fewer lines.
+   Exempt: build and lock files (`pom.xml`, `package.json`, `package-lock.json`, `docker-compose.yml`).
 2. **Modern Java 21:** records for DTOs, `var` where it helps, switch expressions, text blocks,
    `Optional` for absent values, constructor injection only (no field `@Autowired`), no raw types,
    no `System.out`, no checked-exception swallowing. Frontend stays modern ES2022+ JavaScript.

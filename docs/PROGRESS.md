@@ -127,6 +127,48 @@ PostgreSQL (`backend/`). Everything below "MERN log" is the history of the finis
 - Tests: 453 backend (every legacy auth, users, problems, similarity, fallback, fill-up, cf_api, route and
   middleware case; SecurityIT for deny-by-default / 404 / guarded prefixes), coverage 98.8% lines / 95.1% branches.
 
+### Spring Session 4 (2026-11-10) — Handle linking, submission sync, jobs, topic strength
+
+- Rule change: root `CLAUDE.md` rule 1 now exempts build and lock files (`pom.xml`, `package.json`,
+  `package-lock.json`, `docker-compose.yml`) from the 100-line rule (the exemption text was added to CLAUDE.md
+  this session). The pom Blocker is closed; the poms stay unsplit.
+- `users/`: `HandleRequest` (strict body, JS trim, `^[A-Za-z0-9_.-]{3,24}$`, legacy messages), `HandleQueries`
+  (taken check on `lower(cf_handle)`, link/unlink as one conditional UPDATE on an unlocked user, delete synced
+  data), `HandleService` (accountGone → taken → CF user.info → Codeforces casing + ratings; a different handle
+  resets lastSyncedAt/lastSubmissionId and deletes submissions + topic stats; DuplicateKey → CF_HANDLE_TAKEN;
+  0 rows → SYNC_IN_PROGRESS or accountGone), `HandleController` (PUT/DELETE /users/me/handle).
+- `sync/`: `SyncSettings` (lock 5 min, page 500, 20 pages, cooldown 20 s; problemset cron), `SyncLock` (one atomic
+  `UPDATE … WHERE sync_locked_until IS NULL OR <= now RETURNING …`, released in `finally`), `CfSubmissions`
+  (isPending/isStorable/toRow/pendingRefs/nextCursor/uniqueById), `SubmissionPager` (legacy fetchNewSubmissions),
+  `Cooldown`, `SubmissionWriter` (JDBC batches of 500, `ON CONFLICT (cf_submission_id) DO NOTHING`, other
+  failures → 500 INTERNAL_ERROR "Could not save submissions"), `SyncService` (+ `SyncConfig`: the stats recompute
+  is the onSynced hook), `SyncController`. RATE_LIMITED carries `details.retryAfterSeconds` (ceil); jobs skip it.
+- `stats/`: `StatsConstants` (STATS / STATS_VIEW / reasons in one class), pure helpers in `stats/calc/`
+  (`StrengthMath` = sigmoid/decay/difficultyWeight/contribution/strength, `ComfortRating`, `GroupByProblem`,
+  `TopicKeys`, `TopicTotals`, `BuildTopicStats`, `RatingBands`, `Activity`, `BuildSummary`), `StatsQueries`,
+  `TopicStatWriter` (stale-key delete + upsert; `recomputeForUser` runs both in one `@Transactional`),
+  `StatsQuery` (zod enum/int messages), `StatsService`, `StatsController`, DTOs `TopicStatView`, `Summary`,
+  `StatsMeta`, `SummaryMeta` (`reason` only when set).
+- `jobs/`: `JobErrorHandler`, `SyncAllUsersJob` (sequential, ignores the cooldown, failing user logged and
+  skipped, overlapping run skipped), `SyncProblemsetJob` (wraps `SyncProblemsetTask`), `LlmCacheCleanupJob`
+  (daily 04:00, deletes rows older than 30 days), `JobScheduler` (`SchedulingConfigurer`: SYNC_CRON, Sunday 03:00,
+  daily cleanup; per-job no-overlap guard), `BackgroundJobs`, `LinkedUsers` / `JdbcLinkedUsers`.
+- `internal/`: `CronSecretFilter` (every `/api/v1/internal/**` path; SHA-256 + `MessageDigest.isEqual`; header
+  only) and `InternalController` (POST /internal/sync-all → 202 `{ started: true, job: "syncAllUsers" }` at once).
+- Config switches: `algolearn.jobs.scheduler-enabled`, `algolearn.jobs.background-enabled` and
+  `algolearn.codeforces.min-interval-ms` (default 2100), all off / 0 in `application-test.yml`. An invalid
+  SYNC_CRON already fails startup (EnvValidator; ported legacy env.cron test in `SyncCronTest`).
+- Test support: `MutableClock` and `FakeCodeforcesClient` are `@Primary` beans in the IT context (`TestDoubles`),
+  reset by `DatabaseTest` before each test; time moves only through `clock.set/advance` (no sleeps).
+  `CfData` (legacy cfSubmission/cfHistory/cfUser/cfDown), `Handles` (link/unlink/sync over HTTP).
+- Smoke test (local Postgres 5433, real Codeforces): link " TOURIST " → `tourist` 3408/4009; first sync 5519 new
+  submissions in 27 s (12 pages at 2.1 s spacing), an immediate second sync → 429 `retryAfterSeconds: 20`;
+  stats/summary filled (36 topics, 409 pairs); sync-all 202 with the secret, 403 without. Scheduler log:
+  `syncAllUsers @ 0 0 */6 * * *, syncProblemset @ 0 0 3 * * SUN, llmCacheCleanup @ 0 0 4 * * *`.
+- Tests: 649 backend (every legacy handle, sync, lock, cooldown, insert, stats helper, recompute, summary,
+  lastResults, routes, jobs, scheduler, cron-secret and internal case) + 553 frontend. Coverage 99.1% lines /
+  94.5% branches. Root `npm run lint` and `npm test` green.
+
 ## Decisions
 
 - Env validation runs in an `ApplicationContextInitializer` (after every property source including
@@ -167,6 +209,20 @@ PostgreSQL (`backend/`). Everything below "MERN log" is the history of the finis
 - Text search `q`: words are OR-ed (`websearch_to_tsquery('english', 'w1 or w2')`, never a syntax error), ranked
   with `ts_rank` weights title:description = 3:1 like the Mongo text index.
 
+- Session 4: the 100-line rule does not apply to build/lock files (CLAUDE.md rule 1); `pom.xml` and
+  `build/pom.xml` stay unsplit.
+- Sync, lock and handle writes use native SQL (`JdbcTemplate`) so each is one atomic statement; JPA only reads
+  users. Linking/unlinking runs the user update and the synced-data delete in one `TransactionTemplate`.
+- `SyncService` is built in `SyncConfig` with `SyncSettings.DEFAULT` and `StatsService::recomputeForUser`; tests
+  build their own with small pages (5 × 3) and no cooldown, like legacy `TEST_SYNC`.
+- In-process jobs use `SchedulingConfigurer` cron triggers (the 5-field SYNC_CRON gets a leading `0` seconds
+  field); each job is guarded against overlapping firings (node-cron `noOverlap`). No scheduler for `--task` runs.
+  `/internal/sync-all` runs the job on Spring Boot's `applicationTaskExecutor` (virtual threads).
+- The llm_cache TTL index is replaced by `LlmCacheCleanupJob` (daily 04:00, `created_at < now − 30 days`).
+- The cron secret is checked by a servlet filter for every `/api/v1/internal/**` path (legacy `router.use`);
+  security permits that prefix for every method.
+- Topic stat ratings stay `double precision` columns; reads round them to integers for the JSON.
+
 ## Parity notes
 
 - `LOG_LEVEL` accepts Spring's levels (`trace|debug|info|warn|error|fatal|off`); legacy `silent` is `off`.
@@ -199,6 +255,14 @@ PostgreSQL (`backend/`). Everything below "MERN log" is the history of the finis
 - If both element errors and "more than 10 tags" apply, both are reported (zod may report only the first kind).
 - cf_api rows store `''` for text fields; legacy bulkWrite stubs had no text fields at all (read as '').
 - Unknown `--task` names fail with exit code 1 and list the known tasks.
+- Session 4: the lock release (`sync_locked_until = NULL`) does not move `updated_at` (mongoose timestamps did on
+  every updateOne); lock acquire, the sync result, link and unlink do set it.
+- Sync-all visits users ordered by `created_at, id`; the stats read submissions ordered by
+  `submitted_at, cf_submission_id` (Mongo used natural order). Only ties within the same second could differ.
+- llm_cache rows are deleted once a day instead of by Mongo's TTL monitor (about every minute), so an entry can
+  live up to one extra day. The weekly problemset cron is `0 0 3 * * SUN` in the server time zone (as node-cron).
+- `strength` is written by Jackson as a double (`0.5`; `0.0` for a never-computed row) where JS wrote `0`.
+- With the right secret, an unknown method/path under `/internal` answers 404 ROUTE_NOT_FOUND (as legacy).
 
 ## Blockers
 
@@ -206,16 +270,15 @@ PostgreSQL (`backend/`). Everything below "MERN log" is the history of the finis
   does not run; the CI e2e job is disabled (`if: false`) until its server setup is adapted.
 - On this machine a native PostgreSQL 17 service uses port 5432, so the root `.env` (git-ignored) sets
   `POSTGRES_PORT=5433` and `backend/.env` uses `localhost:5433`.
-- `backend/pom.xml` (112 lines) and `backend/build/pom.xml` (111) are over the 100-line rule (they were
-  101/110 before Session 3; Checkstyle only checks Java). Needs a split, e.g. a BOM/parent for test deps.
 
 ## Next
 
-- Spring Session 4 (scope comes with its prompt). Ready to use: `AuthUser` via `@AuthenticationPrincipal`,
-  `UsersService.accountGone()`, `JsonBody` + `Issues` for zod-style bodies, `SimilarSearch.find(SimilarRequest)`
-  (takes `userRating`, exclusions) for recommendations/stuck.
+- Spring Session 5 (scope comes with its prompt). Ready to use: `SyncService.syncUser(id)` (practice verify),
+  `StatsQueries.all(userId)` / `TopicStatDoc` for recommendations and the stuck gap, `SimilarSearch.find(...)`,
+  `UsersService.accountGone()`, `JsonBody` + `Issues`, `MutableClock` / `FakeCodeforcesClient` in ITs.
+- When the LLM cache is ported: legacy reads relied on the TTL index, so decide whether reads should also skip
+  rows older than 30 days between the daily cleanups (record it under Parity notes).
 - Adapt the e2e server to the Spring backend and re-enable the CI e2e job.
-- Split the two pom files under 100 lines.
 
 # MERN log
 

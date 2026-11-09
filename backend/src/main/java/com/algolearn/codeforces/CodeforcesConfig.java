@@ -16,15 +16,16 @@ import tools.jackson.databind.json.JsonMapper;
 @Configuration(proxyBeanMethods = false)
 public class CodeforcesConfig {
 
-    /** 2.1 s between call starts leaves a small margin over Codeforces' 2 s rule. */
+    /** 2.1 s between call starts leaves a small margin over Codeforces' 2 s rule (tests set 0). */
     public static final long CF_MIN_INTERVAL_MS = 2_100;
     public static final Duration CF_TIMEOUT = Duration.ofSeconds(20);
     /** 2 retries, 1 s base delay (full jitter, x2, 5 s cap). */
     public static final RetryPolicy CF_RETRY = new RetryPolicy(2, 1_000, 5_000, 2);
 
     @Bean
-    RateLimitQueue codeforcesQueue() {
-        return RateLimitQueue.spacedBy(CF_MIN_INTERVAL_MS);
+    RateLimitQueue codeforcesQueue(
+            @Value("${algolearn.codeforces.min-interval-ms:" + CF_MIN_INTERVAL_MS + "}") long minIntervalMs) {
+        return RateLimitQueue.spacedBy(minIntervalMs);
     }
 
     @Bean
