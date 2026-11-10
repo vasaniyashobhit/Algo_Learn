@@ -21,7 +21,7 @@ Either way the backend gets three variables (no credentials inside the URL):
 | `DATABASE_URL` | `jdbc:postgresql://<host>:5432/<db>?sslmode=require` |
 | `DATABASE_USERNAME` / `DATABASE_PASSWORD` | the role and its password |
 
-Flyway creates the schema on the first start (V1–V4, including the `algolearn_mongo` text-search
+Flyway creates the schema on the first start (V1–V4, including the `algolearn_text` text-search
 configuration; the database owner role on Neon and the `postgres` role on Supabase may create it).
 Load the problems once from your machine: point `backend/.env` at the managed database, then run
 `npm run import:dataset` and `npm run sync:problemset` (about 11,700 problems; put the local values

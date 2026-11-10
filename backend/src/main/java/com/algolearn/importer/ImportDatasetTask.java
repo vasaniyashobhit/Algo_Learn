@@ -50,7 +50,7 @@ public class ImportDatasetTask implements Task {
         return ImportSummary.of(prepared.summary(), totals, writer.count());
     }
 
-    /** One write per id (the last row wins, like sequential Mongo updates); the dataset has no duplicates. */
+    /** One write per id (the last row wins, like the sequential legacy updates); the dataset has no duplicates. */
     private static List<ProblemDoc> lastPerId(List<ProblemDoc> docs) {
         var byId = new LinkedHashMap<String, ProblemDoc>();
         docs.forEach(doc -> byId.put(doc.id(), doc));

@@ -35,7 +35,7 @@ public class StuckRepository {
                 StuckRepository::problem).stream().findFirst();
     }
 
-    /** The {@code limit} best full-text matches (any word), ranked like the Mongo $text search. */
+    /** The {@code limit} best full-text matches (any word), ranked like the legacy text search. */
     public List<StuckProblem> searchProblems(String query, int limit) {
         var words = query == null ? "" : ProblemListQueries.anyWord(query);
         if (JsText.isBlank(words)) {

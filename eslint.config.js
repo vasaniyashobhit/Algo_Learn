@@ -35,8 +35,7 @@ export default [
       '.gemini/**',
       '.impeccable/**',
       'data/**',
-      // Read-only reference (legacy Express backend) and the Java backend's build output.
-      'legacy/**',
+      // The Java backend and its build output.
       'backend/**',
       'frontend/mockups/**',
     ],

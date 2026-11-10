@@ -1,7 +1,7 @@
 # Backend — Spring Boot + PostgreSQL
 
-Read the root `CLAUDE.md` first. This file adds backend rules. The behaviour to reproduce is in
-`legacy/backend-node/` and `docs/API.md`.
+Read the root `CLAUDE.md` first. This file adds backend rules. The behaviour to keep is in
+`docs/API.md`, the tests and the parity snapshot (`npm run parity`).
 
 ## Stack
 
@@ -37,7 +37,7 @@ Each feature: `XController` → `XService` → `XRepository` (JPA) and/or `XQuer
   with an `ErrorCode`. Wrap external failures: `throw new ExternalServiceException(CF_UNAVAILABLE,
   msg, cause)`.
 - **Entities never leave the service layer.** Map to response records that match `docs/API.md`
-  exactly (field names, nesting, nulls vs missing). Check the legacy tests for exact shapes.
+  exactly (field names, nesting, nulls vs missing); the integration tests and `docs/PARITY.md` pin them.
 - External clients (Codeforces, Gemini, Groq, URL fetcher, OCR) are interfaces with one real
   implementation; tests inject fakes or point the real client at WireMock.
 
@@ -65,10 +65,10 @@ Each feature: `XController` → `XService` → `XRepository` (JPA) and/or `XQuer
 
 ## Database (Flyway, `src/main/resources/db/migration`)
 
-Tables (snake_case columns; names may follow the legacy collections):
+Tables (snake_case columns):
 `problems` (id text PK "1/A", contest_id, idx, title, description, input_format, output_format,
-note, editorial, rating int null, tags text[], tag_count, has_editorial, source, search tsvector
-generated from title weight A + description weight B), `users` (uuid id, email unique, password_hash,
+note, editorial, rating int null, tags text[], tag_count, has_editorial, source, term_scores jsonb
+generated per-term text scores, see V4), `users` (uuid id, email unique, password_hash,
 name, cf_handle unique case-insensitive via `lower(cf_handle)` index, cf_rating, cf_max_rating,
 last_synced_at, last_submission_id, sync_locked_until, timestamps), `submissions`
 (cf_submission_id unique), `topic_stats` (unique user_id+topic_key, last_results jsonb),
@@ -85,7 +85,7 @@ The sync lock is one atomic `UPDATE ... WHERE sync_locked_until IS NULL OR sync_
 `SPRING_PROFILES_ACTIVE, PORT=4000, DATABASE_URL, DATABASE_USERNAME, DATABASE_PASSWORD,
 JWT_SECRET, JWT_EXPIRES_IN=7d, CLIENT_URL, GEMINI_API_KEY, GEMINI_MODELS, GROQ_API_KEY,
 GROQ_MODEL, CRON_SECRET, SYNC_CRON, LOG_LEVEL`. Fail fast at startup with a clear message listing
-missing or invalid variables (as the legacy env check did). Never log secrets or the DB password.
+missing or invalid variables (as the env check does today). Never log secrets or the DB password.
 Enable virtual threads. Time-based logic uses an injected `Clock` so tests can control time.
 
 ## Testing rules
@@ -94,7 +94,7 @@ Enable virtual threads. Time-based logic uses an injected `Clock` so tests can c
   services, checking JSON shape and error codes. Repositories/queries: Testcontainers PostgreSQL
   with Flyway applied (one shared container for the whole run). Full flows: `@SpringBootTest` +
   MockMvc + Testcontainers. HTTP clients: WireMock. Never call real Codeforces, Gemini or Groq.
-- Port every legacy test case (same inputs, same expected outputs, same error codes).
+- Keep every ported test case (same inputs, same expected outputs, same error codes).
 - Each endpoint: success, validation failure, auth failure (if protected), error JSON shape.
 - JaCoCo thresholds: lines 80%, branches 75%. Checkstyle `FileLength` 100 applies to tests too.
 - Docker must be running for tests (Testcontainers). If it is not, say so instead of skipping tests.

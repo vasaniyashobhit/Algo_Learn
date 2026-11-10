@@ -347,6 +347,16 @@ PostgreSQL (`backend/`). Everything below "MERN log" is the history of the finis
 - Root `npm run lint` and `npm test` green: 1149 backend tests (coverage gates met) + 111 frontend test files.
 - Lockfile: the stale `backend` (Express) workspace entry and `mongodb-memory-server` were removed.
 
+- **CI on GitHub** after the first push: the backend job failed in 7 s because `backend/mvnw` was committed without
+  the executable bit (`100644`); fixed with `git update-index --chmod=+x` (commit `936c735`). Then `ImportDatasetTaskIT` required the git-ignored dataset file (fixed in `f4fe4a6`; verified first in a Linux container on the committed tree), and the OCR probe folder was 0700 for the image's non-root user (fixed in `2d3c0a0`). **CI run 42839401306 green**: backend verify 91 s, frontend 110 s, Playwright e2e 97 s, Docker images + OCR in the image 64 s.
+- **Legacy removed** (after parity clean, e2e green, image built with OCR verified, CI green): `legacy/` (including
+  its local `node_modules` and git-ignored `.env`), `tools/parity/legacy/`, and every MongoDB/Mongoose/Express
+  reference in code comments, CLAUDE.md files, PRODUCT.md, README, `docs/API.md` (health wording, two error-table
+  rows, the data model is now the PostgreSQL schema) and the parity tooling. The parity check now compares the
+  Spring e2e backend with the recorded legacy snapshot (`npm run parity`: still 109/109). Exceptions on purpose:
+  this file's history and the applied Flyway migration `V1__init.sql`, whose comment cannot change without breaking
+  every database's checksum.
+
 ## Decisions
 
 - Env validation runs in an `ApplicationContextInitializer` (after every property source including
@@ -517,6 +527,9 @@ PostgreSQL (`backend/`). Everything below "MERN log" is the history of the finis
   numbers (`-1` is one term here), apostrophes, and stop words outside the 3,000 most frequent corpus words; a term
   counts at most 256 times per field.
 - `e2e/playwright.config.js` uses 2 workers locally too (was one per core) and a 420 s server timeout.
+- `docs/API.md` wording fixed for the new backend (no contract change): `db`/readiness say "the database",
+  `VALIDATION_FAILED` mentions database check/type errors, `DB_UNAVAILABLE` describes when it is sent, user ids are
+  "an opaque string", and "Data model" documents the PostgreSQL tables.
 
 ## Blockers
 
@@ -524,11 +537,17 @@ PostgreSQL (`backend/`). Everything below "MERN log" is the history of the finis
 - Local note: a native PostgreSQL 17 service uses port 5432 on this machine, so the root `.env` (git-ignored) sets
   `POSTGRES_PORT=5433` and `backend/.env` uses `localhost:5433`.
 
+## Final status (end of Spring Session 8)
+
+The migration is complete: the Spring Boot + PostgreSQL backend serves the unchanged frontend with the same API
+(parity report clean), root lint and tests are green, Playwright e2e passes on the Spring e2e backend, the Docker
+image runs OCR, `docker compose up --build` runs the whole app, and CI covers backend, frontend, e2e and images.
+
 ## Next
 
-- Delete `legacy/` and the remaining MongoDB/Mongoose/Express references once CI is green on GitHub.
 - Deployment (human): the checklist in the Session 8 summary and `docs/DEPLOY.md`.
-- After the migration: recommendation tuning (formula and constants unchanged so far).
+- After the migration: recommendation tuning (formula and constants unchanged so far); embeddings (pgvector is
+  already the database image).
 
 # MERN log
 

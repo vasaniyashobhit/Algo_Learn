@@ -58,13 +58,13 @@ the host's health check).
 { "success": true, "data": { "status": "ok", "db": "up", "uptime": 12.34, "time": "2026-10-28T16:41:50.482Z" } }
 ```
 
-`db` is `up` when MongoDB is connected, else `down` (then `status` is `degraded`). `uptime` is the
+`db` is `up` when the database answers, else `down` (then `status` is `degraded`). `uptime` is the
 process uptime in seconds; `time` is the server time (ISO 8601, UTC).
 
 ### `GET /api/v1/health/ready`
 
-Public. Readiness check (Session 15): the same body as `/health` with `200` when MongoDB is
-connected, otherwise `503 DB_UNAVAILABLE` in the error shape.
+Public. Readiness check (Session 15): the same body as `/health` with `200` when the database
+answers, otherwise `503 DB_UNAVAILABLE` in the error shape.
 
 ### `GET /api/v1/meta/tags`
 
@@ -115,7 +115,7 @@ or internal sync fields):
 }
 ```
 
-Note: users are identified by `id` (hex string), not `_id`.
+Note: users are identified by `id` (an opaque string), not `_id`.
 
 `POST /auth/signup` and `POST /auth/login` share a stricter limit: **20 requests per 15 minutes
 per IP**, counted together (on top of the global 300). Exceeding it → `429 RATE_LIMITED`,
@@ -702,7 +702,7 @@ Source: `backend/src/errors/codes.js`. Every code needs a frontend message in
 
 | Code | HTTP | When |
 |---|---|---|
-| `VALIDATION_FAILED` | 400 | Invalid body/query/params, malformed JSON, Mongoose validation/cast errors. `details: [{ field, message }]` |
+| `VALIDATION_FAILED` | 400 | Invalid body/query/params, malformed JSON, database check/type errors. `details: [{ field, message }]` |
 | `AUTH_REQUIRED` | 401 | Protected route called without an `Authorization` header |
 | `AUTH_INVALID_TOKEN` | 401 | Header not `Bearer <jwt>`, token malformed/badly signed/not yet valid, or the account no longer exists |
 | `AUTH_TOKEN_EXPIRED` | 401 | Token expired |
@@ -727,7 +727,7 @@ Source: `backend/src/errors/codes.js`. Every code needs a frontend message in
 | `PRACTICE_ITEM_EXISTS` | 409 | Problem already in the user's practice list |
 | `STUCK_QUERY_NOT_FOUND` | 404 | Stuck query id unknown, malformed, or another user's |
 | `DUPLICATE_RESOURCE` | 409 | Generic unique-index violation. `details: { fields: [...] }` (field names only) |
-| `DB_UNAVAILABLE` | 503 | Could not connect to or close MongoDB (startup/shutdown; not yet sent by any endpoint) |
+| `DB_UNAVAILABLE` | 503 | The database cannot be reached (`/health/ready`, or a request while it is down) |
 | `INTERNAL_ERROR` | 500 | Anything unexpected. Message is always generic |
 
 Auth codes are confirmed (Session 4). CF and sync codes (`CF_HANDLE_*`, `CF_UNAVAILABLE`,
@@ -737,80 +737,74 @@ sync use of `RATE_LIMITED` are confirmed (Session 8; no new codes). Upload and s
 confirmed (Session 10; no new codes). Only `DB_UNAVAILABLE` is not sent by any endpoint. This table
 is the complete list for the frontend's messages.
 
-## Data model (MongoDB)
+## Data model (PostgreSQL)
 
-Source: `backend/src/modules/*/*.model.js`. Shared options in `backend/src/db/schema.js`.
-Every document's JSON form drops `__v` and `passwordHash` and keeps `_id` (ObjectId → hex
-string, except `problems`, whose `_id` is the problem id). `createdAt`/`updatedAt` are ISO
-dates. Enum lists live in `backend/src/config/constants.js`.
+Source: `backend/src/main/resources/db/migration` (Flyway). Columns are snake_case; the API
+names below are the JSON fields. Users, practice items and cache rows have UUID ids; stuck
+queries have 24-hex ids (`"6720f0c2a1b2c3d4e5f60718"`); problems use the problem id. Times are
+`timestamptz` and appear in JSON as ISO dates.
 
 ### `problems`
 
-| Field | Type | Notes |
+| Column | Type | Notes |
 |---|---|---|
-| `_id` | string | `"<contestId>/<index>"`, must match `^\d+\/[A-Z0-9]{1,3}$` (`PROBLEM_ID_PATTERN` in `config/constants.js`), e.g. `"1/A"`, `"1950/F2"`, `"1723/GP1"`, `"921/01"` |
-| `contestId` | number | required |
-| `index` | string | required |
-| `title` | string | required |
-| `description`, `inputFormat`, `outputFormat`, `note`, `editorial` | string | default `""`; CF LaTeX `$$$...$$$` kept as is |
-| `rating` | number \| null | 0–4000, `null` when unrated |
-| `tags` | string[] | each one of the 37 CF tags (incl. `*special`) |
-| `tagCount` | number | derived: `tags.length` |
-| `hasEditorial` | boolean | derived: editorial is non-blank |
+| `id` | text | `"<contestId>/<index>"`, must match `^\d+/[A-Z0-9]{1,3}$`, e.g. `"1/A"`, `"1950/F2"`, `"1723/GP1"`, `"921/01"` |
+| `contest_id`, `idx`, `title` | integer, text, text | required |
+| `description`, `input_format`, `output_format`, `note`, `editorial` | text | default `''`; CF LaTeX `$$$...$$$` kept as is |
+| `rating` | integer \| null | 0–4000, `null` when unrated |
+| `tags` | text[] | each one of the 37 CF tags (incl. `*special`) |
+| `tag_count`, `has_editorial` | integer, boolean | derived: `tags` length, editorial is non-blank |
 | `source` | `hf` \| `cf_api` | default `hf`; `cf_api` rows (from `npm run sync:problemset`) have no statement text |
+| `term_scores` | jsonb (generated) | per-term text-search scores (title weight 3, description 1) for `?q=` and the stuck flow |
 
-Rows are written by `npm run import:dataset` (hf, `$set` upsert) and
-`npm run sync:problemset` / the weekly job (cf_api: inserts new problems, and updates only
-`rating`, `tags`, `tagCount` of existing **cf_api** rows when Codeforces changed them; hf rows
-and text fields are never touched).
-
-Indexes: `tags`, `rating`, `{tags, rating}`, text index `problem_text` (title weight 3, description 1).
+Rows are written by `npm run import:dataset` (hf, upsert) and `npm run sync:problemset` / the
+weekly job (cf_api: inserts new problems, and updates only `rating`, `tags`, `tag_count` of
+existing **cf_api** rows when Codeforces changed them; hf rows and text fields are never touched).
+Indexes: GIN on `tags` and `term_scores`, btree on `rating`.
 
 ### `users`
 
-`email` (unique, lowercased), `passwordHash` (never returned; `select: false`), `name`
-(default `""`), `cfHandle` (unset until linked; unique **case-insensitively**, only when it
-is a string), `cfRating`, `cfMaxRating`, `lastSyncedAt`, `lastSubmissionId`,
-`syncLockedUntil` (all default `null`).
+`email` (unique, lowercased), `password_hash` (never returned), `name` (default `''`),
+`cf_handle` (null until linked; unique **case-insensitively**), `cf_rating`, `cf_max_rating`,
+`last_synced_at`, `last_submission_id`, `sync_locked_until` (all default `null`), timestamps.
 
 ### `submissions`
 
-`cfSubmissionId` (unique), `userId`, `problemId`, `contestId`, `index`, `problemRating`
-(nullable), `problemTags` (copied from CF at sync time), `verdict` (CF verdict, e.g. `OK`,
-`WRONG_ANSWER`), `submittedAt`. Index `{userId: 1, submittedAt: -1}`. Written by the sync
-(`insertMany`, unordered, duplicates ignored); deleted when the handle is unlinked or changed.
+`cf_submission_id` (unique), `user_id`, `problem_id`, `contest_id`, `idx`, `problem_rating`
+(nullable), `problem_tags` (copied from CF at sync time), `verdict` (CF verdict, e.g. `OK`,
+`WRONG_ANSWER`), `submitted_at`. Index `(user_id, submitted_at desc)`. Written by the sync
+(batches, duplicates ignored); deleted when the handle is unlinked or changed.
 
-### `topicstats`
+### `topic_stats`
 
-`userId`, `topicKey` (`dp` or a pair key like `bitmasks+dp`), `kind` (`single` \| `pair`,
-must match the key), `attempted`, `solved`, `failed` (default 0), `avgSolvedRating`,
-`maxSolvedRating`, `comfortRating` (default `null`), `strength` (0..1, default 0),
-`lastActivityAt`, `lastResults` (`[{ problemId, solved }]`, newest first, max 5, default `[]`).
-Unique `{userId, topicKey}`. Rewritten after every sync by
-`recomputeForUser` (one `bulkWrite`: delete this user's keys that are no longer present, then
-upsert-replace every current key).
+`user_id`, `topic_key` (`dp` or a pair key like `bitmasks+dp`), `kind` (`single` \| `pair`,
+must match the key), `attempted`, `solved`, `failed` (default 0), `avg_solved_rating`,
+`max_solved_rating`, `comfort_rating` (default `null`), `strength` (0..1, default 0),
+`last_activity_at`, `last_results` (jsonb `[{ problemId, solved }]`, newest first, max 5).
+Unique `(user_id, topic_key)`. Rewritten after every sync (keys no longer present are deleted,
+every current key is upserted, in one transaction).
 
-### `stuckqueries`
+### `stuck_queries`
 
-`userId`, `inputType` (`text|url|pdf|image`), `rawInput` (truncated to 20,000 chars),
-`matchedProblemId` (nullable), `detectedTags`, `tagsSource` (`db|ai|neighbors`, unset when no
-tags were found), `estimatedRating` (nullable), `gap` (the gap items only:
+`user_id`, `input_type` (`text|url|pdf|image`), `raw_input` (truncated to 20,000 chars),
+`matched_problem_id` (nullable), `detected_tags`, `tags_source` (`db|ai|neighbors`, null when no
+tags were found), `estimated_rating` (nullable), `gap` (jsonb, the gap items only:
 `[{ topicKey, kind, strength (null when unseen), status }]`, status `unseen|weak|developing|strong`),
-`result` (the public result returned by the API), `solution` (the AI solution, only served by
-`/stuck/:id/solution`; `null` without one), `source` (`ai|cache|fallback`), `createdAt` (no
-`updatedAt`). Index `{userId: 1, createdAt: -1}`.
+`result` (jsonb, the public result returned by the API), `solution` (jsonb, the AI solution, only
+served by `/stuck/:id/solution`; `null` without one), `source` (`ai|cache|fallback`), `created_at`
+(no `updated_at`). Index `(user_id, created_at desc)`.
 
-### `llmcaches` (internal, never returned directly)
+### `llm_cache` (internal, never returned directly)
 
 `key` (unique: problem id or sha256 of the statement), `provider`, `model`, `response`
-(free-form), `createdAt`. TTL index: entries expire 30 days after `createdAt`.
+(jsonb), `created_at`. Entries older than 30 days are never read and are deleted daily.
 
-### `practiceitems`
+### `practice_items`
 
-`userId`, `problemId`, `status` (`todo|solved|skipped`, default `todo`), `addedFrom`
-(`recommendation|similar|stuck|manual`, default `manual`), timestamps. Unique `{userId, problemId}`.
+`user_id`, `problem_id`, `status` (`todo|solved|skipped`, default `todo`), `added_from`
+(`recommendation|similar|stuck|manual`, default `manual`), timestamps. Unique `(user_id, problem_id)`.
 `POST /practice` maps its duplicate key to `409 PRACTICE_ITEM_EXISTS`.
 
-Unique-index violations on any collection → `409 DUPLICATE_RESOURCE` with
-`details.fields` (field names only). Feature endpoints may map them to a specific code
+Unique-constraint violations on any table → `409 DUPLICATE_RESOURCE` with
+`details.fields` (API field names only). Feature endpoints may map them to a specific code
 (e.g. `PRACTICE_ITEM_EXISTS`).

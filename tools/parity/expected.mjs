@@ -15,7 +15,7 @@ export const DECISIONS = [
   ['Error Content-Type', '`application/json` instead of `application/json; charset=utf-8` (headers are not compared).'],
 ];
 
-const TIES = 'Its text-search neighbors tie in textScore (6+ problems at 0.5714); MongoDB returns ties in arbitrary '
+const TIES = 'Its text-search neighbors tie in textScore (6+ problems at 0.5714); the legacy database returned ties in arbitrary '
   + 'order (legacy gave different topics across runs), Spring breaks ties by problem id. Scores themselves match.';
 
 export const EXPECTED_VALUES = {

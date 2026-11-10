@@ -2,7 +2,7 @@ package com.algolearn.ratelimit;
 
 import jakarta.servlet.http.HttpServletResponse;
 
-/** IETF draft-7 headers, as express-rate-limit's {@code standardHeaders: 'draft-7'} sends them. */
+/** IETF draft-7 headers, as the legacy rate limiter sent them. */
 public final class RateLimitHeaders {
 
     public static final String POLICY = "RateLimit-Policy";

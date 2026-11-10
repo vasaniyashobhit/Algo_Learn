@@ -12,8 +12,8 @@ import org.springframework.stereotype.Repository;
 
 /**
  * GET /problems (legacy buildListFilter / buildListSort). The WHERE clause is assembled from fixed
- * SQL fragments only; every value is a bind parameter. {@code q} is a Mongo $text search: it matches ANY of
- * the words (stemmed English, Mongo's stop words), ranked by Mongo's textScore
+ * SQL fragments only; every value is a bind parameter. {@code q} is the legacy text search: it matches ANY of
+ * the words (stemmed English, the legacy stop words), ranked by the legacy text score
  * ({@link TextScore}). Order: relevance (with q), newest contest, then index (binary order).
  */
 @Repository

@@ -17,7 +17,7 @@ import org.springframework.stereotype.Repository;
 @Repository
 public class StatsQueries {
 
-    /** Mongo sorted by binary key order; {@code COLLATE "C"} gives the same order. */
+    /** Legacy sorted by binary key order; {@code COLLATE "C"} gives the same order. */
     private static final Map<String, String> ORDER = Map.of(
             "strength", "strength DESC, attempted DESC, topic_key COLLATE \"C\"",
             "attempted", "attempted DESC, strength DESC, topic_key COLLATE \"C\"");

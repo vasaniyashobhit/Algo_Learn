@@ -9,7 +9,7 @@ import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicLong;
 
 /**
- * Fixed-window limit per key (like express-rate-limit's memory store): {@code limit} requests,
+ * Fixed-window limit per key (like the legacy rate limiter's memory store): {@code limit} requests,
  * all restored together when the window ends. Idle full buckets are dropped now and then.
  */
 public class RateLimiter {

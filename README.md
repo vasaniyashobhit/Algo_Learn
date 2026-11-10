@@ -107,10 +107,10 @@ problems. The frontend needs only `VITE_API_URL` in production (the API origin, 
   PostgreSQL with 24 seeded problems, a fake Codeforces client (handles `e2e_*`), a fake AI
   provider (text containing `AI-OUTAGE` makes it fail) and no OCR. It refuses to start without
   `E2E=1` and warms the JVM before it reports healthy.
-- **Parity**: `npm run parity` sends the same 109-request sequence to the legacy Express E2E server
-  and the Spring e2e backend and compares status codes, error codes and JSON shapes (values with
-  ids and timestamps masked). Without the legacy server it compares against the saved snapshot
-  `tools/parity/legacy-snapshot.json`. Report: `docs/PARITY.md`.
+- **Parity**: `npm run parity` sends a 109-request sequence to the Spring e2e backend and compares
+  status codes, error codes and JSON shapes (values with ids and timestamps masked) with
+  `tools/parity/legacy-snapshot.json`, recorded from the legacy backend's E2E server before it was
+  removed. Report: `docs/PARITY.md`.
 - **CI** (`.github/workflows/ci.yml`): backend `mvnw verify`; frontend lint, tests and build;
   Playwright e2e; Docker images plus an OCR run inside the backend image.
 

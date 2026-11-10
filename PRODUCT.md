@@ -44,7 +44,7 @@ upsolving only; never for live rated contests or assessments.
 - Never blank: when AI fails, show the likely topics, weak areas, similar problems and the
   editorial, with a clear notice.
 - Stuck requests are limited to 10 per hour per user.
-- Stack: React (Vite) frontend, Express + MongoDB backend (see CLAUDE.md).
+- Stack: React (Vite) frontend, Spring Boot + PostgreSQL backend (see CLAUDE.md).
 
 ## Brand Commitments
 

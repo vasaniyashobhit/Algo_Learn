@@ -14,7 +14,7 @@ import org.springframework.web.method.support.ModelAndViewContainer;
 import tools.jackson.databind.json.JsonMapper;
 
 /**
- * Resolves {@link JsonBody} parameters. Like {@code express.json()}: only application/json bodies
+ * Resolves {@link JsonBody} parameters. Like the legacy JSON body parser: only application/json bodies
  * are parsed (JsonBodyFilter already rejected malformed ones); anything else is "no body".
  */
 @Component

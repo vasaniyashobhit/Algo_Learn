@@ -16,7 +16,7 @@ export const stuckSteps = [
   // Neighbors with distinct text scores, so the fallback is deterministic on both servers.
   { name: 'stuck AI outage (fallback)', method: 'POST', path: '/stuck',
     form: { inputType: 'text', text: `${AI_OUTAGE_MARKER} balanced bracket splits, long brackets again` } },
-  // The E2E test's text: its neighbors tie in Mongo's textScore, which returns ties in arbitrary order.
+  // The E2E test's text: its neighbors tie in the legacy text score, which returned ties in arbitrary order.
   { name: 'stuck AI outage (tied neighbors)', method: 'POST', path: '/stuck',
     form: { inputType: 'text', text: `${AI_OUTAGE_MARKER} Greedy coins: pay n with the fewest coins.` } },
   { name: 'stuck Codeforces url', method: 'POST', path: '/stuck',

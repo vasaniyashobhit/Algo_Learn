@@ -5,7 +5,7 @@ import static org.assertj.core.api.Assertions.assertThat;
 import java.util.List;
 import org.junit.jupiter.api.Test;
 
-/** Duplicate-key details name the legacy API fields (Mongo keyPattern), never SQL columns. */
+/** Duplicate-key details name the legacy API fields (as legacy named them), never SQL columns. */
 class DuplicateFieldsTest {
 
     private static List<String> fields(String constraint, String... columns) {

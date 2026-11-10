@@ -10,7 +10,7 @@ import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.stereotype.Component;
 
 /**
- * Daily llm_cache cleanup: deletes answers older than 30 days (replaces the legacy MongoDB TTL index
+ * Daily llm_cache cleanup: deletes answers older than 30 days (replaces the legacy TTL index
  * {@code expireAfterSeconds: LLM_CACHE_TTL_SECONDS}). Never throws.
  */
 @Component

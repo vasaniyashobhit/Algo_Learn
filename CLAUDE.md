@@ -6,28 +6,27 @@ AlgoLearn is a competitive-programming coach built on Codeforces data: similar-p
 per-topic strength from the user's Codeforces submissions, "I'm stuck" help (hints first), and
 recommendations of the next topics and problems.
 
-## What this repository is doing right now
+## State of the repository
 
-This repo is a **backend migration** of a finished MERN project:
+The backend was migrated from a Node backend to **Spring Boot + PostgreSQL** (`backend/`), finished in
+Spring Session 8. The legacy code is gone; its behaviour is pinned by `docs/API.md`, the ported tests
+and the parity snapshot (`tools/parity/legacy-snapshot.json`, `npm run parity`, report `docs/PARITY.md`).
 
-- The old Express + MongoDB backend lives in `legacy/backend-node/` as a **read-only reference**.
-- The new backend is **Spring Boot + PostgreSQL** in `backend/`.
-- **Goal: identical functionality.** Same endpoints, same request/response JSON, same status codes,
-  same 27 error codes, same limits, same algorithms and constants. Users must not notice the change.
-- `frontend/` must keep working **without code changes**. Only dev tooling around it may change
-  (root scripts, Docker, CI). If the frontend seems to need a change, the backend is wrong.
+- Keep the API identical: same endpoints, request/response JSON, status codes, the 27 error codes,
+  limits, algorithms and constants. Users must not notice the change.
+- `frontend/` keeps working **without code changes**. If the frontend seems to need a change, the
+  backend is wrong.
 
 ## Sources of truth (read at the start of every session)
 
-1. `docs/API.md` — the **frozen API contract**. Do not change it, except to fix a mistake proven by
-   the legacy code (record that under "Parity notes" in PROGRESS.md).
-2. `legacy/backend-node/src` and `legacy/backend-node/tests` — the behaviour to reproduce. Port
-   test cases, not just code: every legacy test case should have an equivalent Java test.
+1. `docs/API.md` — the **frozen API contract**. Change it only to fix a proven mistake (record that
+   under "Parity notes" in PROGRESS.md).
+2. `docs/PARITY.md` and `npm run parity` — the legacy behaviour, recorded; keep the report clean.
 3. `docs/PROGRESS.md` — read first, update last, every session (section "Spring migration").
 4. `docs/PROJECT_BRIEF.md`, `PRODUCT.md`, `frontend/DESIGN.md` — product context (unchanged).
 
-If legacy behaviour looks like a bug, **keep the behaviour** and add a line under "Parity notes"
-in PROGRESS.md. Never silently "improve" behaviour during the migration.
+If inherited behaviour looks like a bug, change it only on purpose and record it under "Decisions" or
+"Parity notes" in PROGRESS.md. Never silently "improve" behaviour.
 
 ## Stack
 
@@ -40,17 +39,17 @@ in PROGRESS.md. Never silently "improve" behaviour during the migration.
 | Containers | Docker Compose: `postgres`, `backend`, `frontend` |
 | Tests | JUnit 5, Mockito, AssertJ, Testcontainers, WireMock; frontend Vitest; Playwright E2E |
 
-Do **not** create MongoDB, Mongoose, Express or Python code in `backend/`.
+The backend is Java only (no Node or Python code in `backend/`).
 
 ## Repository layout
 
 ```
 /                  root package.json (frontend + e2e workspaces, dev/test/lint scripts), CLAUDE.md
-├─ docs/           PROJECT_BRIEF.md, PROGRESS.md, API.md (frozen), DEPLOY.md
+├─ docs/           PROJECT_BRIEF.md, PROGRESS.md, API.md (frozen), DEPLOY.md, PARITY.md
 ├─ backend/        Spring Boot app → see backend/CLAUDE.md
 ├─ frontend/       React app → see frontend/CLAUDE.md (unchanged)
-├─ e2e/            Playwright tests (unchanged tests; server setup adapted)
-├─ legacy/         backend-node/ (reference only; removed in the last session)
+├─ e2e/            Playwright tests (server: the backend's e2e profile)
+├─ tools/          checks/ (live checks: check:server, check:stuck, check:ocr), parity/ (npm run parity)
 └─ docker-compose.yml
 ```
 
@@ -89,7 +88,7 @@ Problem id `"<contestId>/<index>"`, index pattern `[A-Z0-9]{1,3}` (ids like `172
 
 ## Session workflow
 
-1. Read PROGRESS.md, this file, `backend/CLAUDE.md`, `docs/API.md`, and the legacy module(s) you port.
+1. Read PROGRESS.md, this file, `backend/CLAUDE.md`, `docs/API.md`, and the code you change.
 2. Do only the current session's scope. Blockers go to PROGRESS.md, not into a different design.
 3. Run root `npm run lint` and `npm test`; fix until green.
 4. Update PROGRESS.md (Done, Decisions, Parity notes, Blockers, Next). Conventional Commits.

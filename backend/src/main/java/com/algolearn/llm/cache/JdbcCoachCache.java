@@ -58,7 +58,7 @@ public class JdbcCoachCache implements CoachCache {
     }
 
     /**
-     * Upserts the answer. An existing row keeps its {@code created_at} (mongoose upsert), unless it has
+     * Upserts the answer. An existing row keeps its {@code created_at} (legacy upsert), unless it has
      * already expired: then it counts as new, as if the TTL index had deleted it.
      */
     @Override

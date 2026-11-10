@@ -9,7 +9,7 @@ import java.util.random.RandomGenerator;
 import java.util.regex.Pattern;
 
 /**
- * 24-hex ids in the MongoDB ObjectId layout (4-byte seconds, then 8 random bytes), for stuck queries: the frontend
+ * 24-hex ids in the legacy ObjectId layout (4-byte seconds, then 8 random bytes), for stuck queries: the frontend
  * routes and the E2E tests expect {@code /stuck/<24 hex>} (legacy ObjectIds). Lower-case on output.
  */
 public final class ObjectIds {
@@ -31,7 +31,7 @@ public final class ObjectIds {
         return "%08x".formatted(clock.millis() / 1000) + HexFormat.of().formatHex(bytes);
     }
 
-    /** The id in lower case when it is 24 hex characters (any case, like Mongo's ObjectId parsing), else empty. */
+    /** The id in lower case when it is 24 hex characters (any case, as legacy ids were parsed), else empty. */
     public static Optional<String> parse(String text) {
         return Optional.ofNullable(text).filter(id -> TEXT.matcher(id).matches())
                 .map(id -> id.toLowerCase(Locale.ROOT));

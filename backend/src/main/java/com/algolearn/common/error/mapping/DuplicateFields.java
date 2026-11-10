@@ -5,7 +5,7 @@ import java.util.Map;
 import java.util.regex.Pattern;
 
 /**
- * API field names for a unique violation, exactly as the legacy Mongo E11000 keyPattern named them
+ * API field names for a unique violation, exactly as the legacy duplicate-key errors named them
  * ({@code userId}, {@code problemId}, {@code cfHandle}, {@code _id} for a primary key), never the
  * SQL column names. Known constraints are listed; other columns are converted to camelCase.
  */

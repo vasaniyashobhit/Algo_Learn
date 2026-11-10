@@ -19,7 +19,7 @@ import tools.jackson.core.JacksonException;
 import tools.jackson.databind.json.JsonMapper;
 
 /**
- * Like the legacy {@code express.json({ limit: '1mb' })}, before routing: a JSON body over 1 MB →
+ * Like the legacy JSON body parser (1 MB limit), before routing: a JSON body over 1 MB →
  * 413 FILE_TOO_LARGE; malformed JSON (or a top-level value that is not an object/array) → 400
  * VALIDATION_FAILED on every path, including unknown routes. The checked body is replayed downstream.
  */

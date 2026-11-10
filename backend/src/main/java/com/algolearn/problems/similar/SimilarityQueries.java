@@ -12,8 +12,8 @@ import org.springframework.stereotype.Repository;
 /**
  * One native query per attempt (legacy similarPipeline.js): optional tag overlap and rating window
  * filters, exclusions, then score = 0.75 · jaccard (topic tags, *special ignored) + 0.25 · rating
- * closeness in float8 (the same IEEE operations as the Mongo pipeline). Order: score desc,
- * closeness desc, rating distance asc (unrated last), id (binary order, like Mongo).
+ * closeness in float8 (the same IEEE operations as the legacy aggregation pipeline). Order: score desc,
+ * closeness desc, rating distance asc (unrated last), id (binary order, like legacy).
  */
 @Repository
 public class SimilarityQueries {
