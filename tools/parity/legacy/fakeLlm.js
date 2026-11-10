@@ -1,5 +1,5 @@
-import { createLlm } from '../../backend/src/modules/llm/llm.module.js';
-import { AI_OUTAGE_MARKER } from './stuckFixture.js';
+import { createLlm } from '../../../legacy/backend-node/src/modules/llm/llm.module.js';
+import { AI_OUTAGE_MARKER } from '../../../e2e/server/stuckFixture.js';
 
 const ANSWER = JSON.stringify({
   tags: ['greedy', 'strings'],

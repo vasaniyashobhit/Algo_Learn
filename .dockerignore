@@ -1,0 +1,21 @@
+# Build context of frontend/Dockerfile (the repository root). The backend image uses backend/ as its context.
+**/node_modules
+**/dist
+**/coverage
+.git
+.venv
+.agent
+.claude
+.cursor
+.gemini
+.impeccable
+backend
+legacy
+data
+docs
+tools
+e2e/test-results
+e2e/playwright-report
+frontend/mockups
+**/.env
+**/*.log

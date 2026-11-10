@@ -12,16 +12,12 @@ import org.springframework.stereotype.Repository;
 
 /**
  * GET /problems (legacy buildListFilter / buildListSort). The WHERE clause is assembled from fixed
- * SQL fragments only; every value is a bind parameter. {@code q} uses the generated tsvector: like a
- * Mongo $text search it matches ANY of the words (stemmed English), ranked with title weight 3 and
- * description weight 1. Order: relevance (with q), newest contest, then index (binary order).
+ * SQL fragments only; every value is a bind parameter. {@code q} is a Mongo $text search: it matches ANY of
+ * the words (stemmed English, Mongo's stop words), ranked by Mongo's textScore
+ * ({@link TextScore}). Order: relevance (with q), newest contest, then index (binary order).
  */
 @Repository
 public class ProblemListQueries {
-
-    /** ts_rank weights {D, C, B, A}: title (A) counts three times the description (B), as in Mongo. */
-    public static final String RANK =
-            "ts_rank('{0.1, 0.2, 0.33333334, 1.0}', search, websearch_to_tsquery('english', :q))";
 
     private final NamedParameterJdbcTemplate jdbc;
 
@@ -31,7 +27,7 @@ public class ProblemListQueries {
 
     public List<ProblemSummary> page(ListQuery query, int offset, int limit) {
         var params = params(query).addValue("offset", offset).addValue("limit", limit);
-        var order = query.q() == null ? "" : RANK + " DESC, ";
+        var order = query.q() == null ? "" : TextScore.SQL + " DESC, ";
         var sql = "SELECT " + ProblemRows.SUMMARY_COLUMNS + " FROM problems" + where(query)
                 + " ORDER BY " + order + "contest_id DESC, idx COLLATE \"C\" ASC OFFSET :offset LIMIT :limit";
         return jdbc.query(sql, params, (rs, row) -> ProblemRows.summary(rs, null));
@@ -54,7 +50,7 @@ public class ProblemListQueries {
             clauses.add("rating <= :maxRating");
         }
         if (query.q() != null) {
-            clauses.add("search @@ websearch_to_tsquery('english', :q)");
+            clauses.add(TextScore.MATCH);
         }
         return clauses.isEmpty() ? "" : " WHERE " + String.join(" AND ", clauses);
     }

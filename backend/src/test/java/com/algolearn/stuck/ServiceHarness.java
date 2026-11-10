@@ -79,7 +79,8 @@ public final class ServiceHarness {
     }
 
     public static StoredQuery stored(NewQuery q) {
-        return new StoredQuery(UUID.randomUUID(), q.inputType(), Instant.parse("2026-10-30T12:00:00Z"), q.source(),
+        return new StoredQuery("6720f0c2a1b2c3d4e5f60718", q.inputType(), Instant.parse("2026-10-30T12:00:00Z"),
+                q.source(),
                 q.matchedProblemId(), q.detectedTags(), q.tagsSource(), q.estimatedRating(), q.gap(), q.result(),
                 q.solution());
     }

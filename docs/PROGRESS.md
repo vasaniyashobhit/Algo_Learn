@@ -282,6 +282,71 @@ PostgreSQL (`backend/`). Everything below "MERN log" is the history of the finis
   Gemini read the PNG (no OCR needed). Every solution was `kind: ai` with 14–24 lines of code. The 4 test queries were
   then deleted through DELETE /stuck/:id (account and other data untouched).
 
+### Spring Session 8 (2026-11-10) — E2E profile, parity, checks, Docker, CI, docs, legacy removal
+
+- **Docker first.** `backend/Dockerfile` build stage is lean: `MAVEN_OPTS=-Xmx512m -XX:+UseSerialGC
+  -XX:TieredStopAtLevel=1`, `-Dmaven.test.skip -Djacoco.skip -Dcheckstyle.skip` (CI runs them), BuildKit cache mount
+  for `~/.m2`, no `dependency:go-offline`. The image built without memory trouble (868 MB). OCR inside the image was
+  then proven with the real adapter (`npm run check:ocr`: `tools/checks/ocr-docker.mjs` renders a problem statement
+  to a PNG with the legacy bitmap font, compiles `tools/checks/ocr/OcrProbe.java` against `backend/target/classes`
+  and runs it in the image through Boot's `PropertiesLauncher`). Two real bugs found and fixed: (1) JNA needs the
+  unversioned `libtesseract.so` **and** `libleptonica.so` (noble ships `liblept.so.5`); the Dockerfile links both and
+  fails the build if one is missing; (2) Tess4J 5.20's Lept4J needs Leptonica >= 1.83 (noble has 1.82: undefined
+  symbol `pixBackgroundNormTo1MinMax`), so `TesseractEngine` now passes raw 8-bit gray pixels to libtesseract
+  (`doOCR(w, h, ByteBuffer, 8, ...)`, transparent areas white) and never calls Lept4J. Result (1.0 s, 10 lines):
+  "A. THEATRE SQUARE / THEATRE SQUARE IN THE CAPITAL CITY OF BERLAND HAS A RECTANGULAR SHAPE WITH THE SIZE N & M
+  METERS. ON THE OCCASION OF THE CITY'S ANNIVERSARY: A DECISION WAS TAKEN TO PAVE THE SQUARE WITH SQUARE GRANITE
+  FLAGSTONES. EACH FLAGSTONE IS OF THE SIZE AX A. / WHAT IS THE LEAST NUMBER OF FLAGSTONES NEEDED TO PAVE THE
+  SQUARE? ..." (every word right except the `x` signs). The Docker blocker is closed; the CI `docker` job repeats it.
+- **E2E profile** (`backend/src/test/java/com/algolearn/e2e`, test sources only, never in the production jar):
+  `E2eApplication` (refuses to start without `E2E=1`, disables spring-dotenv, adds profiles `e2e,prod` and
+  `E2eConfig` through `SpringApplication.withHook`), `TestClassExcludeFilter` (outside JUnit nothing hides test-source
+  beans such as `TestDoubles`/`TestRoutes` from the component scan), `E2eConfig` (Testcontainers PostgreSQL via
+  `@ServiceConnection`, seed before the port opens, `@Primary` fakes), `E2eProblems` (the 24 legacy seeds),
+  `E2eCodeforces` (legacy fakeCodeforces: `e2e_*` handles, the same verdict plan, an id range per handle), `E2eCoach`
+  (the legacy fake provider inside the real chain, `AI-OUTAGE` gives 400, in-memory cache), no OCR,
+  `application-e2e.yml` (legacy relaxed limits 10,000/min, no scheduler, no CF spacing). `e2e/server/start.js` runs
+  `mvnw spring-boot:test-run` with `optimizedLaunch=false` (no C1-only JIT). `E2eWarmup` + `E2eReadiness`: `/health`
+  answers 503 until 6 parallel throwaway users have walked the main routes over HTTP (the coach is never called: the
+  fake AI keeps the legacy 5/min budget). Playwright: server timeout 420 s (cold CI compile), **workers 2** everywhere
+  (as CI). No spec file changed. `npm run e2e`: **10/10 passed, 5 runs in a row**, and twice more on the final code.
+- **Stuck ids are 24-hex again** (three e2e specs assert `/stuck/[a-f0-9]{24}`): `common/db/ObjectIds` (4-byte
+  seconds from the Clock + 8 random bytes; parse in any case), `V3__stuck_object_ids.sql` (text + CHECK, SQL default
+  in the same form), String ids through store, queries, view and entity (`@PrePersist`). Users and practice items stay
+  UUIDs.
+- **Parity check** (`npm run parity`, `tools/parity/`, Node, every file <= 100 lines): starts the legacy E2E server on
+  4001 (its packages from `legacy/backend-node/node_modules`, installed locally, not committed) and the Spring e2e
+  backend on 4000, sends the same **109 requests** to both (auth, profile, handle, sync, cooldown, stats, summary,
+  recommendations before/after sync, problems list/filters/search/detail/similar, practice add/patch/delete/verify,
+  stuck text/JSON/outage/URL/SSRF/validation, history, get, solution, delete, unknown routes, sync-all, unlink) and
+  compares status, error code and JSON shape strictly, plus masked values, key order and timings. Final report
+  `docs/PARITY.md`: **clean, 109/109**. A masked legacy snapshot (`tools/parity/legacy-snapshot.json`) lets it run
+  after the legacy removal.
+- **Differences found by parity and fixed in Spring:** (1) full-text ranking: Postgres `ts_rank` and its stop list
+  ordered `?q=` results and the stuck fallback's neighbors differently from the legacy text index (different topics,
+  rating and gap for the same statement). `V4__text_scores.sql` + `problems/TextScore` now reproduce the legacy score
+  exactly (per field `weight * (2 - 2^(1-c)) * (0.5c/n + 0.5)`, x1.1 for a whole-field match; stop words measured
+  word by word: Postgres drops `s t can will just don now`, which the legacy index keeps, and keeps `would could
+  cannot`, which it drops; hyphenated words by their parts). Scores are precomputed per problem (generated
+  `term_scores jsonb` + GIN): a search costs 13-30 ms on the 11,732 local problems (worst case, a long statement
+  matching 9,859 problems: 0.2-0.5 s). `TextScoreIT` asserts the exact legacy numbers over the 24 seeds. (2) Stuck
+  ids (above). The other first-run differences were races in the request sequence (the sync-all lock).
+- **Checks moved** to `tools/checks/` (`npm run check:server`, `check:stuck`, `check:ocr`); credentials only from
+  `CHECK_EMAIL` / `CHECK_PASSWORD` (optional `CHECK_BASE_URL`). Against the local setup (backend on 4000, Postgres
+  5433, real keys): `check:server` **12/12 PASS** (the throwaway signup deleted through the compose Postgres);
+  `check:stuck` **PASS**: text 71/A, URL 4/A, PDF 231/A, PNG 1/A all 201 in <= 3.6 s, none blank, `source: cache`
+  (Session 7 answers); the 4 queries were deleted afterwards. The check account was not changed.
+- **docker-compose.yml:** `postgres`, `backend` (Dockerfile, `backend/.env` + compose overrides, `prod`, 512 MB limit,
+  curl healthcheck) and `frontend` (`frontend/Dockerfile`: Vite build from the root lockfile, nginx with SPA fallback,
+  `/api` proxy, the Vercel headers). `docker compose up --build`: all healthy, backend 342 MB / 512 MB, SPA deep
+  links 200, `check:server` through nginx on :8080 12/12.
+- **CI:** jobs `backend` (Java 21, `mvnw verify`), `frontend` (Node 22, ESLint, Vitest, build), `e2e` (Playwright on
+  the Spring e2e backend), `docker` (both images with the GHA build cache, then the OCR probe in the image).
+- **Docs:** README (architecture Mermaid, Docker setup, variables, scripts, testing), `docs/DEPLOY.md` (Docker web
+  service, Neon/Supabase, Vercel unchanged, cron-job.org, 512 MB notes), `docs/PARITY.md`.
+- Root `npm run lint` and `npm test` green: 1149 backend tests (coverage gates met) + 111 frontend test files.
+- Lockfile: the stale `backend` (Express) workspace entry and `mongodb-memory-server` were removed.
+
 ## Decisions
 
 - Env validation runs in an `ApplicationContextInitializer` (after every property source including
@@ -366,6 +431,18 @@ PostgreSQL (`backend/`). Everything below "MERN log" is the history of the finis
   `StuckUpload` on the parts (MockMvc does not run the container's parser).
 - `StuckAi` wraps `Llm` so integration tests replace only the stuck flow's AI (`StuckDoubles`: fake AI, OCR, DNS, fetch).
 
+- Session 8: the E2E backend lives in test sources and starts with `spring-boot:test-run` (Testcontainers on the test
+  classpath); a test-only `TypeExcludeFilter` keeps every other test-source bean out of its scan.
+- `/health` of the E2E backend is 503 until a warm-up has run: the cold JVM made the first seconds of parallel browser
+  tests several times slower than Node. At 8 workers both backends lose the practice specs' race on this machine;
+  after warm-up Spring answers faster than legacy under the same 8-user load (recommendations 48 ms vs 169 ms).
+- Full-text scores are computed at write time (a generated jsonb column from IMMUTABLE SQL functions with the stop
+  list inlined, so a dump/restore can never compute them before another table exists).
+- V4 was rewritten during this session before any commit; it had only been applied to the local dev database, where
+  the uncommitted versions were rolled back by hand (Session 2 precedent).
+- OCR passes raw gray pixels to libtesseract (no Lept4J), so it works with the distribution's Leptonica.
+- The parity tool keeps a masked legacy snapshot so it still runs after `legacy/` is deleted.
+
 ## Parity notes
 
 - `LOG_LEVEL` accepts Spring's levels (`trace|debug|info|warn|error|fatal|off`); legacy `silent` is `off`.
@@ -433,21 +510,25 @@ PostgreSQL (`backend/`). Everything below "MERN log" is the history of the finis
   `Unexpected file field`); a malformed multipart body is a 500, as in legacy (busboy errors were not mapped either).
 - PDF text comes from PDFBox instead of unpdf; line breaks inside a page can differ before tidying.
 
+- Session 8: stuck ids are 24-hex ObjectId-style again (supersedes the Session 7 UUID note); users and practice items
+  stay UUIDs, which no test or screen pins. Upper-case hex is accepted, as legacy did.
+- Text search: scores equal the legacy text index's; ties are broken by problem id (the legacy database returned ties
+  in arbitrary order: the same stuck statement gave different neighbors in two legacy runs). Not compared: signed
+  numbers (`-1` is one term here), apostrophes, and stop words outside the 3,000 most frequent corpus words; a term
+  counts at most 256 times per field.
+- `e2e/playwright.config.js` uses 2 workers locally too (was one per core) and a 420 s server timeout.
+
 ## Blockers
 
-- E2E: `e2e/server/start.js` imports the legacy Express backend (`../../backend/src`), so `npm run e2e`
-  does not run; the CI e2e job is disabled (`if: false`) until its server setup is adapted.
-- `backend/Dockerfile` is not verified yet: the local `docker build` was stopped (the machine ran low on memory), so
-  Tesseract inside the image (JNA finding `libtesseract`, `TESSDATA_PREFIX`) has not been exercised. Build and check it
-  in Session 8 or CI.
-- On this machine a native PostgreSQL 17 service uses port 5432, so the root `.env` (git-ignored) sets
+- None. (Session 8 closed the e2e server and the Docker/OCR blockers.)
+- Local note: a native PostgreSQL 17 service uses port 5432 on this machine, so the root `.env` (git-ignored) sets
   `POSTGRES_PORT=5433` and `backend/.env` uses `localhost:5433`.
 
 ## Next
 
-- Spring Session 8 (scope comes with its prompt): docker-compose `backend` / `frontend` services built from
-  `backend/Dockerfile`, deploy docs, the e2e server adapted to Spring, removal of `legacy/`.
-- Adapt the e2e server to the Spring backend and re-enable the CI e2e job.
+- Delete `legacy/` and the remaining MongoDB/Mongoose/Express references once CI is green on GitHub.
+- Deployment (human): the checklist in the Session 8 summary and `docs/DEPLOY.md`.
+- After the migration: recommendation tuning (formula and constants unchanged so far).
 
 # MERN log
 

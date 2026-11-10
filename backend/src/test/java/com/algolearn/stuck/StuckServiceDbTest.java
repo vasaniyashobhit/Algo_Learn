@@ -79,7 +79,7 @@ class StuckServiceDbTest {
         assertThat(saved.source()).isEqualTo("cache");
         assertThat(saved.gap()).containsExactly(new GapItem("math", "single", null, "unseen"));
         assertThat(saved.solution().code()).startsWith("#include");
-        assertThat(result.id()).matches("^[0-9a-f-]{36}$");
+        assertThat(result.id()).matches("^[0-9a-f]{24}$");
         assertThat(result.createdAt()).isEqualTo("2026-10-30T12:00:00.000Z");
     }
 

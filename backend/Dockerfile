@@ -1,23 +1,32 @@
+# syntax=docker/dockerfile:1.7
 # AlgoLearn backend image. Build from backend/:  docker build -t algolearn-backend .
-# Stage 1 builds the jar with the Maven wrapper (tests run in CI, not here); stage 2 runs it on a JRE with
-# Tesseract OCR and its English data (the stuck flow's image fallback after Gemini).
+# Stage 1 builds the jar with the Maven wrapper. It is kept lean for small machines: tests are not even compiled
+# (CI runs them), Maven gets a capped heap, and ~/.m2 lives in a BuildKit cache mount instead of an image layer.
+# Stage 2 runs it on a JRE with Tesseract OCR and its English data (the stuck flow's image fallback after Gemini).
 
 FROM eclipse-temurin:21-jdk-noble AS build
 WORKDIR /src
+ENV MAVEN_OPTS="-Xmx512m -XX:+UseSerialGC -XX:TieredStopAtLevel=1"
 COPY .mvn/ .mvn/
 COPY mvnw pom.xml lombok.config ./
 COPY build/ build/
-RUN chmod +x mvnw && ./mvnw -q -B dependency:go-offline
 COPY config/ config/
-COPY src/ src/
-RUN ./mvnw -q -B -DskipTests package && cp target/algolearn-backend-*.jar /app.jar
+COPY src/main/ src/main/
+RUN --mount=type=cache,target=/root/.m2 \
+    chmod +x mvnw \
+    && ./mvnw -q -B -Dmaven.test.skip=true -Djacoco.skip=true -Dcheckstyle.skip=true package \
+    && cp target/algolearn-backend-*.jar /app.jar
 
 FROM eclipse-temurin:21-jre-noble
-# tesseract-ocr pulls libtesseract5 + leptonica; Tess4J loads libtesseract through JNA, so give it the unversioned
-# name (the -dev package would add it, with far more than we need).
+# tesseract-ocr pulls libtesseract5 + libleptonica; Tess4J (and its Lept4J) load both through JNA by their unversioned
+# names, so link them (the -dev packages would add the links, with far more than we need). The build fails if a
+# library is missing, rather than OCR failing at runtime.
 RUN apt-get update \
     && apt-get install -y --no-install-recommends tesseract-ocr tesseract-ocr-eng \
-    && ln -sf "$(find /usr/lib -name 'libtesseract.so.5*' | head -n 1)" /usr/lib/libtesseract.so \
+    && for pair in tesseract:libtesseract.so.5 leptonica:liblept.so.5; do \
+         target="$(find /usr/lib -name "${pair#*:}*" -type f | head -n 1)"; \
+         test -n "$target" && ln -sf "$target" "/usr/lib/lib${pair%%:*}.so" || exit 1; \
+       done \
     && rm -rf /var/lib/apt/lists/* \
     && useradd --system --create-home --uid 10001 algolearn
 ENV TESSDATA_PREFIX=/usr/share/tesseract-ocr/5/tessdata \

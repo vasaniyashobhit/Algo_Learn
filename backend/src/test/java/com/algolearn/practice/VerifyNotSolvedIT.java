@@ -13,7 +13,7 @@ import org.junit.jupiter.api.Test;
 import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.test.web.servlet.MockMvc;
 
-/** Legacy practice.verify.service.test.js — not solved (200, not an error). */
+/** Legacy practice.verify.service.test.js â€” not solved (200, not an error). */
 class VerifyNotSolvedIT extends VerifyTestBase {
 
     VerifyNotSolvedIT(MockMvc mvc, JdbcTemplate jdbc, ProblemRepository problems, SimilarSearch search,

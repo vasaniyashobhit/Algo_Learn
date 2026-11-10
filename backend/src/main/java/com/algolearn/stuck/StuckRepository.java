@@ -2,6 +2,7 @@ package com.algolearn.stuck;
 
 import com.algolearn.common.validation.JsText;
 import com.algolearn.problems.ProblemListQueries;
+import com.algolearn.problems.TextScore;
 import com.algolearn.stuck.gap.GapAnalysis.TopicStatRow;
 import com.algolearn.stuck.match.StuckProblem;
 import java.sql.ResultSet;
@@ -34,14 +35,14 @@ public class StuckRepository {
                 StuckRepository::problem).stream().findFirst();
     }
 
-    /** The {@code limit} best full-text matches (any word, title weighted 3:1), like the Mongo $text search. */
+    /** The {@code limit} best full-text matches (any word), ranked like the Mongo $text search. */
     public List<StuckProblem> searchProblems(String query, int limit) {
         var words = query == null ? "" : ProblemListQueries.anyWord(query);
         if (JsText.isBlank(words)) {
             return List.of();
         }
-        return jdbc.query("SELECT " + COLUMNS + " FROM problems WHERE search @@ websearch_to_tsquery('english', :q) "
-                + "ORDER BY " + ProblemListQueries.RANK + " DESC, id COLLATE \"C\" LIMIT :limit",
+        return jdbc.query("SELECT " + COLUMNS + " FROM problems WHERE " + TextScore.MATCH + " "
+                + "ORDER BY " + TextScore.SQL + " DESC, id COLLATE \"C\" LIMIT :limit",
                 new MapSqlParameterSource("q", words).addValue("limit", limit), StuckRepository::problem);
     }
 

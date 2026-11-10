@@ -33,7 +33,7 @@ class ProblemListQueriesTest {
                 .isEqualTo(" WHERE rating <= :maxRating");
         assertThat(ProblemListQueries.where(query(List.of("dp"), false, 800, 1200, "x")))
                 .isEqualTo(" WHERE tags && CAST(:tags AS text[]) AND rating >= :minRating AND rating <= :maxRating"
-                        + " AND search @@ websearch_to_tsquery('english', :q)");
+                        + " AND " + TextScore.MATCH);
     }
 
     @Test

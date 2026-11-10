@@ -1,5 +1,6 @@
 package com.algolearn.stuck;
 
+import com.algolearn.common.db.ObjectIds;
 import com.algolearn.common.db.SqlTime;
 import com.algolearn.stuck.result.StuckResult;
 import com.algolearn.stuck.result.StuckSolution;
@@ -36,7 +37,8 @@ public class StuckQueryStore {
     }
 
     public StoredQuery save(NewQuery q) {
-        var params = new MapSqlParameterSource("user", q.userId()).addValue("type", q.inputType())
+        var params = new MapSqlParameterSource("id", ObjectIds.next(clock)).addValue("user", q.userId())
+                .addValue("type", q.inputType())
                 .addValue("raw", StuckQuery.truncateRawInput(q.rawInput() == null ? "" : q.rawInput()))
                 .addValue("matched", q.matchedProblemId()).addValue("tags", q.detectedTags().toArray(String[]::new))
                 .addValue("tagsSource", q.tagsSource()).addValue("rating", q.estimatedRating())
@@ -46,14 +48,14 @@ public class StuckQueryStore {
                 .addValue("source", q.source())
                 .addValue("now", SqlTime.of(clock.instant().truncatedTo(ChronoUnit.MILLIS)));
         return jdbc.queryForObject("""
-                INSERT INTO stuck_queries (user_id, input_type, raw_input, matched_problem_id, detected_tags,
+                INSERT INTO stuck_queries (id, user_id, input_type, raw_input, matched_problem_id, detected_tags,
                   tags_source, estimated_rating, gap, result, solution, source, created_at)
-                VALUES (:user, :type, :raw, :matched, :tags, :tagsSource, :rating, :gap::jsonb, :result::jsonb,
+                VALUES (:id, :user, :type, :raw, :matched, :tags, :tagsSource, :rating, :gap::jsonb, :result::jsonb,
                   :solution::jsonb, :source, :now)
                 RETURNING""" + " " + ROW, params, this::row);
     }
 
-    public Optional<StoredQuery> find(UUID userId, UUID id) {
+    public Optional<StoredQuery> find(UUID userId, String id) {
         return jdbc.query("SELECT " + ROW + " FROM stuck_queries WHERE id = :id AND user_id = :user",
                 new MapSqlParameterSource("id", id).addValue("user", userId), this::row).stream().findFirst();
     }
@@ -71,7 +73,7 @@ public class StuckQueryStore {
         return total == null ? 0 : total;
     }
 
-    public int delete(UUID userId, UUID id) {
+    public int delete(UUID userId, String id) {
         return jdbc.update("DELETE FROM stuck_queries WHERE id = :id AND user_id = :user",
                 new MapSqlParameterSource("id", id).addValue("user", userId));
     }
@@ -83,7 +85,7 @@ public class StuckQueryStore {
 
     private StoredQuery row(ResultSet rs, int i) throws SQLException {
         var tags = rs.getArray("detected_tags");
-        return new StoredQuery(rs.getObject("id", UUID.class), rs.getString("input_type"),
+        return new StoredQuery(rs.getString("id"), rs.getString("input_type"),
                 SqlTime.instant(rs.getTimestamp("created_at")), rs.getString("source"),
                 rs.getString("matched_problem_id"), tags == null ? List.of() : List.of((String[]) tags.getArray()),
                 rs.getString("tags_source"), rs.getObject("estimated_rating", Integer.class),

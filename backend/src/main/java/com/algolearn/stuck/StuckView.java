@@ -13,14 +13,14 @@ public final class StuckView {
     }
 
     public static Response response(StoredQuery q) {
-        return new Response(String.valueOf(q.id()), q.inputType(), IsoTime.format(q.createdAt()), q.result());
+        return new Response(q.id(), q.inputType(), IsoTime.format(q.createdAt()), q.result());
     }
 
     /** The stored problem, or one rebuilt from the top-level columns for a row without a result. */
     public static HistoryItem historyItem(StoredQuery q) {
         var problem = q.result() != null ? q.result().problem()
                 : new ProblemInfo(q.matchedProblemId(), null, null, q.detectedTags(), null, q.estimatedRating());
-        return new HistoryItem(String.valueOf(q.id()), q.inputType(), IsoTime.format(q.createdAt()), q.source(),
+        return new HistoryItem(q.id(), q.inputType(), IsoTime.format(q.createdAt()), q.source(),
                 problem, q.gap().stream().map(GapItem::topicKey).toList());
     }
 

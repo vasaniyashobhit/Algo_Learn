@@ -1,5 +1,7 @@
-# Local development stack. Session 1: PostgreSQL only (backend and frontend services come later).
-# Start with `npm run db:up`, stop with `npm run db:down` (data stays in the named volume).
+# The whole app: `docker compose up --build` → http://localhost:8080 (frontend + /api through nginx).
+# `npm run db:up` / `npm run db:down` start and stop Postgres alone for `npm run dev`.
+# The backend reads its secrets (JWT_SECRET, GEMINI_*, GROQ_*, CRON_SECRET, ...) from backend/.env; the values below
+# override what only differs inside compose (database host, CORS origin, production profile).
 services:
   postgres:
     image: pgvector/pgvector:pg16
@@ -19,6 +21,46 @@ services:
       timeout: 5s
       retries: 10
       start_period: 10s
+    restart: unless-stopped
+
+  backend:
+    build: ./backend
+    image: algolearn-backend
+    container_name: algolearn-backend
+    env_file:
+      - path: backend/.env
+        required: false
+    environment:
+      SPRING_PROFILES_ACTIVE: prod
+      PORT: "4000"
+      DATABASE_URL: jdbc:postgresql://postgres:5432/algolearn
+      DATABASE_USERNAME: ${POSTGRES_USER:-algolearn}
+      DATABASE_PASSWORD: ${POSTGRES_PASSWORD:-algolearn}
+      CLIENT_URL: ${CLIENT_URL:-http://localhost:8080}
+    depends_on:
+      postgres:
+        condition: service_healthy
+    # Same budget as a 512 MB host (the image sizes the JVM for it).
+    mem_limit: 512m
+    healthcheck:
+      test: ["CMD-SHELL", "curl -fsS http://localhost:4000/api/v1/health || exit 1"]
+      interval: 10s
+      timeout: 5s
+      retries: 12
+      start_period: 40s
+    restart: unless-stopped
+
+  frontend:
+    build:
+      context: .
+      dockerfile: frontend/Dockerfile
+    image: algolearn-frontend
+    container_name: algolearn-frontend
+    ports:
+      - "${FRONTEND_PORT:-8080}:80"
+    depends_on:
+      backend:
+        condition: service_healthy
     restart: unless-stopped
 
 volumes:

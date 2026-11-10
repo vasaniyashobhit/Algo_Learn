@@ -39,7 +39,7 @@ class StuckSolveIT extends StuckIT {
         var data = data(res);
         assertThat(data.propertyNames()).containsExactly("id", "inputType", "createdAt", "source", "provider", "model",
                 "notice", "fallbackReason", "problem", "hints", "hasSolution", "editorialAvailable", "gap", "similar");
-        assertThat(data.get("id").asString()).matches("^[0-9a-f-]{36}$");
+        assertThat(data.get("id").asString()).matches("^[0-9a-f]{24}$");
         assertThat(data.get("createdAt").asString()).matches("^\\d{4}-\\d\\d-\\d\\dT\\d\\d:\\d\\d:\\d\\d\\.\\d{3}Z$");
         assertThat(data.get("source").asString()).isEqualTo("ai");
         assertThat(data.get("notice").isNull()).isTrue();

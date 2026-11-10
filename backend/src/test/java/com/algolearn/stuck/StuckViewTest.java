@@ -9,13 +9,12 @@ import com.algolearn.llm.LlmFakes;
 import com.algolearn.stuck.result.ProblemInfo;
 import java.time.Instant;
 import java.util.List;
-import java.util.UUID;
 import org.junit.jupiter.api.Test;
 
 /** Legacy stuckView.test.js, plus the LLM adapter of the stuck flow. */
 class StuckViewTest {
 
-    private static final UUID ID = UUID.randomUUID();
+    private static final String ID = "6720f0c2a1b2c3d4e5f60718";
     private static final Instant AT = Instant.parse("2026-10-30T10:00:00Z");
 
     private static StoredQuery row(ProblemInfo problem) {

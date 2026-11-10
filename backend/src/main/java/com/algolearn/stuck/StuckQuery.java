@@ -1,11 +1,12 @@
 package com.algolearn.stuck;
 
+import com.algolearn.common.db.ObjectIds;
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
-import jakarta.persistence.GeneratedValue;
-import jakarta.persistence.GenerationType;
 import jakarta.persistence.Id;
+import jakarta.persistence.PrePersist;
 import jakarta.persistence.Table;
+import java.time.Clock;
 import java.time.Instant;
 import java.util.ArrayList;
 import java.util.List;
@@ -32,9 +33,9 @@ public class StuckQuery {
     /** Longest stored raw input; longer input is cut (legacy truncateRawInput). */
     public static final int RAW_INPUT_MAX = 20_000;
 
+    /** 24-hex ObjectId-style id ({@link ObjectIds}), assigned before the first insert. */
     @Id
-    @GeneratedValue(strategy = GenerationType.UUID)
-    private UUID id;
+    private String id;
 
     private UUID userId;
     private String inputType;
@@ -70,5 +71,12 @@ public class StuckQuery {
     /** Stores the input cut to {@link #RAW_INPUT_MAX} characters; null becomes empty. */
     public void setRawInput(String value) {
         this.rawInput = value == null ? "" : truncateRawInput(value);
+    }
+
+    @PrePersist
+    void assignId() {
+        if (id == null) {
+            id = ObjectIds.next(Clock.systemUTC());
+        }
     }
 }

@@ -1,0 +1,22 @@
+/** Public problem routes: list, filters, search, detail, similar, and their validation errors. */
+export const problemSteps = [
+  { name: 'problems list', method: 'GET', path: '/problems', auth: 'none' },
+  { name: 'problems page 2 of 5', method: 'GET', path: '/problems?page=2&limit=5', auth: 'none' },
+  { name: 'problems filtered', method: 'GET', auth: 'none',
+    path: '/problems?tags=greedy,strings&minRating=1000&maxRating=1400&limit=5' },
+  { name: 'problems repeated tags', method: 'GET', path: '/problems?tags=dp&tags=math', auth: 'none' },
+  { name: 'problems editorial only', method: 'GET', path: '/problems?hasEditorial=true&limit=50', auth: 'none' },
+  { name: 'problems search', method: 'GET', path: '/problems?q=brackets', auth: 'none' },
+  { name: 'problems sort', method: 'GET', path: '/problems?sort=rating&limit=3', auth: 'none' },
+  { name: 'problems min > max rating', method: 'GET', path: '/problems?minRating=2000&maxRating=1000', auth: 'none' },
+  { name: 'problems unknown tag', method: 'GET', path: '/problems?tags=greedy,not-a-tag', auth: 'none' },
+  { name: 'problems bad paging', method: 'GET', path: '/problems?page=0&limit=500', auth: 'none' },
+  { name: 'problem detail', method: 'GET', path: '/problems/1500/A', auth: 'none' },
+  { name: 'problem detail lower-case index', method: 'GET', path: '/problems/1501/a', auth: 'none' },
+  { name: 'problem not found', method: 'GET', path: '/problems/9999/A', auth: 'none' },
+  { name: 'problem invalid id', method: 'GET', path: '/problems/abc/A!', auth: 'none' },
+  { name: 'similar', method: 'GET', path: '/problems/1500/A/similar', auth: 'none' },
+  { name: 'similar k and window', method: 'GET', path: '/problems/1502/A/similar?k=3&ratingWindow=100', auth: 'none' },
+  { name: 'similar invalid k', method: 'GET', path: '/problems/1500/A/similar?k=0', auth: 'none' },
+  { name: 'similar unknown problem', method: 'GET', path: '/problems/9999/A/similar', auth: 'none' },
+];

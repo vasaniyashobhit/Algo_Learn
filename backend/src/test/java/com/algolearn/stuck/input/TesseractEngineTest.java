@@ -4,6 +4,7 @@ import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.catchThrowableOfType;
 
 import com.algolearn.stuck.TextPng;
+import java.awt.image.BufferedImage;
 import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
@@ -56,5 +57,18 @@ class TesseractEngineTest {
         var engine = new TesseractEngine(Optional.of(dir.toString()));
         assertThat(catchThrowableOfType(OcrEngine.OcrFailure.class, () -> engine.recognize(new byte[] {1, 2})))
                 .hasMessageContaining("cannot be decoded");
+    }
+
+    @Test
+    void flattensThePictureToGrayPixelsOnWhite() {
+        var picture = new BufferedImage(3, 2, BufferedImage.TYPE_INT_ARGB);
+        picture.setRGB(0, 0, 0xFF000000);
+        picture.setRGB(1, 0, 0xFFFFFFFF);
+        var pixels = TesseractEngine.grayPixels(picture);
+        assertThat(pixels.isDirect()).isTrue();
+        assertThat(pixels.remaining()).isEqualTo(6);
+        assertThat(pixels.get(0) & 0xFF).isZero();
+        assertThat(pixels.get(1) & 0xFF).isEqualTo(255);
+        assertThat(pixels.get(2) & 0xFF).as("transparent pixel").isEqualTo(255);
     }
 }

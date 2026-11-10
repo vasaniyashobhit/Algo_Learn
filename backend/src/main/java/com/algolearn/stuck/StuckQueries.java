@@ -1,5 +1,6 @@
 package com.algolearn.stuck;
 
+import com.algolearn.common.db.ObjectIds;
 import com.algolearn.common.error.ErrorCode;
 import com.algolearn.common.error.NotFoundException;
 import com.algolearn.common.validation.JsText;
@@ -7,7 +8,6 @@ import com.algolearn.problems.dto.ProblemSummary;
 import com.algolearn.stuck.result.StuckSolution;
 import java.util.List;
 import java.util.UUID;
-import java.util.regex.Pattern;
 import org.springframework.stereotype.Service;
 
 /**
@@ -16,9 +16,6 @@ import org.springframework.stereotype.Service;
  */
 @Service
 public class StuckQueries {
-
-    private static final Pattern UUID_TEXT =
-            Pattern.compile("^[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{12}$");
 
     private final StuckQueryStore store;
 
@@ -44,14 +41,13 @@ public class StuckQueries {
                 .map(JsText::trim).filter(text -> !text.isEmpty()).orElse(null);
         var kind = query.solution() != null ? "ai" : editorial != null ? "editorial" : "none";
         var items = query.result() == null ? List.<ProblemSummary>of() : query.result().similar().items();
-        return new SolutionView(String.valueOf(query.id()), kind, query.solution(), editorial,
+        return new SolutionView(query.id(), kind, query.solution(), editorial,
                 "none".equals(kind) ? StuckConstants.FALLBACK_NOTICE : null,
                 items.stream().filter(ProblemSummary::hasEditorial).toList());
     }
 
     public Deleted remove(UUID userId, String id) {
-        var uuid = parse(id);
-        if (store.delete(userId, uuid) == 0) {
+        if (store.delete(userId, parse(id)) == 0) {
             throw notFound();
         }
         return new Deleted(id, true);
@@ -61,11 +57,9 @@ public class StuckQueries {
         return store.find(userId, parse(id)).orElseThrow(StuckQueries::notFound);
     }
 
-    private static UUID parse(String id) {
-        if (id == null || !UUID_TEXT.matcher(id).matches()) {
-            throw notFound();
-        }
-        return UUID.fromString(id);
+    /** A 24-hex id in any case (legacy ObjectId parsing); anything else is simply not found. */
+    private static String parse(String id) {
+        return ObjectIds.parse(id).orElseThrow(StuckQueries::notFound);
     }
 
     private static NotFoundException notFound() {

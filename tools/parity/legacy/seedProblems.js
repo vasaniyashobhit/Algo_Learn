@@ -1,5 +1,5 @@
-import { Problem } from '../../backend/src/modules/problems/problem.model.js';
-import { STUCK_STATEMENT, STUCK_TITLE } from './stuckFixture.js';
+import { Problem } from '../../../legacy/backend-node/src/modules/problems/problem.model.js';
+import { STUCK_STATEMENT, STUCK_TITLE } from '../../../e2e/server/stuckFixture.js';
 
 // [contestId, title, rating, tags] — a small spread over ratings and topics.
 const ROWS = [

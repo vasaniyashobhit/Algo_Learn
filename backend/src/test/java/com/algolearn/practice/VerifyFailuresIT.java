@@ -19,7 +19,7 @@ import org.junit.jupiter.api.Test;
 import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.test.web.servlet.MockMvc;
 
-/** Legacy practice.verify.errors.test.js — problem check before syncing, other sync failures. */
+/** Legacy practice.verify.errors.test.js â€” problem check before syncing, other sync failures. */
 class VerifyFailuresIT extends VerifyTestBase {
 
     VerifyFailuresIT(MockMvc mvc, JdbcTemplate jdbc, ProblemRepository problems, SimilarSearch search,

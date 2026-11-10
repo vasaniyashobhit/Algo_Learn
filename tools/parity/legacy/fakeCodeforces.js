@@ -1,5 +1,5 @@
-import { NotFoundError } from '../../backend/src/errors/httpErrors.js';
-import { codes } from '../../backend/src/errors/codes.js';
+import { NotFoundError } from '../../../legacy/backend-node/src/errors/httpErrors.js';
+import { codes } from '../../../legacy/backend-node/src/errors/codes.js';
 import { problemDocs } from './seedProblems.js';
 
 /** Any handle starting with `e2e_` exists, so parallel tests can each link their own. */

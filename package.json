@@ -19,7 +19,12 @@
     "import:dataset": "node scripts/mvnw.mjs -q spring-boot:run -Dspring-boot.run.arguments=--task=import-dataset",
     "sync:problemset": "node scripts/mvnw.mjs -q spring-boot:run -Dspring-boot.run.arguments=--task=sync-problemset",
     "check:coach": "node scripts/mvnw.mjs -q spring-boot:run -Dspring-boot.run.arguments=--task=check-coach",
+    "check:server": "node tools/checks/server.js",
+    "check:stuck": "node tools/checks/stuck.js",
+    "check:ocr": "node tools/checks/ocr-docker.mjs",
     "e2e": "npm run e2e -w e2e",
+    "e2e:server": "node e2e/server/start.js",
+    "parity": "node tools/parity/run.mjs",
     "build": "npm run build -w frontend"
   },
   "devDependencies": {
