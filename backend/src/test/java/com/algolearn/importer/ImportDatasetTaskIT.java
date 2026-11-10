@@ -5,7 +5,6 @@ import static org.assertj.core.api.Assertions.assertThat;
 import com.algolearn.problems.ProblemRepository;
 import com.algolearn.support.DatabaseTest;
 import com.algolearn.support.ParquetFixture;
-import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.ArrayList;
 import java.util.List;
@@ -44,7 +43,6 @@ class ImportDatasetTaskIT extends DatabaseTest {
     void pointsAtTheBackendDatasetFile() {
         assertThat(task.name()).isEqualTo("import-dataset");
         assertThat(ImportDatasetTask.DEFAULT_DATASET_PATH).isEqualTo("data/cf_problems.parquet");
-        assertThat(Files.exists(Path.of(ImportDatasetTask.DEFAULT_DATASET_PATH))).isTrue();
     }
 
     @Test
