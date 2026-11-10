@@ -45,7 +45,7 @@ class CheckCoachTaskIT extends DatabaseTest {
         var summary = task(provider).run();
         assertThat(summary).containsEntry("statement", "database").containsEntry("source", "ai")
                 .containsEntry("provider", "gemini").containsEntry("model", "a").containsEntry("fresh", false)
-                .containsEntry("estimatedRating", 1000).containsEntry("codeLines", 1)
+                .containsEntry("estimatedRating", 1000).containsEntry("codeLines", 2)
                 .containsEntry("providers", List.of("gemini:a")).containsKey("tookMs").doesNotContainKey("reason");
         assertThat(provider.prompts.getFirst()).contains("Theatre Square")
                 .contains("Known tags for this problem: math");

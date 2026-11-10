@@ -80,7 +80,7 @@ public class CheckCoachTask implements Task {
             summary.put("estimatedRating", a.estimatedRating());
             summary.put("firstHint", a.hints().getFirst());
             summary.put("complexity", a.complexity());
-            summary.put("codeLines", a.code().split("\n", -1).length);
+            summary.put("codeLines", a.code() == null ? 0 : a.code().split("\n", -1).length);
         });
         return summary;
     }

@@ -227,6 +227,61 @@ PostgreSQL (`backend/`). Everything below "MERN log" is the history of the finis
   uses a different email; trying the given password on it was refused by the permission check, so nothing was
   linked, synced, added or removed. The practice list is untouched.
 
+### Spring Session 7 (2026-11-10) — Stuck flow, input readers, uploads, Dockerfile
+
+- **Session 5 smoke check (account vasaniyademo@gmail.com, handle ShobhitVasaniya, rating 1216):** login OK; summary
+  1536 submissions, 735/782 solved, 32 topics. Strongest: math 0.94 (comfort 1800), implementation 0.93 (1700), greedy
+  0.92 (1900), constructive algorithms 0.91 (1700), sortings 0.91 (1700). Weakest: divide and conquer 0.66 (1600),
+  geometry 0.69 (1500), ternary search 0.72 (1700), interactive 0.77 (1600), hashing 0.78 (1700). Recommendations (all
+  `basis: learning_zone`, `coldStart: false`): geometry (comfort 1500, range 1600–1800, problems 1600–1800), divide and
+  conquer (1600, range 1700–1900, problems 1700–1900), ternary search (1700, range 1800–2000, problems 1800–2000), i.e.
+  +100…+300 above comfort. Practice list was empty; added 581/D (201), verify 4/A → `NOT_SOLVED_YET` (nothing added),
+  removed 581/D; list empty again.
+- `stuck/input/`: `TextTidy`, `MainText` (jsoup `wholeText`), `FromText`, `FileSignature`, `PdfText` (PDFBox 3) +
+  `FromPdf`, `OcrEngine` + `TesseractEngine` (Tess4J; data from `TESSDATA_PREFIX` or standard paths; missing data,
+  native library or an undecodable image → `OcrFailure`) + `Ocr` (hard limit min(timeout, 15 s) on its own
+  virtual-thread limiter), `FromImage` (Gemini ≤ 20 s of the deadline, then OCR, else 422), `InputResolver`, records
+  `StuckInput`, `UploadedFile`, `ResolvedInput`.
+- `stuck/url/`: `PrivateAddress` (legacy CIDR list, IPv4-mapped IPv6, literals only), `HostResolver`, `UrlGuard`
+  (scheme, credentials, port, localhost, every resolved address public; returns the checked addresses), `UrlText`,
+  `CodeforcesUrl`, `PageFetcher` + `SafePageFetcher` (RestClient on Apache HttpClient 5 whose `DnsResolver` is pinned to
+  the guard's addresses and re-checks them at connect time; no redirects, retries or cookies; connect, read and body
+  bounded), `PinnedDnsResolver`, `LimitedBody` (declared and streamed 2 MB cap, deadline), `FromUrl` (≤ 3 redirects,
+  guard on every hop, 8 s for the whole fetch), `UrlErrors`, `FetchLimits`.
+- `stuck/match/` (`ProblemMatch`, `Neighbors`, `Locator`, `StuckProblem`), `stuck/gap/` (`GapAnalysis`, `GapTopic`,
+  `Gap`, `FallbackHints`), `stuck/result/` (`ResultBuilder`, `EasierSimilar`, `StuckResult`, `ProblemInfo`,
+  `SimilarBlock`, `StuckSolution`).
+- `stuck/`: `StuckConstants`, `StuckRepository` (problems by id / full text, topic stats, rating + solved ids),
+  `StuckQueryStore` (JDBC insert with `created_at` from the Clock in ms; per-user page/find/delete; jsonb read back into
+  records so GET returns the POST key order), `StuckService` (one 50 s deadline; coach skipped below 10 s),
+  `StuckQueries` (history 20/page, get, solution kinds ai/editorial/none, delete), `StuckView`, `StuckRequests` (zod
+  rules and messages), `StuckUpload` (multer rules on the parsed parts), `StuckController`, `StuckAi` (LLM adapter),
+  `StuckConfig`. `ratelimit/StuckRateLimitFilter`: 10/h per user, after Spring Security, before the upload is read.
+- Multipart: `spring.servlet.multipart.max-file-size 5MB` (request 7MB), Tomcat `max-part-count 20`,
+  `max-swallow-size 10MB`.
+- `backend/Dockerfile` (+ `.dockerignore`): build with the wrapper on `eclipse-temurin:21-jdk-noble`, run on
+  `eclipse-temurin:21-jre-noble` with `tesseract-ocr tesseract-ocr-eng`, `TESSDATA_PREFIX`, a non-root user,
+  `-Xmx256m -XX:MaxMetaspaceSize=160m -XX:+UseSerialGC` for a 512 MB host.
+- Libraries: jsoup 1.23.2, PDFBox 3.0.8, Tess4J 5.20.0 (the newest releases were under 2 weeks old), httpclient5
+  (Boot-managed).
+- Frontend checked, unchanged: stuck ids are opaque route params (`/stuck/:id`, no format check), and `AiSolution`
+  renders the code block only when `solution.code` is truthy, so `code: null` simply hides it.
+- Tests: 1133 backend (every legacy stuck case: helpers, each input type, SSRF guard and redirects, connect-time refusal
+  on a real loopback server, body caps, deadline cases with hanging fake providers on the fake clock, service
+  db/fallback/sources, schema, upload, views, repository, all routes) + 111 frontend files. Coverage 99.1% lines /
+  94.0% branches. Root `npm run lint` and `npm test` green.
+- **Live stuck check (local backend, same account, real Gemini):** every request 201, none blank, all under 4 s:
+
+  | input | time | source | provider / model | problem | tags (source) | hints / gap items / topics / similar |
+  |---|---|---|---|---|---|---|
+  | text 71A | 3.6 s | ai | gemini / gemini-3.5-flash-lite | 71/A | strings (db) | 3 / 0 / 1 / 10 |
+  | URL 4/A | 2.2 s | ai | gemini / gemini-3.5-flash-lite | 4/A | brute force, math (db) | 3 / 0 / 3 / 10 |
+  | PDF (Team) | 3.5 s | ai | gemini / gemini-3.5-flash-lite | 231/A | brute force, greedy (db) | 3 / 0 / 3 / 10 |
+  | PNG (Team) | 3.5 s | cache | gemini / gemini-3.5-flash-lite | 231/A | brute force, greedy (db) | 3 / 0 / 3 / 10 |
+
+  Gemini read the PNG (no OCR needed). Every solution was `kind: ai` with 14–24 lines of code. The 4 test queries were
+  then deleted through DELETE /stuck/:id (account and other data untouched).
+
 ## Decisions
 
 - Env validation runs in an `ApplicationContextInitializer` (after every property source including
@@ -297,6 +352,20 @@ PostgreSQL (`backend/`). Everything below "MERN log" is the history of the finis
 - The executor is owned by `ExecutorTimeLimiter`, not an `Executor` bean, so Spring Boot keeps its own
   `applicationTaskExecutor` (used by `/internal/sync-all`).
 
+- Session 7: **deliberate improvement (not legacy):** `CodeRepair` checks the model's C++ before caching (`CppCheck`: at
+  least one `#include`, every `#` line one of include/define/pragma/if/ifdef/ifndef/else/elif/endif). A malformed program
+  is asked for once more from the same model with an instruction for valid C++17 with standard includes; if it is still
+  malformed (or the retry fails) the answer keeps its steps with `code: null`. The parser accepts `"code": null` so such
+  answers survive the cache. Closes the Session 6 "Next" item about a real C++ check.
+- Stuck rows are written and read with JDBC (`StuckQueryStore`), not the JPA entity, so `created_at` comes from the
+  injected Clock and jsonb is read back into typed records (stable key order). The entity stays for the model tests.
+- The URL fetcher connects only to the addresses the guard checked (pinned DNS resolver), so there is no second lookup
+  at all; the connect-time re-check stays as a second line of defence (legacy guarded lookup).
+- OCR runs on its own virtual-thread time limiter (an `Ocr` bean closed on shutdown), not the LLM chain's.
+- The 5 MB file limit is enforced twice: by the servlet container while parsing (413 via the existing mapper) and by
+  `StuckUpload` on the parts (MockMvc does not run the container's parser).
+- `StuckAi` wraps `Llm` so integration tests replace only the stuck flow's AI (`StuckDoubles`: fake AI, OCR, DNS, fetch).
+
 ## Parity notes
 
 - `LOG_LEVEL` accepts Spring's levels (`trace|debug|info|warn|error|fatal|off`); legacy `silent` is `off`.
@@ -351,20 +420,33 @@ PostgreSQL (`backend/`). Everything below "MERN log" is the history of the finis
 - A model answer with trailing text after the JSON (`{...} x`) is invalid_json, as `JSON.parse` was.
 - Log lines are formatted text (`provider=…, model=…, attempt=…`) instead of pino objects; the same fields are logged.
 
+- Session 7: stuck ids are UUIDs (legacy ObjectIds). Any non-UUID id (including a 24-hex ObjectId) is
+  STUCK_QUERY_NOT_FOUND, as legacy treated malformed ids; the frontend treats ids as opaque.
+- Links are parsed with `java.net.URI` after percent-encoding what browsers accept (spaces, non-ASCII, `|` ...); a few
+  WHATWG oddities differ (e.g. `http:///x` is VALIDATION_FAILED instead of host `x`).
+- OCR is system Tesseract 5 through Tess4J instead of tesseract.js (bundled LSTM data); text can differ slightly. Java
+  ImageIO cannot decode WebP, so a WebP screenshot's OCR step counts as failed (Gemini still reads WebP). Without
+  Tesseract installed (this Windows machine) the OCR step always counts as failed, like legacy OCR finding no text.
+- The neighbor full-text search uses the Postgres tsvector ranking (Session 3) instead of Mongo `$text` scores; the 5
+  nearest can come back in a different order for weak matches.
+- Multer error messages are reproduced by hand (`Too many files`, `Too many fields`, `Field value too long`,
+  `Unexpected file field`); a malformed multipart body is a 500, as in legacy (busboy errors were not mapped either).
+- PDF text comes from PDFBox instead of unpdf; line breaks inside a page can differ before tidying.
+
 ## Blockers
 
 - E2E: `e2e/server/start.js` imports the legacy Express backend (`../../backend/src`), so `npm run e2e`
   does not run; the CI e2e job is disabled (`if: false`) until its server setup is adapted.
+- `backend/Dockerfile` is not verified yet: the local `docker build` was stopped (the machine ran low on memory), so
+  Tesseract inside the image (JNA finding `libtesseract`, `TESSDATA_PREFIX`) has not been exercised. Build and check it
+  in Session 8 or CI.
 - On this machine a native PostgreSQL 17 service uses port 5432, so the root `.env` (git-ignored) sets
   `POSTGRES_PORT=5433` and `backend/.env` uses `localhost:5433`.
 
 ## Next
 
-- Spring Session 7 (scope comes with its prompt): the stuck flow can use `Llm.getCoachAnswer(new CoachRequest(...))`
-  and `Llm.extractImageText(bytes, mime, deadline)` (shared deadline), `StatsQueries.all(userId)` (gap),
-  `SimilarSearch.find(...)`, `PracticeQueries`, `StrictKeys`; tests: `FakeProvider`, `FakeLimiter`, `LlmFakes`, `LogCapture`.
-- Session 5 smoke check: needs the human to confirm which local account to use (see Session 6).
-- Decide whether `solution.code` should get a real C++ check (would be a behaviour change; API.md already allows null).
+- Spring Session 8 (scope comes with its prompt): docker-compose `backend` / `frontend` services built from
+  `backend/Dockerfile`, deploy docs, the e2e server adapted to Spring, removal of `legacy/`.
 - Adapt the e2e server to the Spring backend and re-enable the CI e2e job.
 
 # MERN log

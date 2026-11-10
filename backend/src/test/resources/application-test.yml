@@ -21,6 +21,9 @@ algolearn:
     auth:
       limit: 1000
       window: 1m
+    stuck:
+      limit: 1000
+      window: 1m
   # No in-process cron, no background job threads, no 2.1 s Codeforces spacing in tests.
   jobs:
     scheduler-enabled: false

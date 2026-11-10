@@ -26,7 +26,7 @@ class CoachResponseParserTest {
         var answer = CoachResponseParser.parse(coachJson(Map.of("extra", "dropped")));
         assertThat(answer.estimatedRating()).isEqualTo(1000);
         assertThat(answer.tags()).containsExactly("math", "implementation");
-        assertThat(answer.code()).isEqualTo("int main() {}");
+        assertThat(answer.code()).isEqualTo(LlmFakes.CODE);
         assertThat(LlmFakes.MAPPER.valueToTree(answer).propertyNames()).containsExactly("tags", "estimatedRating",
                 "hints", "approach", "solutionSteps", "complexity", "code", "pitfalls");
     }

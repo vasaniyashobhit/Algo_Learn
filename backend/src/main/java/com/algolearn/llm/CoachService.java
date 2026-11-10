@@ -63,7 +63,8 @@ public class CoachService {
             var outcome = ProviderCall.call(provider, p -> CoachResponseParser.parse(p.generateJson(prompt)),
                     settings, deadline);
             if (outcome.value() != null) {
-                var written = new CachedAnswer(outcome.value(), provider.name(), provider.model());
+                var checked = CodeRepair.ensureValidCode(provider, outcome.value(), prompt, settings, deadline);
+                var written = new CachedAnswer(checked, provider.name(), provider.model());
                 cache.set(key.get(), written);
                 return CoachResult.of(CoachResult.AI, written);
             }

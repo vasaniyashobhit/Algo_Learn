@@ -20,6 +20,8 @@ import tools.jackson.databind.json.JsonMapper;
 public final class LlmFakes {
 
     public static final JsonMapper MAPPER = JsonMapper.builder().build();
+    /** A program that passes the C++ shape check. */
+    public static final String CODE = String.join("\n", "#include <cstdio>", "int main() {}");
 
     private LlmFakes() {
     }
@@ -33,7 +35,7 @@ public final class LlmFakes {
         body.put("approach", "Count ceil(n/a) · ceil(m/a).");
         body.put("solutionSteps", List.of("Read n, m, a", "Print the product"));
         body.put("complexity", "O(1) time, O(1) memory");
-        body.put("code", "int main() {}");
+        body.put("code", CODE);
         body.put("pitfalls", List.of("Use 64-bit integers"));
         body.putAll(overrides);
         return MAPPER.writeValueAsString(body);

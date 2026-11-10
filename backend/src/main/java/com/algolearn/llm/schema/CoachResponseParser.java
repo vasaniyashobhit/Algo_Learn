@@ -14,7 +14,7 @@ import tools.jackson.databind.json.JsonMapper;
 /**
  * Model text → sanitized coach answer (legacy coachResponse.schema): a ```json fence around the object is
  * tolerated, unknown keys are dropped. Text that is not JSON throws reason {@code invalid_json}; JSON that misses
- * the schema (or is empty after sanitizing) throws reason {@code invalid_schema}.
+ * the schema throws {@code invalid_schema}. {@code "code": null} stays null (failed the C++ check, see CodeRepair).
  */
 public final class CoachResponseParser {
 
@@ -62,13 +62,13 @@ public final class CoachResponseParser {
         var hints = strings(node.get("hints"), false);
         Object ratingValue = rating != null && rating.isNumber() ? (Object) rating.doubleValue()
                 : rating != null && rating.isString() ? rating.stringValue() : null;
+        var code = node.get("code");
         var raw = new CoachSanitizer.Raw(strings(node.get("tags"), true), ratingValue, hints,
-                text(node.get("approach")),
-                strings(node.get("solutionSteps"), true), text(node.get("complexity")), text(node.get("code")),
-                strings(node.get("pitfalls"), true));
+                text(node.get("approach")), strings(node.get("solutionSteps"), true), text(node.get("complexity")),
+                code != null && code.isNull() ? null : text(code), strings(node.get("pitfalls"), true));
         var valid = ratingOk && raw.tags() != null && hints != null && !hints.isEmpty() && raw.approach() != null
                 && !raw.approach().isEmpty() && raw.solutionSteps() != null && raw.complexity() != null
-                && raw.code() != null && raw.pitfalls() != null;
+                && (raw.code() != null || code.isNull()) && raw.pitfalls() != null;
         return valid ? CoachSanitizer.sanitize(raw) : null;
     }
 

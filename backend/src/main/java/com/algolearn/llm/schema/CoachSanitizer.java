@@ -10,7 +10,7 @@ import java.util.List;
 
 /**
  * Bounds a schema-valid answer (legacy sanitizeCoachResponse): official tags only, clamped rating, limited
- * arrays and strings. {@code code} is only trimmed and capped (legacy never checked the C++ itself).
+ * arrays and strings. {@code code} is only trimmed and capped (null stays null); CodeRepair checks the C++.
  */
 public final class CoachSanitizer {
 
@@ -59,6 +59,9 @@ public final class CoachSanitizer {
     }
 
     static String clean(String value, int max) {
+        if (value == null) {
+            return null;
+        }
         var trimmed = JsText.trim(value);
         return trimmed.length() > max ? trimmed.substring(0, max) : trimmed;
     }

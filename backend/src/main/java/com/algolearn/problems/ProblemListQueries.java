@@ -20,7 +20,8 @@ import org.springframework.stereotype.Repository;
 public class ProblemListQueries {
 
     /** ts_rank weights {D, C, B, A}: title (A) counts three times the description (B), as in Mongo. */
-    static final String RANK = "ts_rank('{0.1, 0.2, 0.33333334, 1.0}', search, websearch_to_tsquery('english', :q))";
+    public static final String RANK =
+            "ts_rank('{0.1, 0.2, 0.33333334, 1.0}', search, websearch_to_tsquery('english', :q))";
 
     private final NamedParameterJdbcTemplate jdbc;
 
@@ -67,7 +68,7 @@ public class ProblemListQueries {
     }
 
     /** "two arrays" → "two or arrays": websearch_to_tsquery then ORs the words (never a syntax error). */
-    static String anyWord(String q) {
+    public static String anyWord(String q) {
         return Arrays.stream(JsText.trim(q).split("\\s+"))
                 .map(word -> word.replace("\"", "").replaceFirst("^-+", ""))
                 .filter(word -> !word.isEmpty() && !word.equalsIgnoreCase("or"))
