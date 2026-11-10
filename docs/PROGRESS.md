@@ -195,6 +195,38 @@ PostgreSQL (`backend/`). Everything below "MERN log" is the history of the finis
   (`problems` 11,732 rows; `users`, `submissions`, `topic_stats`, `practice_items` empty), so
   `demo@cpcoach.dev` cannot log in (401). Nothing was created. The backend started fine against that database.
 
+### Spring Session 6 (2026-11-10) — LLM layer (no routes)
+
+- `llm/`: `LlmConstants` (legacy LLM: 40 s deadline, 2 tries, 1 s backoff, 25 s per call, 2 min circuit, budget
+  gemini 8 / groq 25 per minute, answer limits, rating 800–3500 step 100), `FallbackReason` (NO_INPUT, AI_BUSY,
+  AI_UNAVAILABLE, AI_TIMEOUT), records `CoachAnswer`, `CoachRequest`, `CoachResult`, `CachedAnswer`, `ImageText`,
+  `CoachService` (getCoachAnswer: cache → providers → fallback, never throws), `ImageTextReader`
+  (extractImageText(bytes, mime, deadline), Gemini models only), `Llm` (facade in chain order + `Llm.offline`),
+  `LlmConfig` (one Gemini provider per GEMINI_MODELS entry, Groq only with key and model), `CheckCoachTask`.
+- `llm/chain/`: `LlmException` (+ `describe` for logs), `FailureKind` (sick/retry/fail), `ChainOrder`, `MinuteBudget`,
+  `CircuitBreaker` (both on the injected Clock), `ChainSettings`, `CallOutcome`, `ProviderCall` (legacy callProvider),
+  `TimeLimiter` + `ExecutorTimeLimiter` (virtual threads; owns its executor).
+- `llm/provider/`: `LlmProvider`, `LlmHttp` (RestClient JSON POST, status/timeout/network/invalid-body mapping),
+  `GeminiProvider` (REST `v1beta/models/<m>:generateContent`, `x-goog-api-key` header, JSON response mode, inline
+  base64 image + transcription prompt), `GroqProvider` (OpenAI-compatible chat completions, `json_object`).
+- `llm/prompt/CoachPrompt`, `llm/schema/CoachResponseParser` (fence, zod rules, invalid_json/invalid_schema) +
+  `CoachSanitizer`, `llm/cache/CacheKey` (NFKC + JS `\s` collapse, sha256) + `CoachCache` + `JdbcCoachCache`.
+- Root `npm run check:coach` (= `--task=check-coach`; for `--fresh` run
+  `node scripts/mvnw.mjs -q spring-boot:run "-Dspring-boot.run.arguments=--task=check-coach --fresh"`).
+- **Live check-coach (2026-11-10, local Postgres 5433, keys from backend/.env):** providers
+  `gemini:gemini-3.5-flash-lite, groq:openai/gpt-oss-120b, gemini:gemini-3.8-flash`; `source=ai provider=gemini
+  model=gemini-3.5-flash-lite` in 5.6 s on the first model; tags `math, implementation`, rating 1000, 18-line C++,
+  cached as `problem:1/A`. No key in the output.
+- Tests: 896 backend (133 new: every legacy llm test — prompt, cache key, schema, sanitizer, failureKind, llmError,
+  chainOrder, chainSettings, callProvider (+ deadline), coach success/failure/deadline, imageText, llm.module, cache,
+  llmCache model TTL — plus WireMock Gemini/Groq, ExecutorTimeLimiter, 30-day read TTL and expired-overwrite on the
+  injected Clock, check-coach task) + 111 frontend files. No real sleeps: a fake TimeLimiter turns a hanging call
+  into a timeout by advancing the clock. Coverage 99.2% lines / 95.0% branches. Root lint and test green.
+- **Session 5 smoke check: not run.** The backend started fine, but the test account given in the prompt does not
+  exist in the local database (login 401 AUTH_INVALID_CREDENTIALS). The only local account linked to ShobhitVasaniya
+  uses a different email; trying the given password on it was refused by the permission check, so nothing was
+  linked, synced, added or removed. The practice list is untouched.
+
 ## Decisions
 
 - Env validation runs in an `ApplicationContextInitializer` (after every property source including
@@ -255,6 +287,16 @@ PostgreSQL (`backend/`). Everything below "MERN log" is the history of the finis
   promise did). Recommendation ITs call `TagCountsCache.clear()` before each test, as legacy built a fresh cache.
 - Controller-delegation tests (legacy controllers.test.js) are covered by the route ITs (Session 3 decision).
 
+- Session 6: provider calls get a hard limit from `TimeLimiter` (executor future, cancel + interrupt on timeout) in
+  place of AbortSignal; the HTTP read timeout is 25 s. Tests inject a fake limiter and a recording Sleeper.
+- Gemini is called over REST with RestClient (no SDK); the answer text joins the non-thought text parts of the first
+  candidate, as the SDK's `response.text` did.
+- Cache reads skip rows older than 30 days (`created_at >= now − 30 d` on the injected Clock), as the legacy TTL index
+  made them invisible; the daily cleanup still deletes them. An overwrite keeps `created_at` (mongoose upsert) unless
+  the row had already expired, then it restarts — as if the TTL monitor had removed it first.
+- The executor is owned by `ExecutorTimeLimiter`, not an `Executor` bean, so Spring Boot keeps its own
+  `applicationTaskExecutor` (used by `/internal/sync-all`).
+
 ## Parity notes
 
 - `LOG_LEVEL` accepts Spring's levels (`trace|debug|info|warn|error|fatal|off`); legacy `silent` is `off`.
@@ -303,6 +345,12 @@ PostgreSQL (`backend/`). Everything below "MERN log" is the history of the finis
   for `<contestId>/<index>` ids.
 - The tag counts count each tag of a problem once per array entry (`unnest`), as `$unwind` did.
 
+- Session 6: `solution.code` is kept as legacy did: trimmed and cut to 20,000 chars, never checked as C++ (legacy has
+  no C++ check, though the Session 6 prompt asked to "port" one). A malformed program is passed through, '' when absent.
+- `extractImageText` returns `Optional.empty()` where legacy returned null; `deadline` is an `Instant` (legacy epoch ms).
+- A model answer with trailing text after the JSON (`{...} x`) is invalid_json, as `JSON.parse` was.
+- Log lines are formatted text (`provider=…, model=…, attempt=…`) instead of pino objects; the same fields are logged.
+
 ## Blockers
 
 - E2E: `e2e/server/start.js` imports the legacy Express backend (`../../backend/src`), so `npm run e2e`
@@ -312,11 +360,11 @@ PostgreSQL (`backend/`). Everything below "MERN log" is the history of the finis
 
 ## Next
 
-- Spring Session 6 (scope comes with its prompt). Ready to use for the stuck flow: `StatsQueries.all(userId)` (gap),
-  `SimilarSearch.find(...)`, `PracticeQueries`, `StrictKeys`, `UserData` / `MutableClock` / `FakeCodeforcesClient` in ITs.
-- Smoke-check recommendations and practice on the demo account once it exists in the local database.
-- When the LLM cache is ported: legacy reads relied on the TTL index, so decide whether reads should also skip
-  rows older than 30 days between the daily cleanups (record it under Parity notes).
+- Spring Session 7 (scope comes with its prompt): the stuck flow can use `Llm.getCoachAnswer(new CoachRequest(...))`
+  and `Llm.extractImageText(bytes, mime, deadline)` (shared deadline), `StatsQueries.all(userId)` (gap),
+  `SimilarSearch.find(...)`, `PracticeQueries`, `StrictKeys`; tests: `FakeProvider`, `FakeLimiter`, `LlmFakes`, `LogCapture`.
+- Session 5 smoke check: needs the human to confirm which local account to use (see Session 6).
+- Decide whether `solution.code` should get a real C++ check (would be a behaviour change; API.md already allows null).
 - Adapt the e2e server to the Spring backend and re-enable the CI e2e job.
 
 # MERN log

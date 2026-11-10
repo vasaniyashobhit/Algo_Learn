@@ -18,6 +18,7 @@
     "db:down": "docker compose down",
     "import:dataset": "node scripts/mvnw.mjs -q spring-boot:run -Dspring-boot.run.arguments=--task=import-dataset",
     "sync:problemset": "node scripts/mvnw.mjs -q spring-boot:run -Dspring-boot.run.arguments=--task=sync-problemset",
+    "check:coach": "node scripts/mvnw.mjs -q spring-boot:run -Dspring-boot.run.arguments=--task=check-coach",
     "e2e": "npm run e2e -w e2e",
     "build": "npm run build -w frontend"
   },
