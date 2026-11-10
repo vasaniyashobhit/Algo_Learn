@@ -1,5 +1,5 @@
 import { execFileSync } from 'node:child_process';
-import { mkdtempSync, writeFileSync } from 'node:fs';
+import { chmodSync, mkdtempSync, writeFileSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
@@ -12,6 +12,8 @@ import { THEATRE_SQUARE } from './stuck/problems.js';
 const IMAGE = process.env.OCR_IMAGE ?? 'algolearn-backend';
 const root = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '../..');
 const work = mkdtempSync(path.join(tmpdir(), 'algolearn-ocr-'));
+// The image runs as a non-root user: let it read the mounted folder (mkdtemp creates it as 0700).
+chmodSync(work, 0o755);
 
 const lines = wrap(THEATRE_SQUARE.split('\n').slice(0, 3).join('\n'), 64);
 writeFileSync(path.join(work, 'statement.png'), textPng(lines));
